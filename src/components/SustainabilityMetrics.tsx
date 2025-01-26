@@ -4,7 +4,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 const metrics = [
   {
@@ -167,9 +167,7 @@ export const SustainabilityMetrics = () => {
                       fill="var(--color-waterSaved)"
                       radius={[4, 4, 0, 0]}
                     />
-                    <ChartTooltip>
-                      <ChartTooltipContent />
-                    </ChartTooltip>
+                    <Tooltip content={<ChartTooltipContent />} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
