@@ -9,6 +9,14 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 
+if (!import.meta.env.VITE_SUPABASE_URL) {
+  throw new Error('VITE_SUPABASE_URL is required');
+}
+
+if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  throw new Error('VITE_SUPABASE_ANON_KEY is required');
+}
+
 const queryClient = new QueryClient();
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
