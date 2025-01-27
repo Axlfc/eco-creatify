@@ -33,8 +33,32 @@ export const AuthForm = () => {
           email,
           password,
         });
-        if (error) throw error;
-        navigate("/dashboard");
+        
+        if (error) {
+          // Check if the error is due to unconfirmed email
+          if (error.message.includes("Email not confirmed")) {
+            toast({
+              title: "Email Not Verified",
+              description: "Please check your email and verify your account before signing in.",
+              variant: "destructive",
+            });
+            // Optionally, we can offer to resend the confirmation email
+            const { error: resendError } = await supabase.auth.resend({
+              type: 'signup',
+              email,
+            });
+            if (!resendError) {
+              toast({
+                title: "Verification Email Sent",
+                description: "We've resent the verification email. Please check your inbox.",
+              });
+            }
+          } else {
+            throw error;
+          }
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       toast({
