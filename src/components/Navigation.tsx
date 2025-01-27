@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
+import { createClientComponentClient } from "@supabase/auth-helpers-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -9,20 +11,39 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 export const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const supabase = createClientComponentClient();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "Successfully signed out",
+      });
+      navigate("/");
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16">
-          {/* Logo */}
           <a href="/" className="text-xl font-bold">
             Afaces
           </a>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:block">
             <NavigationMenu>
               <NavigationMenuList>
@@ -57,13 +78,13 @@ export const Navigation = () => {
             </NavigationMenu>
           </div>
 
-          {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost">Sign In</Button>
-            <Button>Get Started</Button>
+            <Button variant="ghost" onClick={() => navigate("/auth")}>
+              Sign In
+            </Button>
+            <Button onClick={() => navigate("/auth?signup=true")}>Get Started</Button>
           </div>
 
-          {/* Mobile Menu Button */}
           <Button
             variant="ghost"
             size="icon"
@@ -74,7 +95,6 @@ export const Navigation = () => {
           </Button>
         </nav>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 animate-fade-down">
             <div className="flex flex-col space-y-4">
@@ -88,10 +108,12 @@ export const Navigation = () => {
                 About
               </a>
               <div className="pt-4 flex flex-col gap-2">
-                <Button variant="ghost" className="w-full">
+                <Button variant="ghost" className="w-full" onClick={() => navigate("/auth")}>
                   Sign In
                 </Button>
-                <Button className="w-full">Get Started</Button>
+                <Button className="w-full" onClick={() => navigate("/auth?signup=true")}>
+                  Get Started
+                </Button>
               </div>
             </div>
           </div>
