@@ -1,15 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createClient } from '@supabase/supabase-js';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { Label } from "@/components/ui/label";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AuthForm = () => {
   const [email, setEmail] = useState("");
@@ -19,46 +13,34 @@ export const AuthForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          })
-        : await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-      if (error) {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message,
+          title: "Success!",
+          description: "Please check your email to verify your account.",
         });
       } else {
-        toast({
-          title: isSignUp ? "Check your email" : "Welcome back!",
-          description: isSignUp
-            ? "We sent you a confirmation email"
-            : "Successfully signed in",
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-        if (!isSignUp) {
-          navigate("/dashboard");
-        }
+        if (error) throw error;
+        navigate("/dashboard");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error.message,
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -66,34 +48,28 @@ export const AuthForm = () => {
   };
 
   return (
-    <div className="mx-auto max-w-sm space-y-8">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {isSignUp ? "Create an account" : "Welcome back"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isSignUp
-            ? "Enter your email to create your account"
-            : "Enter your credentials to sign in"}
+    <div className="w-full max-w-md mx-auto space-y-8">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">{isSignUp ? "Create Account" : "Welcome Back"}</h1>
+        <p className="text-muted-foreground mt-2">
+          {isSignUp ? "Sign up to get started" : "Sign in to your account"}
         </p>
       </div>
-      <form onSubmit={handleAuth} className="space-y-4">
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
           <Input
-            id="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
           <Input
-            id="password"
             type="password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -103,13 +79,16 @@ export const AuthForm = () => {
           {isLoading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
         </Button>
       </form>
-      <div className="text-center text-sm">
+
+      <div className="text-center">
         <Button
           variant="link"
-          className="text-muted-foreground"
           onClick={() => setIsSignUp(!isSignUp)}
+          className="text-sm"
         >
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}
+          {isSignUp
+            ? "Already have an account? Sign in"
+            : "Don't have an account? Sign up"}
         </Button>
       </div>
     </div>
