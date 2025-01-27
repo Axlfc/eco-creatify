@@ -1,11 +1,15 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createClientComponentClient } from "@supabase/auth-helpers-react";
+import { createClient } from '@supabase/supabase-js';
 import { Navigation } from "@/components/Navigation";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -15,7 +19,7 @@ const Dashboard = () => {
       }
     };
     checkUser();
-  }, [navigate, supabase.auth]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background">
