@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Leaf, Recycle, TreePine } from "lucide-react";
+import { Leaf, Recycle, TreePine, ShoppingCart } from "lucide-react";
+import { createCheckoutSession } from "@/utils/stripe";
+import { useToast } from "@/hooks/use-toast";
 
 interface CustomizationOptions {
   color: string;
@@ -38,9 +41,24 @@ export const ProductCustomizer = () => {
     material: materials[0].id,
     size: 50,
   });
+  const { toast } = useToast();
 
   const selectedMaterial = materials.find((m) => m.id === options.material);
   const selectedColor = colors.find((c) => c.id === options.color);
+
+  const handlePurchase = async () => {
+    try {
+      // Using the Custom Decor Piece price ID as an example
+      await createCheckoutSession("price_1QmEuHGzzgXMTNqrT4531sI6");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to initiate checkout. Please try again.",
+      });
+    }
+  };
 
   return (
     <section className="py-12 px-4 md:px-6 bg-secondary/30">
@@ -131,6 +149,16 @@ export const ProductCustomizer = () => {
                   className="w-full"
                 />
               </div>
+
+              {/* Purchase Button */}
+              <Button
+                className="w-full mt-8"
+                onClick={handlePurchase}
+                size="lg"
+              >
+                <ShoppingCart className="mr-2" />
+                Purchase Custom Design
+              </Button>
             </div>
 
             {/* Sustainability Info */}
