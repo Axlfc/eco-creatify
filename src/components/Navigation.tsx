@@ -3,36 +3,74 @@ import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Session check error:", error);
+          setIsAuthenticated(false);
+          return;
+        }
+        setIsAuthenticated(!!session);
+      } catch (error) {
+        console.error("Session check failed:", error);
+        setIsAuthenticated(false);
+      }
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      setIsAuthenticated(event === "SIGNED_IN");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed successfully");
+      }
+      if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
+        navigate('/');
+      }
+      setIsAuthenticated(!!session);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          variant: "destructive",
+          title: "Error signing out",
+          description: "Please try again later",
+        });
+        return;
+      }
+      navigate("/");
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: "Please try again later",
+      });
+    }
   };
 
   return (
