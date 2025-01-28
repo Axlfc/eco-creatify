@@ -21,8 +21,14 @@ serve(async (req) => {
       throw new Error('Price ID is required');
     }
 
-    // Initialize Stripe with the secret key from environment variables
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      console.error('Stripe secret key not found in environment variables');
+      throw new Error('Stripe secret key not configured');
+    }
+
+    console.log('Initializing Stripe...');
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
