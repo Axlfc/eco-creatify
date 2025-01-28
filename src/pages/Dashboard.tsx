@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCustomizer } from "@/components/ProductCustomizer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <DashboardHeader />
       <div className="container mx-auto px-4 py-8">
         <Card className="mb-8">
           <CardHeader>
