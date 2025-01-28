@@ -32,13 +32,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    console.log('Retrieving price details...');
-    // Get the price to determine if it's a subscription or one-time payment
-    const price = await stripe.prices.retrieve(priceId);
-    console.log('Price details:', price);
-    
     console.log('Creating checkout session...');
-    // Create session with appropriate mode based on price type
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -46,7 +40,7 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: price.type === 'recurring' ? 'subscription' : 'payment',
+      mode: 'payment',
       success_url: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/dashboard`,
     });
