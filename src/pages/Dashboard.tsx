@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCustomizer } from "@/components/ProductCustomizer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { PricingTiers } from "@/components/PricingTiers";
+import { SubscriptionManager } from "@/components/SubscriptionManager";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,22 +21,33 @@ const Dashboard = () => {
     checkAuth();
   }, [navigate]);
 
+  const hash = window.location.hash;
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
       <div className="container mx-auto px-4 py-8">
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Welcome to Your Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Customize your products and track your sustainability impact.
-            </p>
-          </CardContent>
-        </Card>
-        
-        <ProductCustomizer />
+        {hash === "#products" ? (
+          <PricingTiers />
+        ) : (
+          <>
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Welcome to Your Dashboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Customize your products and track your sustainability impact.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <div className="grid gap-8 md:grid-cols-2">
+              <SubscriptionManager />
+              <ProductCustomizer />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

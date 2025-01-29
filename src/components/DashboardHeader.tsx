@@ -64,7 +64,7 @@ export const DashboardHeader = () => {
               </SheetHeader>
               <nav className="flex flex-col space-y-4 mt-4">
                 <Button variant="ghost" className="justify-start" asChild>
-                  <a href="#products">Products</a>
+                  <a href="#products">Products & Plans</a>
                 </Button>
                 <Button variant="ghost" className="justify-start" asChild>
                   <a href="#orders">Orders</a>
@@ -83,7 +83,7 @@ export const DashboardHeader = () => {
               href="#products"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
-              Products
+              Products & Plans
             </a>
             <a
               href="#orders"
@@ -117,6 +117,9 @@ export const DashboardHeader = () => {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a href="#settings" className="cursor-pointer">Settings</a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href="#products" className="cursor-pointer">Manage Subscription</a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
