@@ -9,23 +9,24 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Get the authorization header and properly extract the JWT token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('No authorization header')
+      throw new Error('Authorization header is required')
     }
 
-    // Extract the actual token (remove 'Bearer ' if present)
+    // Ensure the token is properly formatted
     const token = authHeader.replace('Bearer ', '')
-    console.log('Received token:', token.substring(0, 20) + '...')
+    if (!token) {
+      throw new Error('Valid Bearer token is required')
+    }
 
-    // Create Supabase client with the token
+    console.log('Processing request with token:', token.substring(0, 10) + '...')
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -36,30 +37,24 @@ serve(async (req) => {
       }
     )
 
-    // Get user from auth header
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser()
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
 
     if (userError) {
-      console.error('User error:', userError)
-      throw new Error(`Error getting user: ${userError.message}`)
+      console.error('User retrieval error:', userError)
+      throw new Error(`Authentication failed: ${userError.message}`)
     }
 
     if (!user) {
-      console.error('No user found')
-      throw new Error('No user found')
+      console.error('No user found with provided token')
+      throw new Error('User not found')
     }
 
-    console.log('Successfully retrieved user:', user.id)
+    console.log('Successfully authenticated user:', user.id)
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2023-10-16',
     })
 
-    // Get customer subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: user.id,
       status: 'active',

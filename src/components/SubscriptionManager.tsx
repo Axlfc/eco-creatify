@@ -11,18 +11,27 @@ export const SubscriptionManager = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.log('No session found');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error('Failed to get session');
+        }
+
+        if (!session?.access_token) {
+          console.log('No active session found');
+          setSubscriptionStatus("Free");
           return;
         }
 
-        console.log('Checking subscription with token');
+        console.log('Found active session, checking subscription');
         const response = await fetch(
           "https://uybowfotcmvzvperopht.supabase.co/functions/v1/check-subscription",
           {
+            method: 'GET',
             headers: {
-              Authorization: `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
             },
           }
         );
