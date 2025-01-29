@@ -19,25 +19,25 @@ serve(async (req) => {
       throw new Error('Authorization header is required')
     }
 
-    // Ensure the token is properly formatted
     const token = authHeader.replace('Bearer ', '')
     if (!token) {
       throw new Error('Valid Bearer token is required')
     }
 
-    console.log('Processing request with token:', token.substring(0, 10) + '...')
+    console.log('Processing request with auth header:', authHeader.substring(0, 20) + '...')
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: authHeader },
         },
       }
     )
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    // Get user directly from the session, not from token
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
 
     if (userError) {
       console.error('User retrieval error:', userError)
