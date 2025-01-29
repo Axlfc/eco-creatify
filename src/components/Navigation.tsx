@@ -20,6 +20,7 @@ export const Navigation = () => {
           setIsAuthenticated(false);
           return;
         }
+        console.log("Session check result:", session ? "Active session" : "No session");
         setIsAuthenticated(!!session);
       } catch (error) {
         console.error("Session check failed:", error);
@@ -30,15 +31,13 @@ export const Navigation = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event);
-      if (event === 'TOKEN_REFRESHED') {
-        console.log("Token refreshed successfully");
-      }
+      console.log("Auth state changed:", event, "Session:", session ? "exists" : "none");
+      setIsAuthenticated(!!session);
+      
       if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
+        console.log("User signed out, redirecting to home");
         navigate('/');
       }
-      setIsAuthenticated(!!session);
     });
 
     return () => {
@@ -52,6 +51,7 @@ export const Navigation = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log("Attempting to sign out...");
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
@@ -62,6 +62,7 @@ export const Navigation = () => {
         });
         return;
       }
+      console.log("Sign out successful");
       navigate("/");
     } catch (error) {
       console.error("Sign out failed:", error);

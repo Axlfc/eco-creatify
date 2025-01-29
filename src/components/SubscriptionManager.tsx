@@ -25,24 +25,17 @@ export const SubscriptionManager = () => {
         }
 
         console.log('Found active session, checking subscription');
-        const response = await fetch(
-          "https://uybowfotcmvzvperopht.supabase.co/functions/v1/check-subscription",
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        const { data, error } = await supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Subscription check failed:', errorData);
-          throw new Error(errorData.error || 'Failed to fetch subscription status');
+        if (error) {
+          console.error('Subscription check failed:', error);
+          throw error;
         }
 
-        const data = await response.json();
         console.log('Subscription check response:', data);
         setSubscriptionStatus(data.subscribed ? "Active" : "Free");
       } catch (error: any) {
