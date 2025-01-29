@@ -27,7 +27,7 @@ serve(async (req) => {
       throw new Error('Stripe secret key not configured');
     }
 
-    console.log('Initializing Stripe...');
+    console.log('Initializing Stripe with secret key...');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
