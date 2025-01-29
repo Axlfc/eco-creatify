@@ -12,8 +12,12 @@ export const SubscriptionManager = () => {
     const checkSubscription = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+          console.log('No session found');
+          return;
+        }
 
+        console.log('Checking subscription with token');
         const response = await fetch(
           "https://uybowfotcmvzvperopht.supabase.co/functions/v1/check-subscription",
           {
@@ -23,16 +27,21 @@ export const SubscriptionManager = () => {
           }
         );
 
-        if (!response.ok) throw new Error("Failed to fetch subscription status");
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Subscription check failed:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch subscription status');
+        }
 
         const data = await response.json();
+        console.log('Subscription check response:', data);
         setSubscriptionStatus(data.subscribed ? "Active" : "Free");
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error checking subscription:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to check subscription status",
+          description: error.message || "Failed to check subscription status",
         });
       }
     };

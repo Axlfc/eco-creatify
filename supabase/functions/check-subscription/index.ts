@@ -15,19 +15,23 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
+    // Get the authorization header and properly extract the JWT token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
     }
 
-    // Create Supabase client
+    // Extract the actual token (remove 'Bearer ' if present)
+    const token = authHeader.replace('Bearer ', '')
+    console.log('Received token:', token.substring(0, 20) + '...')
+
+    // Create Supabase client with the token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: authHeader },
+          headers: { Authorization: `Bearer ${token}` },
         },
       }
     )
@@ -38,16 +42,22 @@ serve(async (req) => {
       error: userError,
     } = await supabaseClient.auth.getUser()
 
-    if (userError || !user) {
-      throw new Error('Error getting user')
+    if (userError) {
+      console.error('User error:', userError)
+      throw new Error(`Error getting user: ${userError.message}`)
     }
+
+    if (!user) {
+      console.error('No user found')
+      throw new Error('No user found')
+    }
+
+    console.log('Successfully retrieved user:', user.id)
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2023-10-16',
     })
-
-    console.log('Checking subscriptions for user:', user.id)
 
     // Get customer subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -69,7 +79,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error:', error.message)
+    console.error('Error in check-subscription:', error)
     return new Response(
       JSON.stringify({
         error: error.message,
