@@ -32,7 +32,9 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    console.log('Creating checkout session...');
+    const origin = req.headers.get('origin') || 'http://localhost:5173';
+    console.log('Creating checkout session with origin:', origin);
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -41,24 +43,39 @@ serve(async (req) => {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/dashboard`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard`,
     });
 
-    console.log('Checkout session created:', session.id);
+    if (!session.url) {
+      throw new Error('Failed to create checkout session URL');
+    }
+
+    console.log('Checkout session created successfully:', session.id);
+    console.log('Redirecting to:', session.url);
+
     return new Response(
       JSON.stringify({ url: session.url }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+        },
         status: 200,
       }
     );
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error in checkout process:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        },
         status: 500,
       }
     );

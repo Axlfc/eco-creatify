@@ -12,7 +12,7 @@ export const createCheckoutSession = async (priceId: string) => {
       throw error;
     }
     
-    if (!data.url) {
+    if (!data?.url) {
       console.error('No checkout URL returned');
       throw new Error('No checkout URL returned');
     }
