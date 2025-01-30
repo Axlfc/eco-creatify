@@ -38,10 +38,7 @@ export const CommunityFeed = () => {
       console.log("Fetching posts...");
       const { data, error } = await supabase
         .from('posts')
-        .select(`
-          *,
-          profiles(username, avatar_url)
-        `)
+        .select('*, profiles!posts_user_id_fkey_profiles(username, avatar_url)')
         .order('created_at', { ascending: false });
 
       if (error) {
