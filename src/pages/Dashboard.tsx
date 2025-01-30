@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { PricingTiers } from "@/components/PricingTiers";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
+import { CommunityFeed } from "@/components/CommunityFeed";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -42,9 +43,21 @@ const Dashboard = () => {
               </CardContent>
             </Card>
             
-            <div className="grid gap-8 md:grid-cols-2">
-              <SubscriptionManager />
-              <ProductCustomizer />
+            <div className="grid gap-8 lg:grid-cols-12">
+              <div className="lg:col-span-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Community Feed</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CommunityFeed />
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="lg:col-span-4 space-y-8">
+                <SubscriptionManager />
+                <ProductCustomizer />
+              </div>
             </div>
           </>
         )}
