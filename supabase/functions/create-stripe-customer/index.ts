@@ -48,43 +48,31 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     })
 
-    // Try to find customer by email
+    // Try to get existing customer first
     const customers = await stripe.customers.list({
       email: user.email,
       limit: 1,
     })
 
-    if (customers.data.length === 0) {
-      console.log('No Stripe customer found for user')
-      return new Response(
-        JSON.stringify({
-          subscribed: false,
-          message: 'No customer record found'
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-          status: 200,
-        }
-      )
+    let customer
+    if (customers.data.length > 0) {
+      customer = customers.data[0]
+      console.log('Found existing customer:', customer.id)
+    } else {
+      // Create new customer if none exists
+      customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          supabaseUUID: user.id,
+        },
+      })
+      console.log('Created new customer:', customer.id)
     }
 
-    const customer = customers.data[0]
-    console.log('Found Stripe customer:', customer.id)
-
-    // Get user's active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'active',
-    })
-
-    console.log('Found subscriptions:', subscriptions.data.length)
-
     return new Response(
-      JSON.stringify({
-        subscribed: subscriptions.data.length > 0,
+      JSON.stringify({ 
+        customerId: customer.id,
+        message: 'Customer retrieved/created successfully' 
       }),
       {
         headers: {
@@ -95,8 +83,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in check-subscription:', error)
-    
+    console.error('Error in create-stripe-customer:', error)
     return new Response(
       JSON.stringify({
         error: error.message,

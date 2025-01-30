@@ -24,7 +24,21 @@ export const SubscriptionManager = () => {
           return;
         }
 
-        console.log('Found active session, checking subscription');
+        console.log('Found active session, ensuring customer exists');
+        
+        // First ensure customer exists
+        const { error: customerError } = await supabase.functions.invoke('create-stripe-customer', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (customerError) {
+          console.error('Customer creation/retrieval failed:', customerError);
+          throw customerError;
+        }
+
+        console.log('Customer verified, checking subscription');
         const { data, error } = await supabase.functions.invoke('check-subscription', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
