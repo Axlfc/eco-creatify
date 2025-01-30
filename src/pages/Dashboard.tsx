@@ -11,6 +11,7 @@ import { CampaignList } from "@/components/CampaignList";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const hash = window.location.hash;
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,32 +24,28 @@ const Dashboard = () => {
     checkAuth();
   }, [navigate]);
 
-  const hash = window.location.hash;
-
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto py-8">
         {hash === "#products" ? (
           <PricingTiers />
         ) : (
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Welcome to Your Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <div className="space-y-6 px-4">
+            <Card className="border-0 bg-secondary/5">
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-3xl">Welcome to Your Dashboard</CardTitle>
                 <p className="text-muted-foreground">
                   Manage your campaigns and customize your products.
                 </p>
-              </CardContent>
+              </CardHeader>
             </Card>
             
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Main Content - Left Side */}
-              <div className="lg:col-span-8 space-y-8">
+              <div className="lg:col-span-8 space-y-6">
                 <CampaignList />
-                <Card>
+                <Card className="border-0 bg-secondary/5">
                   <CardHeader>
                     <CardTitle>Community Feed</CardTitle>
                   </CardHeader>
@@ -59,10 +56,10 @@ const Dashboard = () => {
               </div>
 
               {/* Sidebar - Right Side */}
-              <div className="lg:col-span-4 space-y-8">
+              <div className="lg:col-span-4 space-y-6">
                 <div className="sticky top-4">
                   <SubscriptionManager />
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <ProductCustomizer />
                   </div>
                 </div>

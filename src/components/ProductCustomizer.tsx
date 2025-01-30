@@ -61,129 +61,120 @@ export const ProductCustomizer = () => {
   };
 
   return (
-    <section className="py-12 px-4 md:px-6 bg-secondary/30">
-      <div className="container max-w-6xl mx-auto">
-        <div className="grid gap-8 md:grid-cols-2">
+    <div className="bg-secondary/5 rounded-lg">
+      <div className="p-6">
+        <h2 className="text-2xl font-semibold mb-6">Customize Your Product</h2>
+        <div className="grid gap-8">
           {/* Product Preview */}
-          <Card className="p-6 relative overflow-hidden">
+          <Card className="overflow-hidden bg-background/50 border-0">
             <div
-              className="aspect-square rounded-lg transition-all duration-300"
+              className="aspect-square rounded-lg transition-all duration-300 flex items-center justify-center"
               style={{
                 backgroundColor: selectedColor?.hex,
                 transform: `scale(${options.size / 50})`,
               }}
             >
-              {/* This is a placeholder for the actual product preview */}
-              <div className="w-full h-full flex items-center justify-center text-4xl">
-                Preview
-              </div>
+              <div className="text-4xl opacity-50">Preview</div>
             </div>
           </Card>
 
           {/* Customization Controls */}
-          <Card className="p-6 space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Customize Your Product</h2>
-
-              {/* Material Selection */}
-              <div className="space-y-4 mb-8">
-                <Label>Material</Label>
-                <Select
-                  value={options.material}
-                  onValueChange={(value) =>
-                    setOptions({ ...options, material: value })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select material" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materials.map((material) => (
-                      <SelectItem key={material.id} value={material.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{material.name}</span>
-                          <Badge
-                            variant="secondary"
-                            className="ml-2 bg-green-100 text-green-800"
-                          >
-                            {material.sustainability}% Eco
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Color Selection */}
-              <div className="space-y-4 mb-8">
-                <Label>Color</Label>
-                <div className="grid grid-cols-4 gap-4">
-                  {colors.map((color) => (
-                    <button
-                      key={color.id}
-                      onClick={() => setOptions({ ...options, color: color.id })}
-                      className={`w-full aspect-square rounded-full border-2 transition-all ${
-                        options.color === color.id
-                          ? "border-primary scale-110"
-                          : "border-transparent hover:scale-105"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Size Adjustment */}
-              <div className="space-y-4">
-                <Label>Size</Label>
-                <Slider
-                  value={[options.size]}
-                  onValueChange={(value) =>
-                    setOptions({ ...options, size: value[0] })
-                  }
-                  min={25}
-                  max={75}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Purchase Button */}
-              <Button
-                className="w-full mt-8"
-                onClick={handlePurchase}
-                size="lg"
+          <div className="space-y-6">
+            {/* Material Selection */}
+            <div className="space-y-3">
+              <Label>Material</Label>
+              <Select
+                value={options.material}
+                onValueChange={(value) =>
+                  setOptions({ ...options, material: value })
+                }
               >
-                <ShoppingCart className="mr-2" />
-                Purchase Custom Design
-              </Button>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select material" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materials.map((material) => (
+                    <SelectItem key={material.id} value={material.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{material.name}</span>
+                        <Badge variant="secondary" className="ml-2 bg-green-100/10 text-green-500">
+                          {material.sustainability}% Eco
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Color Selection */}
+            <div className="space-y-3">
+              <Label>Color</Label>
+              <div className="grid grid-cols-4 gap-3">
+                {colors.map((color) => (
+                  <button
+                    key={color.id}
+                    onClick={() => setOptions({ ...options, color: color.id })}
+                    className={`w-full aspect-square rounded-full border-2 transition-all ${
+                      options.color === color.id
+                        ? "border-primary scale-110"
+                        : "border-transparent hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Size Adjustment */}
+            <div className="space-y-3">
+              <Label>Size</Label>
+              <Slider
+                value={[options.size]}
+                onValueChange={(value) =>
+                  setOptions({ ...options, size: value[0] })
+                }
+                min={25}
+                max={75}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            {/* Purchase Button */}
+            <Button
+              className="w-full mt-6"
+              size="lg"
+              onClick={handlePurchase}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Purchase Custom Design
+            </Button>
 
             {/* Sustainability Info */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4">
+            <div className="pt-6 border-t border-border/50">
+              <h3 className="text-sm font-medium mb-3 text-muted-foreground">
                 Sustainability Features
               </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-green-100/10 rounded-lg">
-                  <Leaf className="w-6 h-6 mx-auto mb-2 text-green-600" />
-                  <p className="text-sm">Eco-Friendly</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 bg-green-100/5 rounded-lg">
+                  <Leaf className="w-5 h-5 mx-auto mb-1.5 text-green-500" />
+                  <p className="text-xs text-muted-foreground">Eco-Friendly</p>
                 </div>
-                <div className="text-center p-4 bg-green-100/10 rounded-lg">
-                  <Recycle className="w-6 h-6 mx-auto mb-2 text-green-600" />
-                  <p className="text-sm">Recyclable</p>
+                <div className="text-center p-3 bg-green-100/5 rounded-lg">
+                  <Recycle className="w-5 h-5 mx-auto mb-1.5 text-green-500" />
+                  <p className="text-xs text-muted-foreground">Recyclable</p>
                 </div>
-                <div className="text-center p-4 bg-green-100/10 rounded-lg">
-                  <TreePine className="w-6 h-6 mx-auto mb-2 text-green-600" />
-                  <p className="text-sm">Sustainable</p>
+                <div className="text-center p-3 bg-green-100/5 rounded-lg">
+                  <TreePine className="w-5 h-5 mx-auto mb-1.5 text-green-500" />
+                  <p className="text-xs text-muted-foreground">Sustainable</p>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
