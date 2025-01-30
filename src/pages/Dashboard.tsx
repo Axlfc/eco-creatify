@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { PricingTiers } from "@/components/PricingTiers";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { CommunityFeed } from "@/components/CommunityFeed";
+import { CampaignList } from "@/components/CampaignList";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,35 +32,38 @@ const Dashboard = () => {
         {hash === "#products" ? (
           <PricingTiers />
         ) : (
-          <>
-            <Card className="mb-8">
+          <div className="space-y-8">
+            <Card>
               <CardHeader>
                 <CardTitle>Welcome to Your Dashboard</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Customize your products and track your sustainability impact.
+                  Manage your campaigns and customize your products.
                 </p>
               </CardContent>
             </Card>
             
             <div className="grid gap-8 lg:grid-cols-12">
               <div className="lg:col-span-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Community Feed</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CommunityFeed />
-                  </CardContent>
-                </Card>
+                <CampaignList />
+                <div className="mt-8">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Community Feed</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CommunityFeed />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
               <div className="lg:col-span-4 space-y-8">
                 <SubscriptionManager />
                 <ProductCustomizer />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

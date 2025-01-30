@@ -9,6 +9,91 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      campaign_products: {
+        Row: {
+          campaign_id: string
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          material: string
+          price: number
+          size: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          color: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          material: string
+          price: number
+          size: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          material?: string
+          price?: number
+          size?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_products_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          edit_window_expires_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          edit_window_expires_at: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          edit_window_expires_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
