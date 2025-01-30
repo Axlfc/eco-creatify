@@ -28,7 +28,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
-      <div className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         {hash === "#products" ? (
           <PricingTiers />
         ) : (
@@ -44,28 +44,33 @@ const Dashboard = () => {
               </CardContent>
             </Card>
             
-            <div className="grid gap-8 lg:grid-cols-12">
-              <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Main Content - Left Side */}
+              <div className="lg:col-span-8 space-y-8">
                 <CampaignList />
-                <div className="mt-8">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Community Feed</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CommunityFeed />
-                    </CardContent>
-                  </Card>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Community Feed</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CommunityFeed />
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* Sidebar - Right Side */}
               <div className="lg:col-span-4 space-y-8">
-                <SubscriptionManager />
-                <ProductCustomizer />
+                <div className="sticky top-4">
+                  <SubscriptionManager />
+                  <div className="mt-8">
+                    <ProductCustomizer />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
