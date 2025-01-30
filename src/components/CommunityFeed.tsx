@@ -40,10 +40,7 @@ export const CommunityFeed = () => {
         .from('posts')
         .select(`
           *,
-          profiles:user_id(
-            username,
-            avatar_url
-          )
+          profiles(username, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
