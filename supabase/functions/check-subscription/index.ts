@@ -9,23 +9,21 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    // Get the authorization header
     const authHeader = req.headers.get('Authorization')
+    console.log('Auth header present:', !!authHeader)
+
     if (!authHeader) {
       throw new Error('Authorization header is required')
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    if (!token) {
-      throw new Error('Valid Bearer token is required')
-    }
-
-    console.log('Processing request with auth header:', authHeader.substring(0, 20) + '...')
-
+    // Create Supabase client with auth context
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -36,25 +34,27 @@ serve(async (req) => {
       }
     )
 
-    // Get user directly from the session, not from token
+    // Get user from the session
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-
+    
     if (userError) {
       console.error('User retrieval error:', userError)
       throw new Error(`Authentication failed: ${userError.message}`)
     }
 
     if (!user) {
-      console.error('No user found with provided token')
+      console.error('No user found in session')
       throw new Error('User not found')
     }
 
     console.log('Successfully authenticated user:', user.id)
 
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2023-10-16',
     })
 
+    // Get user's active subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: user.id,
       status: 'active',
@@ -62,6 +62,7 @@ serve(async (req) => {
 
     console.log('Found subscriptions:', subscriptions.data.length)
 
+    // Return success response
     return new Response(
       JSON.stringify({
         subscribed: subscriptions.data.length > 0,
@@ -71,16 +72,19 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
+        status: 200,
       }
     )
   } catch (error) {
     console.error('Error in check-subscription:', error)
+    
+    // Return error response with appropriate status code
     return new Response(
       JSON.stringify({
         error: error.message,
       }),
       {
-        status: 400,
+        status: error.message.includes('Authentication failed') ? 401 : 400,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
