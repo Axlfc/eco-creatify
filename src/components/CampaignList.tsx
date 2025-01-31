@@ -45,7 +45,8 @@ export const CampaignList = () => {
           schema: 'public',
           table: 'campaigns'
         },
-        () => {
+        (payload) => {
+          console.log('Campaign change detected:', payload);
           // Invalidate and refetch campaigns when any change occurs
           queryClient.invalidateQueries({ queryKey: ["campaigns"] });
         }
@@ -60,6 +61,7 @@ export const CampaignList = () => {
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
+      console.log('Fetching campaigns...');
       const { data, error } = await supabase
         .from("campaigns")
         .select(`
@@ -78,6 +80,7 @@ export const CampaignList = () => {
         return [];
       }
 
+      console.log('Campaigns fetched:', data);
       return data as Campaign[];
     },
   });
@@ -100,6 +103,7 @@ export const CampaignList = () => {
       edit_window_expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes from now
     };
 
+    console.log('Creating new campaign:', newCampaign);
     const { error } = await supabase.from("campaigns").insert(newCampaign);
 
     if (error) {
@@ -113,6 +117,7 @@ export const CampaignList = () => {
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
+    console.log('Deleting campaign:', campaignId);
     const { error } = await supabase
       .from("campaigns")
       .delete()
@@ -142,7 +147,7 @@ export const CampaignList = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {campaigns?.map((campaign) => (
           <Card key={campaign.id} className="bg-secondary/5 border-0">
             <CardHeader className="pb-2">
@@ -154,12 +159,12 @@ export const CampaignList = () => {
                 <div className="text-sm text-muted-foreground">
                   Products: {campaign.products?.length || 0}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 max-w-[80px]">
+                <div className="grid grid-cols-3 gap-2">
+                  <Button variant="outline" size="sm" className="w-full">
                     <Eye className="h-4 w-4 mr-2" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 max-w-[80px]">
+                  <Button variant="outline" size="sm" className="w-full">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
@@ -167,7 +172,7 @@ export const CampaignList = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteCampaign(campaign.id)}
-                    className="flex-1 max-w-[80px]"
+                    className="w-full"
                   >
                     <Trash className="h-4 w-4 mr-2" />
                     Delete
