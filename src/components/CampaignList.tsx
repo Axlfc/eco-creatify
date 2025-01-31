@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 interface Campaign {
   id: string;
@@ -31,6 +32,30 @@ interface CampaignProduct {
 
 export const CampaignList = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('campaign-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'campaigns'
+        },
+        () => {
+          // Invalidate and refetch campaigns when any change occurs
+          queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ["campaigns"],
@@ -111,7 +136,7 @@ export const CampaignList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Your Campaigns</h2>
-        <Button onClick={handleCreateCampaign}>
+        <Button onClick={handleCreateCampaign} className="bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           New Campaign
         </Button>
@@ -119,22 +144,22 @@ export const CampaignList = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {campaigns?.map((campaign) => (
-          <Card key={campaign.id}>
-            <CardHeader>
-              <CardTitle>{campaign.title}</CardTitle>
+          <Card key={campaign.id} className="bg-secondary/5 border-0">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl">{campaign.title}</CardTitle>
               <CardDescription>{campaign.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
                   Products: {campaign.products?.length || 0}
                 </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 max-w-[80px]">
                     <Eye className="h-4 w-4 mr-2" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="flex-1 max-w-[80px]">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
@@ -142,6 +167,7 @@ export const CampaignList = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteCampaign(campaign.id)}
+                    className="flex-1 max-w-[80px]"
                   >
                     <Trash className="h-4 w-4 mr-2" />
                     Delete
