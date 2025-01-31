@@ -51,10 +51,22 @@ export const CampaignList = () => {
           schema: 'public',
           table: 'campaigns'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Campaign change detected:', payload);
-          // Invalidate and refetch campaigns when any change occurs
-          queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+          
+          // Get the current campaigns from the cache
+          const currentCampaigns = queryClient.getQueryData<Campaign[]>(["campaigns"]) || [];
+          
+          if (payload.eventType === 'INSERT') {
+            // Add the new campaign to the cache
+            queryClient.setQueryData(["campaigns"], [payload.new as Campaign, ...currentCampaigns]);
+          } else if (payload.eventType === 'DELETE') {
+            // Remove the deleted campaign from the cache
+            queryClient.setQueryData(
+              ["campaigns"],
+              currentCampaigns.filter((campaign) => campaign.id !== payload.old.id)
+            );
+          }
         }
       )
       .subscribe();
@@ -142,6 +154,8 @@ export const CampaignList = () => {
   if (isLoading) {
     return <div>Loading campaigns...</div>;
   }
+
+  // ... keep existing code (return JSX)
 
   return (
     <div className="space-y-4">
