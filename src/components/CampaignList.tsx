@@ -9,6 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
@@ -141,10 +147,25 @@ export const CampaignList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Your Campaigns</h2>
-        <Button onClick={handleCreateCampaign} className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          New Campaign
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleCreateCampaign}
+                className="bg-primary hover:bg-primary/90 w-10 h-10 p-0"
+                size="icon"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="left"
+              className="animate-slide-up-fade"
+            >
+              <p>Create New Campaign</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
