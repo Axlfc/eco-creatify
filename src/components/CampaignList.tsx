@@ -25,6 +25,8 @@ interface Campaign {
   created_at: string;
   edit_window_expires_at: string;
   products: CampaignProduct[];
+  animateIn?: boolean;  // Added animation properties
+  animateOut?: boolean; // Added animation properties
 }
 
 interface CampaignProduct {
