@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Share2, Heart, Send, Image } from "lucide-react";
+import { MessageCircle, Share2, Heart, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,22 +71,23 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Query comments for a post
-  const useComments = (postId: string) => {
-    return useQuery({
-      queryKey: ['comments', postId],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('comments')
-          .select('*, profiles!comments_user_id_fkey(username, avatar_url)')
-          .eq('post_id', postId)
-          .order('created_at', { ascending: true });
+  // Query all comments at once
+  const { data: allComments } = useQuery({
+    queryKey: ['comments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*, profiles!comments_user_id_fkey(username, avatar_url)')
+        .order('created_at', { ascending: true });
 
-        if (error) throw error;
-        return data as Comment[];
-      },
-      enabled: showComments[postId],
-    });
+      if (error) throw error;
+      return data as Comment[];
+    },
+  });
+
+  // Filter comments by post
+  const getCommentsForPost = (postId: string) => {
+    return allComments?.filter(comment => comment.post_id === postId) || [];
   };
 
   // Create post mutation
@@ -157,7 +158,7 @@ export const CommunityFeed = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
       setNewComment({ ...newComment, [variables.postId]: "" });
       toast({
         title: "Comment added",
@@ -270,7 +271,7 @@ export const CommunityFeed = () => {
       )}
 
       {posts?.map((post) => {
-        const { data: comments } = useComments(post.id);
+        const comments = getCommentsForPost(post.id);
         
         return (
           <Card key={post.id} className="animate-fade-up">
@@ -328,7 +329,7 @@ export const CommunityFeed = () => {
 
               {showComments[post.id] && (
                 <div className="w-full space-y-4">
-                  {comments?.map((comment) => (
+                  {comments.map((comment) => (
                     <div key={comment.id} className="flex items-start space-x-3 p-3 bg-accent/5 rounded-lg">
                       <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm">
                         {comment.profiles?.username?.[0]?.toUpperCase() || 'U'}
