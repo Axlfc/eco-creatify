@@ -58,14 +58,39 @@ export const CampaignList = () => {
           const currentCampaigns = queryClient.getQueryData<Campaign[]>(["campaigns"]) || [];
           
           if (payload.eventType === 'INSERT') {
-            // Add the new campaign to the cache
-            queryClient.setQueryData(["campaigns"], [payload.new as Campaign, ...currentCampaigns]);
+            // Add the new campaign to the cache with animation class
+            const newCampaign = {
+              ...payload.new as Campaign,
+              animateIn: true // Add animation flag
+            };
+            queryClient.setQueryData(["campaigns"], [newCampaign, ...currentCampaigns]);
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+              const campaigns = queryClient.getQueryData<Campaign[]>(["campaigns"]) || [];
+              queryClient.setQueryData(
+                ["campaigns"],
+                campaigns.map(c => ({...c, animateIn: false}))
+              );
+            }, 500);
           } else if (payload.eventType === 'DELETE') {
-            // Remove the deleted campaign from the cache
+            // Mark campaign for deletion with animation
             queryClient.setQueryData(
               ["campaigns"],
-              currentCampaigns.filter((campaign) => campaign.id !== payload.old.id)
+              currentCampaigns.map(campaign => 
+                campaign.id === payload.old.id 
+                  ? {...campaign, animateOut: true}
+                  : campaign
+              )
             );
+            
+            // Remove from cache after animation completes
+            setTimeout(() => {
+              queryClient.setQueryData(
+                ["campaigns"],
+                currentCampaigns.filter((campaign) => campaign.id !== payload.old.id)
+              );
+            }, 300);
           }
         }
       )
@@ -155,8 +180,6 @@ export const CampaignList = () => {
     return <div>Loading campaigns...</div>;
   }
 
-  // ... keep existing code (return JSX)
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -184,7 +207,13 @@ export const CampaignList = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {campaigns?.map((campaign) => (
-          <Card key={campaign.id} className="bg-secondary/5 border-0">
+          <Card 
+            key={campaign.id} 
+            className={`bg-secondary/5 border-0 transition-all duration-300 ${
+              campaign.animateIn ? 'animate-fade-up' : 
+              campaign.animateOut ? 'animate-fade-down opacity-0' : ''
+            }`}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xl">{campaign.title}</CardTitle>
               <CardDescription>{campaign.description}</CardDescription>
