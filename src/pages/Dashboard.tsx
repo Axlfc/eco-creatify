@@ -8,6 +8,7 @@ import { PricingTiers } from "@/components/PricingTiers";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { CommunityFeed } from "@/components/CommunityFeed";
 import { CampaignList } from "@/components/CampaignList";
+import { ProfileCard } from "@/components/ProfileCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -58,7 +59,10 @@ const Dashboard = () => {
               {/* Sidebar - Right Side */}
               <div className="lg:col-span-4 space-y-6">
                 <div className="sticky top-4">
-                  <SubscriptionManager />
+                  <ProfileCard />
+                  <div className="mt-6">
+                    <SubscriptionManager />
+                  </div>
                   <div className="mt-6">
                     <ProductCustomizer />
                   </div>

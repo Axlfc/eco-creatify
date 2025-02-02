@@ -183,6 +183,12 @@ export type Database = {
           bio: string | null
           created_at: string
           id: string
+          is_verified: boolean | null
+          join_date: string | null
+          last_active: string | null
+          post_count: number | null
+          rank: string | null
+          reputation: number | null
           social_links: Json | null
           updated_at: string
           username: string | null
@@ -192,6 +198,12 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id: string
+          is_verified?: boolean | null
+          join_date?: string | null
+          last_active?: string | null
+          post_count?: number | null
+          rank?: string | null
+          reputation?: number | null
           social_links?: Json | null
           updated_at?: string
           username?: string | null
@@ -201,6 +213,12 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id?: string
+          is_verified?: boolean | null
+          join_date?: string | null
+          last_active?: string | null
+          post_count?: number | null
+          rank?: string | null
+          reputation?: number | null
           social_links?: Json | null
           updated_at?: string
           username?: string | null
