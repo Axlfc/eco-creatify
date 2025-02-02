@@ -25,8 +25,8 @@ interface Campaign {
   created_at: string;
   edit_window_expires_at: string;
   products: CampaignProduct[];
-  animateIn?: boolean;  // Added animation properties
-  animateOut?: boolean; // Added animation properties
+  animateIn?: boolean;
+  animateOut?: boolean;
 }
 
 interface CampaignProduct {
@@ -42,7 +42,6 @@ export const CampaignList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('campaign-changes')
@@ -56,15 +55,15 @@ export const CampaignList = () => {
         async (payload) => {
           console.log('Campaign change detected:', payload);
           
-          // Get the current campaigns from the cache
           const currentCampaigns = queryClient.getQueryData<Campaign[]>(["campaigns"]) || [];
           
           if (payload.eventType === 'INSERT') {
-            // Add the new campaign to the cache with animation class
             const newCampaign = {
               ...payload.new as Campaign,
-              animateIn: true // Add animation flag
+              animateIn: true,
+              products: [] // Initialize with empty products array
             };
+            
             queryClient.setQueryData(["campaigns"], [newCampaign, ...currentCampaigns]);
             
             // Remove animation class after animation completes
