@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { MessageCircle, Share2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MessageCircle, Share2, Heart, Send, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 type Post = {
   id: string;
@@ -20,9 +23,25 @@ type Post = {
   } | null;
 };
 
+type Comment = {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  post_id: string;
+  profiles: {
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
 export const CommunityFeed = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [newPost, setNewPost] = useState({ title: "", description: "", image: null as File | null });
+  const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
+  const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const checkUser = async () => {
@@ -32,6 +51,7 @@ export const CommunityFeed = () => {
     checkUser();
   }, []);
 
+  // Query posts
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
@@ -48,6 +68,137 @@ export const CommunityFeed = () => {
 
       console.log("Posts fetched:", data);
       return data as Post[];
+    },
+  });
+
+  // Query comments for a post
+  const useComments = (postId: string) => {
+    return useQuery({
+      queryKey: ['comments', postId],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('comments')
+          .select('*, profiles!comments_user_id_fkey(username, avatar_url)')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        return data as Comment[];
+      },
+      enabled: showComments[postId],
+    });
+  };
+
+  // Create post mutation
+  const createPost = useMutation({
+    mutationFn: async ({ title, description, image }: { title: string, description: string, image: File | null }) => {
+      if (!currentUserId) throw new Error("Must be logged in to post");
+      
+      let image_url = null;
+      if (image) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('posts')
+          .upload(fileName, image);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('posts')
+          .getPublicUrl(fileName);
+          
+        image_url = publicUrl;
+      }
+
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([
+          { title, description, image_url, user_id: currentUserId }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setNewPost({ title: "", description: "", image: null });
+      toast({
+        title: "Post created",
+        description: "Your post has been published successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create comment mutation
+  const createComment = useMutation({
+    mutationFn: async ({ postId, content }: { postId: string, content: string }) => {
+      if (!currentUserId) throw new Error("Must be logged in to comment");
+      
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([
+          { post_id: postId, content, user_id: currentUserId }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
+      setNewComment({ ...newComment, [variables.postId]: "" });
+      toast({
+        title: "Comment added",
+        description: "Your comment has been posted successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating comment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to post comment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Like post mutation
+  const likePost = useMutation({
+    mutationFn: async (postId: string) => {
+      if (!currentUserId) throw new Error("Must be logged in to like posts");
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .update({ likes_count: posts?.find(p => p.id === postId)?.likes_count! + 1 })
+        .eq('id', postId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (error) => {
+      console.error("Error liking post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to like post. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -74,44 +225,149 @@ export const CommunityFeed = () => {
 
   return (
     <div className="space-y-6">
-      {posts?.map((post) => (
-        <Card key={post.id} className="animate-fade-up">
+      {currentUserId && (
+        <Card className="animate-fade-up">
           <CardHeader>
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-                {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <div>
-                <CardTitle className="text-lg">{post.profiles?.username || 'Anonymous'}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(post.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
+            <CardTitle className="text-lg">Create a Post</CardTitle>
           </CardHeader>
-          <CardContent>
-            <h3 className="font-semibold mb-2">{post.title}</h3>
-            {post.description && <p className="text-muted-foreground">{post.description}</p>}
-            {post.image_url && (
-              <img 
-                src={post.image_url} 
-                alt={post.title}
-                className="mt-4 rounded-lg w-full object-cover max-h-96"
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={newPost.title}
+                onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                placeholder="Enter your post title"
               />
-            )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newPost.description}
+                onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                placeholder="What's on your mind?"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Image</Label>
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewPost({ ...newPost, image: e.target.files?.[0] || null })}
+              />
+            </div>
+            <Button 
+              onClick={() => createPost.mutate(newPost)}
+              disabled={!newPost.title || createPost.isPending}
+              className="w-full"
+            >
+              Post
+            </Button>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="ghost" size="sm">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Comment
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </CardFooter>
         </Card>
-      ))}
+      )}
+
+      {posts?.map((post) => {
+        const { data: comments } = useComments(post.id);
+        
+        return (
+          <Card key={post.id} className="animate-fade-up">
+            <CardHeader>
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{post.profiles?.username || 'Anonymous'}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(post.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <h3 className="font-semibold mb-2">{post.title}</h3>
+              {post.description && <p className="text-muted-foreground">{post.description}</p>}
+              {post.image_url && (
+                <img 
+                  src={post.image_url} 
+                  alt={post.title}
+                  className="mt-4 rounded-lg w-full object-cover max-h-96"
+                />
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <div className="flex justify-between w-full">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowComments({ ...showComments, [post.id]: !showComments[post.id] })}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Comments
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => currentUserId ? likePost.mutate(post.id) : toast({
+                    title: "Login required",
+                    description: "Please login to like posts",
+                    variant: "destructive",
+                  })}
+                >
+                  <Heart className={`h-4 w-4 mr-2 ${post.likes_count > 0 ? 'fill-current' : ''}`} />
+                  {post.likes_count || 0}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+
+              {showComments[post.id] && (
+                <div className="w-full space-y-4">
+                  {comments?.map((comment) => (
+                    <div key={comment.id} className="flex items-start space-x-3 p-3 bg-accent/5 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm">
+                        {comment.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{comment.profiles?.username || 'Anonymous'}</p>
+                        <p className="text-sm text-muted-foreground">{comment.content}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {currentUserId && (
+                    <div className="flex space-x-2">
+                      <Input
+                        value={newComment[post.id] || ''}
+                        onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
+                        placeholder="Write a comment..."
+                      />
+                      <Button 
+                        size="icon"
+                        onClick={() => createComment.mutate({ 
+                          postId: post.id, 
+                          content: newComment[post.id] || '' 
+                        })}
+                        disabled={!newComment[post.id]}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 };
