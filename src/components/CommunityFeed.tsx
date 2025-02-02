@@ -77,7 +77,7 @@ export const CommunityFeed = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('comments')
-        .select('*, profiles!comments_user_id_fkey(username, avatar_url)')
+        .select('*, profiles!comments_user_id_fkey_profiles(username, avatar_url)')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
