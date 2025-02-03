@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Share2, Heart, Send } from "lucide-react";
+import { MessageCircle, Share2, Heart, Send, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 type Post = {
   id: string;
@@ -17,6 +18,8 @@ type Post = {
   likes_count: number;
   created_at: string;
   user_id: string;
+  is_visible?: boolean;
+  view_count?: number;
   profiles: {
     username: string | null;
     avatar_url: string | null;
@@ -51,7 +54,7 @@ export const CommunityFeed = () => {
     checkUser();
   }, []);
 
-  // Query posts
+  // Query posts with visibility and view count
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
@@ -71,7 +74,7 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Query all comments at once
+  // Query comments
   const { data: allComments } = useQuery({
     queryKey: ['comments'],
     queryFn: async () => {
@@ -85,12 +88,41 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Filter comments by post
-  const getCommentsForPost = (postId: string) => {
-    return allComments?.filter(comment => comment.post_id === postId) || [];
-  };
+  // Toggle post visibility mutation
+  const toggleVisibility = useMutation({
+    mutationFn: async (postId: string) => {
+      if (!currentUserId) throw new Error("Must be logged in to update posts");
+      
+      const post = posts?.find(p => p.id === postId);
+      const newVisibility = !post?.is_visible;
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .update({ is_visible: newVisibility })
+        .eq('id', postId)
+        .select()
+        .single();
 
-  // Create post mutation
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast({
+        title: "Post visibility updated",
+        description: "Your post visibility has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating post visibility:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update post visibility. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createPost = useMutation({
     mutationFn: async ({ title, description, image }: { title: string, description: string, image: File | null }) => {
       if (!currentUserId) throw new Error("Must be logged in to post");
@@ -220,6 +252,10 @@ export const CommunityFeed = () => {
     }
   };
 
+  const getCommentsForPost = (postId: string) => {
+    return allComments?.filter(comment => comment.post_id === postId) || [];
+  };
+
   if (isLoading) {
     return <div className="text-center">Loading posts...</div>;
   }
@@ -272,20 +308,35 @@ export const CommunityFeed = () => {
 
       {posts?.map((post) => {
         const comments = getCommentsForPost(post.id);
+        const isOwnPost = post.user_id === currentUserId;
         
         return (
           <Card key={post.id} className="animate-fade-up">
             <CardHeader>
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                    {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{post.profiles?.username || 'Anonymous'}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">{post.profiles?.username || 'Anonymous'}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </p>
-                </div>
+                {isOwnPost && (
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor={`visibility-${post.id}`} className="text-sm">
+                      {post.is_visible ? 'Visible' : 'Hidden'}
+                    </Label>
+                    <Switch
+                      id={`visibility-${post.id}`}
+                      checked={post.is_visible}
+                      onCheckedChange={() => toggleVisibility.mutate(post.id)}
+                    />
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -298,6 +349,20 @@ export const CommunityFeed = () => {
                   className="mt-4 rounded-lg w-full object-cover max-h-96"
                 />
               )}
+              <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <Eye className="h-4 w-4 mr-1" />
+                  {post.view_count || 0} views
+                </div>
+                <div className="flex items-center">
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  {comments.length} comments
+                </div>
+                <div className="flex items-center">
+                  <Heart className="h-4 w-4 mr-1" />
+                  {post.likes_count || 0} likes
+                </div>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="flex justify-between w-full">
