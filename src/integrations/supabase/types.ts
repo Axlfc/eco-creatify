@@ -142,30 +142,36 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_visible: boolean | null
           likes_count: number | null
           title: string
           updated_at: string
           user_id: string
+          view_count: number | null
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean | null
           likes_count?: number | null
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number | null
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean | null
           likes_count?: number | null
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number | null
         }
         Relationships: [
           {

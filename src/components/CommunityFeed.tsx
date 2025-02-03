@@ -42,7 +42,7 @@ export const CommunityFeed = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [newPost, setNewPost] = useState({ title: "", description: "", image: null as File | null });
+  const [newPost, setNewPost] = useState({ title: "", description: "" });
   const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
 
@@ -124,30 +124,13 @@ export const CommunityFeed = () => {
   });
 
   const createPost = useMutation({
-    mutationFn: async ({ title, description, image }: { title: string, description: string, image: File | null }) => {
+    mutationFn: async ({ title, description }: { title: string, description: string }) => {
       if (!currentUserId) throw new Error("Must be logged in to post");
-      
-      let image_url = null;
-      if (image) {
-        const fileExt = image.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('posts')
-          .upload(fileName, image);
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('posts')
-          .getPublicUrl(fileName);
-          
-        image_url = publicUrl;
-      }
 
       const { data, error } = await supabase
         .from('posts')
         .insert([
-          { title, description, image_url, user_id: currentUserId }
+          { title, description, user_id: currentUserId }
         ])
         .select()
         .single();
@@ -157,7 +140,7 @@ export const CommunityFeed = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
-      setNewPost({ title: "", description: "", image: null });
+      setNewPost({ title: "", description: "" });
       toast({
         title: "Post created",
         description: "Your post has been published successfully.",
@@ -286,15 +269,18 @@ export const CommunityFeed = () => {
                 placeholder="What's on your mind?"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="image">Image</Label>
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setNewPost({ ...newPost, image: e.target.files?.[0] || null })}
-              />
-            </div>
+</lov-replace>
+
+<lov-search>
+              {post.image_url && (
+                <img 
+                  src={post.image_url} 
+                  alt={post.title}
+                  className="mt-4 rounded-lg w-full object-cover max-h-96"
+                />
+              )}
+</lov-search>
+<lov-replace>
             <Button 
               onClick={() => createPost.mutate(newPost)}
               disabled={!newPost.title || createPost.isPending}
