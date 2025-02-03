@@ -9,115 +9,81 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      campaign_products: {
+      profiles: {
         Row: {
-          campaign_id: string
-          color: string
-          created_at: string
-          description: string | null
-          id: string
-          material: string
-          price: number
-          size: number
-          title: string
-          updated_at: string
+          id: string;
+          username: string | null;
+          avatar_url: string | null;
+          created_at: string;
+          updated_at: string;
+          bio: string | null;
+          social_links: Json | null;
+          reputation: number | null;
+          join_date: string | null;
+          last_active: string | null;
+          rank: string | null;
+          post_count: number | null;
+          is_verified: boolean | null;
+          last_username_change: string | null;
         }
         Insert: {
-          campaign_id: string
-          color: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          material: string
-          price: number
-          size: number
-          title: string
-          updated_at?: string
+          id: string;
+          username?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          bio?: string | null;
+          social_links?: Json | null;
+          reputation?: number | null;
+          join_date?: string | null;
+          last_active?: string | null;
+          rank?: string | null;
+          post_count?: number | null;
+          is_verified?: boolean | null;
+          last_username_change?: string | null;
         }
         Update: {
-          campaign_id?: string
-          color?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          material?: string
-          price?: number
-          size?: number
-          title?: string
-          updated_at?: string
+          id?: string;
+          username?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          bio?: string | null;
+          social_links?: Json | null;
+          reputation?: number | null;
+          join_date?: string | null;
+          last_active?: string | null;
+          rank?: string | null;
+          post_count?: number | null;
+          is_verified?: boolean | null;
+          last_username_change?: string | null;
         }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_products_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      campaigns: {
-        Row: {
-          created_at: string
-          description: string | null
-          edit_window_expires_at: string
-          id: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          edit_window_expires_at: string
-          id?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          edit_window_expires_at?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaigns_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       comments: {
         Row: {
-          content: string
-          created_at: string
-          id: string
-          post_id: string
-          updated_at: string
-          user_id: string
+          content: string;
+          created_at: string;
+          id: string;
+          post_id: string;
+          updated_at: string;
+          user_id: string;
         }
         Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          post_id: string
-          updated_at?: string
-          user_id: string
+          content: string;
+          created_at?: string;
+          id?: string;
+          post_id: string;
+          updated_at?: string;
+          user_id: string;
         }
         Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          post_id?: string
-          updated_at?: string
-          user_id?: string
+          content?: string;
+          created_at?: string;
+          id?: string;
+          post_id?: string;
+          updated_at?: string;
+          user_id?: string;
         }
         Relationships: [
           {
@@ -138,40 +104,40 @@ export type Database = {
       }
       posts: {
         Row: {
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_visible: boolean | null
-          likes_count: number | null
-          title: string
-          updated_at: string
-          user_id: string
-          view_count: number | null
+          created_at: string;
+          description: string | null;
+          id: string;
+          image_url: string | null;
+          is_visible: boolean | null;
+          likes_count: number | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          view_count: number | null;
         }
         Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean | null
-          likes_count?: number | null
-          title: string
-          updated_at?: string
-          user_id: string
-          view_count?: number | null
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean | null;
+          likes_count?: number | null;
+          title: string;
+          updated_at?: string;
+          user_id: string;
+          view_count?: number | null;
         }
         Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean | null
-          likes_count?: number | null
-          title?: string
-          updated_at?: string
-          user_id?: string
-          view_count?: number | null
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean | null;
+          likes_count?: number | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+          view_count?: number | null;
         }
         Relationships: [
           {
@@ -183,53 +149,90 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      campaigns: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          id: string
-          is_verified: boolean | null
-          join_date: string | null
-          last_active: string | null
-          post_count: number | null
-          rank: string | null
-          reputation: number | null
-          social_links: Json | null
-          updated_at: string
-          username: string | null
+          created_at: string;
+          description: string | null;
+          edit_window_expires_at: string;
+          id: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          id: string
-          is_verified?: boolean | null
-          join_date?: string | null
-          last_active?: string | null
-          post_count?: number | null
-          rank?: string | null
-          reputation?: number | null
-          social_links?: Json | null
-          updated_at?: string
-          username?: string | null
+          created_at?: string;
+          description?: string | null;
+          edit_window_expires_at: string;
+          id?: string;
+          title: string;
+          updated_at?: string;
+          user_id: string;
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          id?: string
-          is_verified?: boolean | null
-          join_date?: string | null
-          last_active?: string | null
-          post_count?: number | null
-          rank?: string | null
-          reputation?: number | null
-          social_links?: Json | null
-          updated_at?: string
-          username?: string | null
+          created_at?: string;
+          description?: string | null;
+          edit_window_expires_at?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_products: {
+        Row: {
+          campaign_id: string;
+          color: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          material: string;
+          price: number;
+          size: number;
+          title: string;
+          updated_at: string;
+        }
+        Insert: {
+          campaign_id: string;
+          color: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          material: string;
+          price: number;
+          size: number;
+          title: string;
+          updated_at?: string;
+        }
+        Update: {
+          campaign_id?: string;
+          color?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          material?: string;
+          price?: number;
+          size?: number;
+          title?: string;
+          updated_at?: string;
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_products_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -268,10 +271,10 @@ export type Tables<
         PublicSchema["Views"])
     ? (PublicSchema["Tables"] &
         PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+      Row: infer R
+    }
+    ? R
+    : never
     : never
 
 export type TablesInsert<
