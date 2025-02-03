@@ -2,13 +2,20 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
 
 export const ProfileCard = () => {
+  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,6 +37,7 @@ export const ProfileCard = () => {
 
         console.log("Profile data:", data);
         setProfile(data);
+        setNewUsername(data.username || "");
       } catch (error) {
         console.error("Failed to fetch profile:", error);
       }
@@ -38,7 +46,49 @@ export const ProfileCard = () => {
     fetchProfile();
   }, []);
 
+  const handleUsernameUpdate = async () => {
+    if (!profile) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ username: newUsername })
+        .eq("id", profile.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setProfile({ ...profile, username: newUsername });
+      setIsEditingUsername(false);
+      toast({
+        title: "Username updated",
+        description: "Your username has been successfully updated.",
+      });
+    } catch (error: any) {
+      console.error("Error updating username:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update username. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getNextUsernameChangeDate = () => {
+    if (!profile?.last_username_change) return null;
+    const lastChange = new Date(profile.last_username_change);
+    const nextChange = new Date(lastChange.getTime() + (90 * 24 * 60 * 60 * 1000));
+    return nextChange;
+  };
+
   if (!profile) return null;
+
+  const nextChangeDate = getNextUsernameChangeDate();
+  const canChangeUsername = !nextChangeDate || new Date() >= nextChangeDate;
 
   return (
     <Card className="bg-secondary/5 border-0">
@@ -50,10 +100,56 @@ export const ProfileCard = () => {
               {profile.username?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <CardTitle className="text-2xl">
-              {profile.username || "Anonymous"}
-            </CardTitle>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              {isEditingUsername ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Enter new username"
+                    className="max-w-[200px]"
+                  />
+                  <Button 
+                    onClick={handleUsernameUpdate}
+                    disabled={isLoading || !newUsername || newUsername === profile.username}
+                    size="sm"
+                  >
+                    Save
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setIsEditingUsername(false);
+                      setNewUsername(profile.username || "");
+                    }}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <CardTitle className="text-2xl">
+                    {profile.username || "Anonymous"}
+                  </CardTitle>
+                  {canChangeUsername && (
+                    <Button
+                      onClick={() => setIsEditingUsername(true)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+            {!canChangeUsername && nextChangeDate && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Username can be changed after {nextChangeDate.toLocaleDateString()}
+              </p>
+            )}
             <div className="flex items-center space-x-2 mt-1">
               <Badge variant="secondary">{profile.rank}</Badge>
               {profile.is_verified && (
