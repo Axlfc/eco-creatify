@@ -45,6 +45,11 @@ export const CommunityFeed = () => {
   const [newPost, setNewPost] = useState({ title: "", description: "" });
   const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
+  const [lastPostTime, setLastPostTime] = useState<number>(0);
+  const [lastCommentTime, setLastCommentTime] = useState<number>(0);
+
+  const POST_COOLDOWN = 60000; // 1 minute cooldown for posts
+  const COMMENT_COOLDOWN = 30000; // 30 seconds cooldown for comments
 
   useEffect(() => {
     const checkUser = async () => {
@@ -126,6 +131,13 @@ export const CommunityFeed = () => {
   const createPost = useMutation({
     mutationFn: async ({ title, description }: { title: string, description: string }) => {
       if (!currentUserId) throw new Error("Must be logged in to post");
+      
+      const now = Date.now();
+      const timeElapsed = now - lastPostTime;
+      
+      if (timeElapsed < POST_COOLDOWN) {
+        throw new Error(`Please wait ${Math.ceil((POST_COOLDOWN - timeElapsed) / 1000)} seconds before posting again`);
+      }
 
       const { data, error } = await supabase
         .from('posts')
@@ -136,6 +148,7 @@ export const CommunityFeed = () => {
         .single();
 
       if (error) throw error;
+      setLastPostTime(now);
       return data;
     },
     onSuccess: () => {
@@ -146,11 +159,11 @@ export const CommunityFeed = () => {
         description: "Your post has been published successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error creating post:", error);
       toast({
         title: "Error",
-        description: "Failed to create post. Please try again.",
+        description: error.message || "Failed to create post. Please try again.",
         variant: "destructive",
       });
     },
@@ -161,6 +174,13 @@ export const CommunityFeed = () => {
     mutationFn: async ({ postId, content }: { postId: string, content: string }) => {
       if (!currentUserId) throw new Error("Must be logged in to comment");
       
+      const now = Date.now();
+      const timeElapsed = now - lastCommentTime;
+      
+      if (timeElapsed < COMMENT_COOLDOWN) {
+        throw new Error(`Please wait ${Math.ceil((COMMENT_COOLDOWN - timeElapsed) / 1000)} seconds before commenting again`);
+      }
+
       const { data, error } = await supabase
         .from('comments')
         .insert([
@@ -170,6 +190,7 @@ export const CommunityFeed = () => {
         .single();
 
       if (error) throw error;
+      setLastCommentTime(now);
       return data;
     },
     onSuccess: (_, variables) => {
@@ -180,11 +201,11 @@ export const CommunityFeed = () => {
         description: "Your comment has been posted successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error creating comment:", error);
       toast({
         title: "Error",
-        description: "Failed to post comment. Please try again.",
+        description: error.message || "Failed to post comment. Please try again.",
         variant: "destructive",
       });
     },
