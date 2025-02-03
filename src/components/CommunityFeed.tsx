@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Share2, Heart, Send, Eye, EyeOff } from "lucide-react";
+import { MessageCircle, Share2, Heart, Send, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -269,18 +269,6 @@ export const CommunityFeed = () => {
                 placeholder="What's on your mind?"
               />
             </div>
-</lov-replace>
-
-<lov-search>
-              {post.image_url && (
-                <img 
-                  src={post.image_url} 
-                  alt={post.title}
-                  className="mt-4 rounded-lg w-full object-cover max-h-96"
-                />
-              )}
-</lov-search>
-<lov-replace>
             <Button 
               onClick={() => createPost.mutate(newPost)}
               disabled={!newPost.title || createPost.isPending}
@@ -328,13 +316,6 @@ export const CommunityFeed = () => {
             <CardContent>
               <h3 className="font-semibold mb-2">{post.title}</h3>
               {post.description && <p className="text-muted-foreground">{post.description}</p>}
-              {post.image_url && (
-                <img 
-                  src={post.image_url} 
-                  alt={post.title}
-                  className="mt-4 rounded-lg w-full object-cover max-h-96"
-                />
-              )}
               <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Eye className="h-4 w-4 mr-1" />
