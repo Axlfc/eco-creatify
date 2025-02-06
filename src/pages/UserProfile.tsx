@@ -25,22 +25,30 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        console.log("Fetching profile for username:", username);
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("username", username)
-          .single();
+          .maybeSingle();
 
-        if (profileError || !profileData) {
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          throw profileError;
+        }
+
+        if (!profileData) {
+          console.log("No profile found for username:", username);
           toast({
-            title: "Error",
-            description: "User profile not found",
+            title: "Profile not found",
+            description: "The requested profile does not exist",
             variant: "destructive",
           });
           navigate("/");
           return;
         }
 
+        console.log("Profile found:", profileData);
         setProfile(profileData);
 
         const { data: postsData, error: postsError } = await supabase
@@ -49,10 +57,15 @@ const UserProfile = () => {
           .eq("user_id", profileData.id)
           .order("created_at", { ascending: false });
 
-        if (postsError) throw postsError;
+        if (postsError) {
+          console.error("Error fetching posts:", postsError);
+          throw postsError;
+        }
+
+        console.log("Posts fetched:", postsData);
         setPosts(postsData || []);
       } catch (error: any) {
-        console.error("Error fetching profile:", error);
+        console.error("Error in fetchProfile:", error);
         toast({
           title: "Error",
           description: error.message,
