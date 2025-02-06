@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/Navigation";
-import { Heart } from "lucide-react";
+import { Heart, UserPlus, UserMinus } from "lucide-react";
 
 type Post = {
   id: string;
@@ -22,8 +23,18 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUserId(session?.user?.id || null);
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -54,6 +65,18 @@ const UserProfile = () => {
         console.log("Profile found:", profileData);
         setProfile(profileData);
 
+        // Check if current user is following this profile
+        if (currentUserId && profileData.id !== currentUserId) {
+          const { data: followData } = await supabase
+            .from("followers")
+            .select("*")
+            .eq("follower_id", currentUserId)
+            .eq("following_id", profileData.id)
+            .maybeSingle();
+          
+          setIsFollowing(!!followData);
+        }
+
         const { data: postsData, error: postsError } = await supabase
           .from("posts")
           .select("*")
@@ -79,8 +102,54 @@ const UserProfile = () => {
       }
     };
 
-    fetchProfile();
-  }, [username, navigate, toast]);
+    if (currentUserId) {
+      fetchProfile();
+    }
+  }, [username, navigate, toast, currentUserId]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUserId || !profile) return;
+
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from("followers")
+          .delete()
+          .eq("follower_id", currentUserId)
+          .eq("following_id", profile.id);
+
+        if (error) throw error;
+        setIsFollowing(false);
+        toast({
+          title: "Unfollowed",
+          description: `You are no longer following ${profile.username}`,
+        });
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from("followers")
+          .insert({
+            follower_id: currentUserId,
+            following_id: profile.id,
+          });
+
+        if (error) throw error;
+        setIsFollowing(true);
+        toast({
+          title: "Following",
+          description: `You are now following ${profile.username}`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error toggling follow:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -103,21 +172,42 @@ const UserProfile = () => {
       <div className="container mx-auto py-8 px-4">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-xl">
-                {profile?.username?.[0]?.toUpperCase()}
-              </div>
-              <div>
-                <h1 className="text-2xl">{profile?.username}</h1>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="secondary">
-                    Joined {new Date(profile?.join_date).toLocaleDateString()}
-                  </Badge>
-                  {profile?.is_verified && (
-                    <Badge>Verified</Badge>
-                  )}
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-xl">
+                  {profile?.username?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <h1 className="text-2xl">{profile?.username}</h1>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="secondary">
+                      Joined {new Date(profile?.join_date).toLocaleDateString()}
+                    </Badge>
+                    {profile?.is_verified && (
+                      <Badge>Verified</Badge>
+                    )}
+                  </div>
                 </div>
               </div>
+              {currentUserId && currentUserId !== profile?.id && (
+                <Button
+                  onClick={handleFollowToggle}
+                  variant={isFollowing ? "outline" : "default"}
+                  className="ml-4"
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserMinus className="w-4 h-4 mr-2" />
+                      Unfollow
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
         </Card>
