@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,12 +93,6 @@ export const ProfileCard = () => {
     <Card className="bg-secondary/5 border-0">
       <CardHeader className="space-y-4">
         <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={profile.avatar_url || undefined} />
-            <AvatarFallback>
-              {profile.username?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2">
               {isEditingUsername ? (
