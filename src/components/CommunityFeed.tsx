@@ -45,6 +45,7 @@ export const CommunityFeed = () => {
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
   const [lastPostTime, setLastPostTime] = useState<number>(0);
   const [lastCommentTime, setLastCommentTime] = useState<number>(0);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   const POST_COOLDOWN = 60000; // 1 minute cooldown for posts
   const COMMENT_COOLDOWN = 30000; // 30 seconds cooldown for comments
@@ -57,7 +58,7 @@ export const CommunityFeed = () => {
     checkUser();
   }, []);
 
-  // Query posts with visibility and view count
+  // Query posts
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
@@ -70,6 +71,18 @@ export const CommunityFeed = () => {
       if (error) {
         console.error("Error fetching posts:", error);
         throw error;
+      }
+
+      // Fetch liked posts for current user
+      if (currentUserId) {
+        const { data: likes } = await supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', currentUserId);
+        
+        if (likes) {
+          setLikedPosts(new Set(likes.map(like => like.post_id)));
+        }
       }
 
       console.log("Posts fetched:", data);
@@ -211,24 +224,45 @@ export const CommunityFeed = () => {
     mutationFn: async (postId: string) => {
       if (!currentUserId) throw new Error("Must be logged in to like posts");
       
-      const { data, error } = await supabase
-        .from('posts')
-        .update({ likes_count: posts?.find(p => p.id === postId)?.likes_count! + 1 })
-        .eq('id', postId)
-        .select()
-        .single();
+      const post = posts?.find(p => p.id === postId);
+      if (post?.user_id === currentUserId) {
+        throw new Error("Cannot like your own post");
+      }
 
-      if (error) throw error;
-      return data;
+      if (likedPosts.has(postId)) {
+        // Unlike the post
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+        setLikedPosts(prev => {
+          const next = new Set(prev);
+          next.delete(postId);
+          return next;
+        });
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from('post_likes')
+          .insert([
+            { post_id: postId, user_id: currentUserId }
+          ]);
+
+        if (error) throw error;
+        setLikedPosts(prev => new Set([...prev, postId]));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error liking post:", error);
       toast({
         title: "Error",
-        description: "Failed to like post. Please try again.",
+        description: error.message || "Failed to like post. Please try again.",
         variant: "destructive",
       });
     },
@@ -299,6 +333,7 @@ export const CommunityFeed = () => {
       {posts?.map((post) => {
         const comments = getCommentsForPost(post.id);
         const isOwnPost = post.user_id === currentUserId;
+        const isLiked = likedPosts.has(post.id);
         
         return (
           <Card key={post.id} className="animate-fade-up">
@@ -376,9 +411,11 @@ export const CommunityFeed = () => {
                     description: "Please login to like posts",
                     variant: "destructive",
                   })}
+                  disabled={isOwnPost}
+                  className={isLiked ? "text-primary" : ""}
                 >
-                  <Heart className={`h-4 w-4 mr-2 ${post.likes_count > 0 ? 'fill-current' : ''}`} />
-                  {post.likes_count}
+                  <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                  {post.likes_count || 0}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
                   <Share2 className="h-4 w-4 mr-2" />
