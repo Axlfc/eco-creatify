@@ -22,7 +22,6 @@ type Post = {
   view_count?: number;
   profiles: {
     username: string | null;
-    avatar_url: string | null;
   } | null;
 };
 
@@ -34,7 +33,6 @@ type Comment = {
   post_id: string;
   profiles: {
     username: string | null;
-    avatar_url: string | null;
   } | null;
 };
 
@@ -66,7 +64,7 @@ export const CommunityFeed = () => {
       console.log("Fetching posts...");
       const { data, error } = await supabase
         .from('posts')
-        .select('*, profiles!posts_user_id_fkey_profiles(username, avatar_url)')
+        .select('*, profiles!posts_user_id_fkey_profiles(username)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -85,7 +83,7 @@ export const CommunityFeed = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('comments')
-        .select('*, profiles!comments_user_id_fkey_profiles(username, avatar_url)')
+        .select('*, profiles!comments_user_id_fkey_profiles(username)')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -93,7 +91,6 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Toggle post visibility mutation
   const toggleVisibility = useMutation({
     mutationFn: async (postId: string) => {
       if (!currentUserId) throw new Error("Must be logged in to update posts");
@@ -169,7 +166,6 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Create comment mutation
   const createComment = useMutation({
     mutationFn: async ({ postId, content }: { postId: string, content: string }) => {
       if (!currentUserId) throw new Error("Must be logged in to comment");
@@ -211,7 +207,6 @@ export const CommunityFeed = () => {
     },
   });
 
-  // Like post mutation
   const likePost = useMutation({
     mutationFn: async (postId: string) => {
       if (!currentUserId) throw new Error("Must be logged in to like posts");
