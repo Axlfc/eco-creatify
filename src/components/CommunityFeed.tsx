@@ -225,7 +225,13 @@ export const CommunityFeed = () => {
       if (!currentUserId) throw new Error("Must be logged in to like posts");
       
       const post = posts?.find(p => p.id === postId);
-      if (post?.user_id === currentUserId) {
+      if (!post) throw new Error("Post not found");
+      
+      if (!post.is_visible) {
+        throw new Error("Cannot like hidden posts");
+      }
+
+      if (post.user_id === currentUserId) {
         throw new Error("Cannot like your own post");
       }
 
@@ -411,7 +417,7 @@ export const CommunityFeed = () => {
                     description: "Please login to like posts",
                     variant: "destructive",
                   })}
-                  disabled={isOwnPost}
+                  disabled={isOwnPost || !post.is_visible}
                   className={isLiked ? "text-primary" : ""}
                 >
                   <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
