@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
+import UserProfile from "@/pages/UserProfile";
+import { UsernameSetupDialog } from "@/components/UsernameSetupDialog";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -16,7 +18,9 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/users/:username" element={<UserProfile />} />
         </Routes>
+        <UsernameSetupDialog />
         <Toaster />
       </Router>
     </QueryClientProvider>

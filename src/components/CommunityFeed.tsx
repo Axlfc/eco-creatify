@@ -314,7 +314,14 @@ export const CommunityFeed = () => {
                     {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{post.profiles?.username || 'Anonymous'}</CardTitle>
+                    <CardTitle className="text-lg">
+                      <a 
+                        href={`/users/${post.profiles?.username}`}
+                        className="hover:underline"
+                      >
+                        {post.profiles?.username || 'Anonymous'}
+                      </a>
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       {new Date(post.created_at).toLocaleDateString()}
                     </p>
@@ -336,7 +343,11 @@ export const CommunityFeed = () => {
             </CardHeader>
             <CardContent>
               <h3 className="font-semibold mb-2">{post.title}</h3>
-              {post.description && <p className="text-muted-foreground">{post.description}</p>}
+              {post.is_visible ? (
+                <p className="text-muted-foreground">{post.description}</p>
+              ) : (
+                <p className="text-muted-foreground italic">This post is hidden</p>
+              )}
               <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Eye className="h-4 w-4 mr-1" />
@@ -372,7 +383,7 @@ export const CommunityFeed = () => {
                   })}
                 >
                   <Heart className={`h-4 w-4 mr-2 ${post.likes_count > 0 ? 'fill-current' : ''}`} />
-                  {post.likes_count || 0}
+                  {post.likes_count}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
                   <Share2 className="h-4 w-4 mr-2" />
