@@ -21,7 +21,7 @@ export const SubscriptionManager = () => {
           return;
         }
 
-        console.log("Found active session with token, ensuring customer exists");
+        console.log("Found active session, ensuring customer exists");
 
         // Create/retrieve Stripe customer with auth header
         const { data: customerData, error: customerError } = await supabase.functions.invoke(
@@ -35,7 +35,22 @@ export const SubscriptionManager = () => {
 
         if (customerError) {
           console.error("Customer creation/retrieval failed:", customerError);
+          if (customerError.message.includes('Auth session missing')) {
+            // Handle expired session
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              setSubscriptionStatus("Free");
+              return;
+            }
+            // Retry the operation after refresh
+            return checkSubscription();
+          }
           setSubscriptionStatus("Free");
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to retrieve customer data",
+          });
           return;
         }
 
@@ -72,8 +87,10 @@ export const SubscriptionManager = () => {
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         checkSubscription();
+      } else if (event === 'SIGNED_OUT') {
+        setSubscriptionStatus("Free");
       }
     });
 

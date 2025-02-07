@@ -52,22 +52,23 @@ export const Navigation = () => {
     try {
       setIsLoading(true);
       
-      // First check if we have a valid session
+      // Check if we have an active session before attempting to sign out
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // Clean up local state if no session exists
+        // If no session exists, just clean up the local state
         setIsAuthenticated(false);
+        setIsLoading(false);
         navigate('/');
         return;
       }
 
-      // Attempt to sign out
+      // Attempt to sign out with the current session
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        // If we get a session_not_found error, clean up local state
         if (error.message.includes('session_not_found')) {
-          // Handle case where session is invalid but we need to clean up state
           setIsAuthenticated(false);
           navigate('/');
           return;
@@ -84,7 +85,7 @@ export const Navigation = () => {
       setIsAuthenticated(false);
       navigate("/");
     } catch (error) {
-      console.error("Sign out failed:", error);
+      console.error("Sign out error:", error);
       toast({
         variant: "destructive",
         title: "Error signing out",
