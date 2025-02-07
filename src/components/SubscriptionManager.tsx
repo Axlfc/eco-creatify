@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export const SubscriptionManager = () => {
 
         console.log('Found active session, ensuring customer exists');
         
-        // First ensure customer exists
+        // First ensure customer exists by passing the access token
         const { error: customerError } = await supabase.functions.invoke('create-stripe-customer', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
