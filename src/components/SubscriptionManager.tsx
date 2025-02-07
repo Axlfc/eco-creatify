@@ -12,7 +12,7 @@ export const SubscriptionManager = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        // Get fresh session with access token
+        // Get current session with access token
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session?.access_token) {
@@ -21,30 +21,14 @@ export const SubscriptionManager = () => {
           return;
         }
 
-        // Try to refresh the session first to ensure we have a fresh token
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error("Session refresh failed:", refreshError);
-          setSubscriptionStatus("Free");
-          return;
-        }
+        console.log("Found active session, ensuring customer exists");
 
-        // Get the refreshed session
-        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-        if (!refreshedSession?.access_token) {
-          console.error("No valid session after refresh");
-          setSubscriptionStatus("Free");
-          return;
-        }
-
-        console.log("Using refreshed session token for customer check");
-
-        // Create/retrieve Stripe customer with fresh auth header
+        // Create/retrieve Stripe customer with auth header
         const { data: customerData, error: customerError } = await supabase.functions.invoke(
           "create-stripe-customer",
           {
             headers: {
-              Authorization: `Bearer ${refreshedSession.access_token}`,
+              Authorization: `Bearer ${session.access_token}`,
             },
           }
         );
@@ -62,12 +46,12 @@ export const SubscriptionManager = () => {
 
         console.log("Customer response:", customerData);
 
-        // Check subscription status with fresh auth header
+        // Check subscription status with auth header
         const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke(
           "check-subscription",
           {
             headers: {
-              Authorization: `Bearer ${refreshedSession.access_token}`,
+              Authorization: `Bearer ${session.access_token}`,
             },
           }
         );
