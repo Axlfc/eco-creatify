@@ -18,27 +18,10 @@ export const Navigation = () => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setIsAuthenticated(false);
-          if (location.pathname === '/dashboard') {
-            navigate('/auth');
-          }
-          return;
-        }
-
-        console.log("Session check result:", session ? "Active session" : "No session");
+        const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
         
         if (!session && location.pathname === '/dashboard') {
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error("Session check failed:", error);
-        setIsAuthenticated(false);
-        if (location.pathname === '/dashboard') {
           navigate('/auth');
         }
       } finally {
@@ -48,8 +31,7 @@ export const Navigation = () => {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, "Session:", session ? "exists" : "none");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_OUT') {
@@ -69,24 +51,28 @@ export const Navigation = () => {
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
+      
+      // First check if we have a valid session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.log("No active session found, cleaning up state");
+        // Clean up local state if no session exists
         setIsAuthenticated(false);
         navigate('/');
         return;
       }
 
+      // Attempt to sign out
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
-        console.error("Sign out error:", error);
         if (error.message.includes('session_not_found')) {
-          console.log("Session not found, cleaning up local state");
+          // Handle case where session is invalid but we need to clean up state
           setIsAuthenticated(false);
           navigate('/');
           return;
         }
+        
         toast({
           variant: "destructive",
           title: "Error signing out",
@@ -94,8 +80,7 @@ export const Navigation = () => {
         });
         return;
       }
-      
-      console.log("Sign out successful");
+
       setIsAuthenticated(false);
       navigate("/");
     } catch (error) {
