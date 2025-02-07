@@ -12,18 +12,17 @@ export const SubscriptionManager = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        // Get current session with access token
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (sessionError || !session?.access_token) {
-          console.log("No valid session found:", sessionError?.message);
+        if (!session?.access_token) {
+          console.log("No active session found");
           setSubscriptionStatus("Free");
           return;
         }
 
         console.log("Found active session, ensuring customer exists");
 
-        // Create/retrieve Stripe customer with auth header
+        // Create/retrieve Stripe customer
         const { data: customerData, error: customerError } = await supabase.functions.invoke(
           "create-stripe-customer",
           {
@@ -46,7 +45,7 @@ export const SubscriptionManager = () => {
 
         console.log("Customer response:", customerData);
 
-        // Check subscription status with auth header
+        // Check subscription status
         const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke(
           "check-subscription",
           {
