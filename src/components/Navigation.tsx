@@ -70,10 +70,30 @@ export const Navigation = () => {
 
   const handleSignOut = async () => {
     try {
+      setIsLoading(true);
       console.log("Attempting to sign out...");
+      
+      // First check if we have a session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log("No active session found, cleaning up state");
+        setIsAuthenticated(false);
+        navigate('/');
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
+        // If we get a session_not_found error, just clean up the local state
+        if (error.message.includes('session_not_found')) {
+          console.log("Session not found, cleaning up local state");
+          setIsAuthenticated(false);
+          navigate('/');
+          return;
+        }
+        
         toast({
           variant: "destructive",
           title: "Error signing out",
@@ -81,7 +101,9 @@ export const Navigation = () => {
         });
         return;
       }
+      
       console.log("Sign out successful");
+      setIsAuthenticated(false);
       navigate("/");
     } catch (error) {
       console.error("Sign out failed:", error);
@@ -90,6 +112,8 @@ export const Navigation = () => {
         title: "Error signing out",
         description: "Please try again later",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,8 +143,8 @@ export const Navigation = () => {
                 <Link to="/dashboard" className="hover:text-primary transition-colors">
                   Dashboard
                 </Link>
-                <Button onClick={handleSignOut} variant="outline">
-                  Sign Out
+                <Button onClick={handleSignOut} variant="outline" disabled={isLoading}>
+                  {isLoading ? "Signing out..." : "Sign Out"}
                 </Button>
               </>
             ) : (
@@ -173,8 +197,13 @@ export const Navigation = () => {
                 >
                   Dashboard
                 </Link>
-                <Button onClick={handleSignOut} variant="outline" className="w-full">
-                  Sign Out
+                <Button 
+                  onClick={handleSignOut} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing out..." : "Sign Out"}
                 </Button>
               </>
             ) : (
