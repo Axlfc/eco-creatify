@@ -80,6 +80,7 @@ const UserProfile = () => {
           setIsFollowing(!!followData);
         }
 
+        // Fetch all posts for this profile
         const { data: postsData, error: postsError } = await supabase
           .from("posts")
           .select("*")
@@ -105,7 +106,6 @@ const UserProfile = () => {
       }
     };
 
-    // We fetch the profile regardless of authentication status
     fetchProfile();
   }, [username, navigate, toast, currentUserId]);
 

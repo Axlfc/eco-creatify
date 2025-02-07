@@ -21,31 +21,35 @@ type PostListProps = {
 
 export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProps) => {
   const navigate = useNavigate();
-  const visiblePosts = posts.filter(post => post.is_visible);
+  
+  // Get only visible posts for non-authenticated users
+  const visiblePosts = posts.filter(post => post.is_visible === true);
 
-  if (!isAuthenticated) {
-    if (visiblePosts.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">Sign up to create your own posts!</p>
-          <Button onClick={() => navigate("/auth")}>Sign Up</Button>
-        </div>
-      );
-    }
-  } else if (posts.length === 0) {
+  // For non-authenticated users with no visible posts, show sign up prompt
+  if (!isAuthenticated && visiblePosts.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground mb-4">Sign up to create your own posts!</p>
+        <Button onClick={() => navigate("/auth")}>Sign Up</Button>
+      </div>
+    );
+  }
+
+  // For authenticated users with no posts
+  if (isAuthenticated && posts.length === 0) {
     if (isCurrentUser) {
       return <p className="text-center text-muted-foreground">You haven't created any posts yet</p>;
     }
     return <p className="text-center text-muted-foreground">No posts yet</p>;
   }
 
-  // For non-authenticated users, only show visible posts
+  // Show appropriate posts based on authentication status
   const displayPosts = isAuthenticated ? posts : visiblePosts;
 
   return (
     <div className="space-y-4">
       {displayPosts.map((post) => (
-        <Card key={post.id} className={post.is_visible ? "" : "opacity-50"}>
+        <Card key={post.id} className={!post.is_visible ? "opacity-50" : ""}>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
             {post.is_visible ? (
