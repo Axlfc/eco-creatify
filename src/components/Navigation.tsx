@@ -23,8 +23,8 @@ export const Navigation = () => {
         if (error) {
           console.error("Session check error:", error);
           setIsAuthenticated(false);
-          // Only redirect to auth if we're trying to access protected routes
-          if (location.pathname.includes('/dashboard') || location.pathname.includes('/users')) {
+          // Only redirect to auth if trying to access dashboard
+          if (location.pathname === '/dashboard') {
             navigate('/auth');
           }
           return;
@@ -33,14 +33,14 @@ export const Navigation = () => {
         console.log("Session check result:", session ? "Active session" : "No session");
         setIsAuthenticated(!!session);
         
-        // If no session and trying to access protected routes, redirect to auth
-        if (!session && (location.pathname.includes('/dashboard') || location.pathname.includes('/users'))) {
+        // If no session and trying to access dashboard, redirect to auth
+        if (!session && location.pathname === '/dashboard') {
           navigate('/auth');
         }
       } catch (error) {
         console.error("Session check failed:", error);
         setIsAuthenticated(false);
-        if (location.pathname.includes('/dashboard') || location.pathname.includes('/users')) {
+        if (location.pathname === '/dashboard') {
           navigate('/auth');
         }
       } finally {

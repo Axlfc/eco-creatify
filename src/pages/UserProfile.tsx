@@ -31,10 +31,14 @@ const UserProfile = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setCurrentUserId(session?.user?.id || null);
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      setCurrentUserId(session.user.id);
     };
     checkAuth();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const fetchProfile = async () => {
