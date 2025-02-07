@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -23,7 +22,6 @@ export const Navigation = () => {
         if (error) {
           console.error("Session check error:", error);
           setIsAuthenticated(false);
-          // Only redirect to auth if trying to access dashboard
           if (location.pathname === '/dashboard') {
             navigate('/auth');
           }
@@ -33,7 +31,6 @@ export const Navigation = () => {
         console.log("Session check result:", session ? "Active session" : "No session");
         setIsAuthenticated(!!session);
         
-        // If no session and trying to access dashboard, redirect to auth
         if (!session && location.pathname === '/dashboard') {
           navigate('/auth');
         }
@@ -56,9 +53,11 @@ export const Navigation = () => {
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, redirecting to home");
+        setIsAuthenticated(false);
         navigate('/');
       } else if (event === 'SIGNED_IN') {
         console.log("User signed in, redirecting to dashboard");
+        setIsAuthenticated(true);
         navigate('/dashboard');
       }
     });
@@ -74,7 +73,15 @@ export const Navigation = () => {
       console.log("Attempting to sign out...");
       
       // First check if we have a session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session check error:", sessionError);
+        // Clean up local state and redirect
+        setIsAuthenticated(false);
+        navigate('/');
+        return;
+      }
       
       if (!session) {
         console.log("No active session found, cleaning up state");
@@ -86,7 +93,8 @@ export const Navigation = () => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
-        // If we get a session_not_found error, just clean up the local state
+        
+        // If we get a session_not_found error, clean up the local state
         if (error.message.includes('session_not_found')) {
           console.log("Session not found, cleaning up local state");
           setIsAuthenticated(false);

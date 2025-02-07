@@ -16,7 +16,8 @@ export const SubscriptionManager = () => {
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          throw new Error('Failed to get session');
+          setSubscriptionStatus("Free");
+          return;
         }
 
         if (!session?.access_token) {
@@ -36,7 +37,9 @@ export const SubscriptionManager = () => {
 
         if (customerError) {
           console.error('Customer creation/retrieval failed:', customerError);
-          throw customerError;
+          // Don't throw here, just show free status
+          setSubscriptionStatus("Free");
+          return;
         }
 
         console.log('Customer verified, checking subscription');
@@ -48,13 +51,17 @@ export const SubscriptionManager = () => {
 
         if (error) {
           console.error('Subscription check failed:', error);
-          throw error;
+          // Don't throw here, just show free status
+          setSubscriptionStatus("Free");
+          return;
         }
 
         console.log('Subscription check response:', data);
         setSubscriptionStatus(data.subscribed ? "Active" : "Free");
       } catch (error: any) {
         console.error("Error checking subscription:", error);
+        // Set status to Free on error and show toast
+        setSubscriptionStatus("Free");
         toast({
           variant: "destructive",
           title: "Error",
