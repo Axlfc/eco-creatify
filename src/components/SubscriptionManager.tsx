@@ -12,65 +12,88 @@ export const SubscriptionManager = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+        // Get current session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          console.error("Session error:", sessionError);
           setSubscriptionStatus("Free");
           return;
         }
 
-        if (!session?.access_token) {
-          console.log('No active session found');
+        if (!session) {
+          console.log("No active session found");
           setSubscriptionStatus("Free");
           return;
         }
 
-        console.log('Found active session, ensuring customer exists');
-        
-        // First ensure customer exists by passing the access token
-        const { error: customerError } = await supabase.functions.invoke('create-stripe-customer', {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
+        console.log("Found active session, ensuring customer exists");
+
+        // Create/retrieve Stripe customer
+        const { data: customerData, error: customerError } = await supabase.functions.invoke(
+          "create-stripe-customer",
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
 
         if (customerError) {
-          console.error('Customer creation/retrieval failed:', customerError);
-          // Don't throw here, just show free status
+          console.error("Customer creation/retrieval failed:", customerError);
           setSubscriptionStatus("Free");
           return;
         }
 
-        console.log('Customer verified, checking subscription');
-        const { data, error } = await supabase.functions.invoke('check-subscription', {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
+        console.log("Customer response:", customerData);
+        console.log("Checking subscription status");
 
-        if (error) {
-          console.error('Subscription check failed:', error);
-          // Don't throw here, just show free status
+        // Check subscription status
+        const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke(
+          "check-subscription",
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+
+        if (subscriptionError) {
+          console.error("Subscription check failed:", subscriptionError);
           setSubscriptionStatus("Free");
           return;
         }
 
-        console.log('Subscription check response:', data);
-        setSubscriptionStatus(data.subscribed ? "Active" : "Free");
-      } catch (error: any) {
+        console.log("Subscription check response:", subscriptionData);
+        setSubscriptionStatus(subscriptionData?.subscribed ? "Active" : "Free");
+      } catch (error) {
         console.error("Error checking subscription:", error);
-        // Set status to Free on error and show toast
         setSubscriptionStatus("Free");
         toast({
           variant: "destructive",
           title: "Error",
-          description: error.message || "Failed to check subscription status",
+          description: "Failed to check subscription status",
         });
       }
     };
 
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        checkSubscription();
+      }
+    });
+
+    // Initial check
     checkSubscription();
+
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [toast]);
 
   return (
