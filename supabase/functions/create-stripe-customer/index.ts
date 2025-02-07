@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@12.0.0'
@@ -8,11 +9,13 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    // Get auth header and validate it exists
     const authHeader = req.headers.get('Authorization')
     console.log('Auth header present:', !!authHeader)
 
@@ -20,6 +23,7 @@ serve(async (req) => {
       throw new Error('Authorization header is required')
     }
 
+    // Create Supabase client with auth context
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -30,6 +34,7 @@ serve(async (req) => {
       }
     )
 
+    // Get authenticated user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError) {
@@ -44,6 +49,7 @@ serve(async (req) => {
 
     console.log('Successfully authenticated user:', user.id)
 
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2023-10-16',
     })

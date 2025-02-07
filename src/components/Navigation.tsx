@@ -49,7 +49,6 @@ export const Navigation = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, "Session:", session ? "exists" : "none");
-      setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, redirecting to home");
@@ -72,12 +71,10 @@ export const Navigation = () => {
       setIsLoading(true);
       console.log("Attempting to sign out...");
       
-      // First check if we have a session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error("Session check error:", sessionError);
-        // Clean up local state and redirect
         setIsAuthenticated(false);
         navigate('/');
         return;
@@ -94,7 +91,6 @@ export const Navigation = () => {
       if (error) {
         console.error("Sign out error:", error);
         
-        // If we get a session_not_found error, clean up the local state
         if (error.message.includes('session_not_found')) {
           console.log("Session not found, cleaning up local state");
           setIsAuthenticated(false);
