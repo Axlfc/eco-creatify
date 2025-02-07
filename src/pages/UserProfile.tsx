@@ -24,13 +24,14 @@ const UserProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      // We only set the currentUserId, but don't redirect
+      setIsAuthenticated(!!session);
       if (session) {
         setCurrentUserId(session.user.id);
       }
@@ -189,7 +190,11 @@ const UserProfile = () => {
           isFollowing={isFollowing}
           onFollowToggle={handleFollowToggle}
         />
-        <PostList posts={posts} />
+        <PostList 
+          posts={posts} 
+          isCurrentUser={currentUserId === profile?.id}
+          isAuthenticated={isAuthenticated}
+        />
       </div>
     </>
   );

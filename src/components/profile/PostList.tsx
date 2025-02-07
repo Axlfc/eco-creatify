@@ -1,6 +1,8 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 type Post = {
   id: string;
@@ -13,16 +15,36 @@ type Post = {
 
 type PostListProps = {
   posts: Post[];
+  isCurrentUser: boolean;
+  isAuthenticated: boolean;
 };
 
-export const PostList = ({ posts }: PostListProps) => {
-  if (posts.length === 0) {
+export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProps) => {
+  const navigate = useNavigate();
+  const visiblePosts = posts.filter(post => post.is_visible);
+
+  if (!isAuthenticated) {
+    if (visiblePosts.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">Sign up to create your own posts!</p>
+          <Button onClick={() => navigate("/auth")}>Sign Up</Button>
+        </div>
+      );
+    }
+  } else if (posts.length === 0) {
+    if (isCurrentUser) {
+      return <p className="text-center text-muted-foreground">You haven't created any posts yet</p>;
+    }
     return <p className="text-center text-muted-foreground">No posts yet</p>;
   }
 
+  // For non-authenticated users, only show visible posts
+  const displayPosts = isAuthenticated ? posts : visiblePosts;
+
   return (
     <div className="space-y-4">
-      {posts.map((post) => (
+      {displayPosts.map((post) => (
         <Card key={post.id} className={post.is_visible ? "" : "opacity-50"}>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
