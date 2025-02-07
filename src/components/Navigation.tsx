@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,23 +9,42 @@ import { useToast } from "@/hooks/use-toast";
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.error("Session check error:", error);
           setIsAuthenticated(false);
+          // Only redirect to auth if we're trying to access protected routes
+          if (location.pathname.includes('/dashboard') || location.pathname.includes('/users')) {
+            navigate('/auth');
+          }
           return;
         }
+
         console.log("Session check result:", session ? "Active session" : "No session");
         setIsAuthenticated(!!session);
+        
+        // If no session and trying to access protected routes, redirect to auth
+        if (!session && (location.pathname.includes('/dashboard') || location.pathname.includes('/users'))) {
+          navigate('/auth');
+        }
       } catch (error) {
         console.error("Session check failed:", error);
         setIsAuthenticated(false);
+        if (location.pathname.includes('/dashboard') || location.pathname.includes('/users')) {
+          navigate('/auth');
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -37,17 +57,16 @@ export const Navigation = () => {
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, redirecting to home");
         navigate('/');
+      } else if (event === 'SIGNED_IN') {
+        console.log("User signed in, redirecting to dashboard");
+        navigate('/dashboard');
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
-
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  }, [navigate, location.pathname]);
 
   const handleSignOut = async () => {
     try {
@@ -93,7 +112,9 @@ export const Navigation = () => {
             <Link to="#features" className="hover:text-primary transition-colors">
               Features
             </Link>
-            {isAuthenticated ? (
+            {isLoading ? (
+              <Button disabled>Loading...</Button>
+            ) : isAuthenticated ? (
               <>
                 <Link to="/dashboard" className="hover:text-primary transition-colors">
                   Dashboard
@@ -110,7 +131,7 @@ export const Navigation = () => {
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2 hover:bg-accent rounded-lg"
-            onClick={toggleMenu}
+            onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -123,30 +144,32 @@ export const Navigation = () => {
             <Link
               to="/"
               className="block hover:text-primary transition-colors"
-              onClick={toggleMenu}
+              onClick={() => setIsOpen(false)}
             >
               Home
             </Link>
             <Link
               to="#products"
               className="block hover:text-primary transition-colors"
-              onClick={toggleMenu}
+              onClick={() => setIsOpen(false)}
             >
               Products
             </Link>
             <Link
               to="#features"
               className="block hover:text-primary transition-colors"
-              onClick={toggleMenu}
+              onClick={() => setIsOpen(false)}
             >
               Features
             </Link>
-            {isAuthenticated ? (
+            {isLoading ? (
+              <Button disabled className="w-full">Loading...</Button>
+            ) : isAuthenticated ? (
               <>
                 <Link
                   to="/dashboard"
                   className="block hover:text-primary transition-colors"
-                  onClick={toggleMenu}
+                  onClick={() => setIsOpen(false)}
                 >
                   Dashboard
                 </Link>
@@ -155,7 +178,10 @@ export const Navigation = () => {
                 </Button>
               </>
             ) : (
-              <Button onClick={() => navigate("/auth")} className="w-full">
+              <Button onClick={() => {
+                setIsOpen(false);
+                navigate("/auth");
+              }} className="w-full">
                 Sign In
               </Button>
             )}
