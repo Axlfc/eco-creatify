@@ -24,13 +24,13 @@ export const SubscriptionManager = () => {
           return;
         }
 
-        if (!session) {
-          console.log("No active session found");
+        if (!session?.access_token) {
+          console.log("No active session or access token found");
           setSubscriptionStatus("Free");
           return;
         }
 
-        console.log("Found active session, ensuring customer exists");
+        console.log("Found active session with token, ensuring customer exists");
 
         // Create/retrieve Stripe customer
         const { data: customerData, error: customerError } = await supabase.functions.invoke(

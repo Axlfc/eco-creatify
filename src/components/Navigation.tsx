@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -49,13 +50,12 @@ export const Navigation = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, "Session:", session ? "exists" : "none");
+      setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_OUT') {
-        console.log("User signed out, redirecting to home");
         setIsAuthenticated(false);
         navigate('/');
       } else if (event === 'SIGNED_IN') {
-        console.log("User signed in, redirecting to dashboard");
         setIsAuthenticated(true);
         navigate('/dashboard');
       }
@@ -69,16 +69,7 @@ export const Navigation = () => {
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
-      console.log("Attempting to sign out...");
-      
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Session check error:", sessionError);
-        setIsAuthenticated(false);
-        navigate('/');
-        return;
-      }
+      const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         console.log("No active session found, cleaning up state");
@@ -90,14 +81,12 @@ export const Navigation = () => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Sign out error:", error);
-        
         if (error.message.includes('session_not_found')) {
           console.log("Session not found, cleaning up local state");
           setIsAuthenticated(false);
           navigate('/');
           return;
         }
-        
         toast({
           variant: "destructive",
           title: "Error signing out",
