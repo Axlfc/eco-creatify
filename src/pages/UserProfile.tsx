@@ -30,14 +30,13 @@ const UserProfile = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
+      // We only set the currentUserId, but don't redirect
+      if (session) {
+        setCurrentUserId(session.user.id);
       }
-      setCurrentUserId(session.user.id);
     };
     checkAuth();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -105,13 +104,24 @@ const UserProfile = () => {
       }
     };
 
-    if (currentUserId) {
-      fetchProfile();
-    }
+    // We fetch the profile regardless of authentication status
+    fetchProfile();
   }, [username, navigate, toast, currentUserId]);
 
   const handleFollowToggle = async () => {
-    if (!currentUserId || !profile) return;
+    if (!currentUserId || !profile) {
+      // If not logged in, redirect to auth
+      if (!currentUserId) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to follow users",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+      return;
+    }
 
     try {
       if (isFollowing) {

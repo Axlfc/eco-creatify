@@ -21,6 +21,7 @@ export const Navigation = () => {
         const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
         
+        // Only redirect to auth if trying to access dashboard while not authenticated
         if (!session && location.pathname === '/dashboard') {
           navigate('/auth');
         }
@@ -36,10 +37,14 @@ export const Navigation = () => {
       
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
+        // Only redirect to home on sign out
         navigate('/');
       } else if (event === 'SIGNED_IN') {
         setIsAuthenticated(true);
-        navigate('/dashboard');
+        // Only redirect to dashboard if on auth page
+        if (location.pathname === '/auth') {
+          navigate('/dashboard');
+        }
       }
     });
 
@@ -52,22 +57,18 @@ export const Navigation = () => {
     try {
       setIsLoading(true);
       
-      // Check if we have an active session before attempting to sign out
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // If no session exists, just clean up the local state
         setIsAuthenticated(false);
         setIsLoading(false);
         navigate('/');
         return;
       }
 
-      // Attempt to sign out with the current session
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // If we get a session_not_found error, clean up local state
         if (error.message.includes('session_not_found')) {
           setIsAuthenticated(false);
           navigate('/');
