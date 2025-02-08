@@ -46,6 +46,7 @@ export const CommunityFeed = () => {
   const [lastPostTime, setLastPostTime] = useState<number>(0);
   const [lastCommentTime, setLastCommentTime] = useState<number>(0);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [localLikeCounts, setLocalLikeCounts] = useState<{ [key: string]: number }>({});
 
   const POST_COOLDOWN = 60000; // 1 minute cooldown for posts
   const COMMENT_COOLDOWN = 30000; // 30 seconds cooldown for comments
@@ -73,6 +74,13 @@ export const CommunityFeed = () => {
         throw error;
       }
 
+      // Initialize local like counts
+      const initialCounts: { [key: string]: number } = {};
+      data?.forEach(post => {
+        initialCounts[post.id] = post.likes_count;
+      });
+      setLocalLikeCounts(initialCounts);
+
       // Fetch liked posts for current user
       if (currentUserId) {
         const { data: likes } = await supabase
@@ -89,6 +97,40 @@ export const CommunityFeed = () => {
       return data as Post[];
     },
   });
+
+  // Set up real-time subscription for post likes
+  useEffect(() => {
+    const channel = supabase
+      .channel('post-likes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const postId = payload.new.post_id;
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: (prev[postId] || 0) + 1
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            const postId = payload.old.post_id;
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: Math.max((prev[postId] || 0) - 1, 0)
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Query comments
   const { data: allComments } = useQuery({
@@ -251,6 +293,12 @@ export const CommunityFeed = () => {
             next.delete(postId);
             return next;
           });
+
+          // Update local count immediately
+          setLocalLikeCounts(prev => ({
+            ...prev,
+            [postId]: Math.max((prev[postId] || 0) - 1, 0)
+          }));
         } else {
           // Check if like already exists first
           const { data: existingLike, error: checkError } = await supabase
@@ -273,10 +321,16 @@ export const CommunityFeed = () => {
             if (insertError) throw insertError;
             
             setLikedPosts(prev => new Set([...prev, postId]));
+
+            // Update local count immediately
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: (prev[postId] || 0) + 1
+            }));
           }
         }
 
-        // Refresh likes count
+        // Refresh the posts data
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       } catch (error) {
         console.error("Error handling like operation:", error);
@@ -414,7 +468,7 @@ export const CommunityFeed = () => {
                 </div>
                 <div className="flex items-center">
                   <Heart className="h-4 w-4 mr-1" />
-                  {post.likes_count || 0} likes
+                  {localLikeCounts[post.id] || 0} likes
                 </div>
               </div>
             </CardContent>
@@ -440,7 +494,7 @@ export const CommunityFeed = () => {
                   className={isLiked ? "text-primary" : ""}
                 >
                   <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-                  {post.likes_count || 0}
+                  {localLikeCounts[post.id] || 0}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
                   <Share2 className="h-4 w-4 mr-2" />

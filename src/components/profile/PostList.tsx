@@ -30,6 +30,16 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
   const queryClient = useQueryClient();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [localLikeCounts, setLocalLikeCounts] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    // Initialize local like counts from posts
+    const initialCounts: { [key: string]: number } = {};
+    posts.forEach(post => {
+      initialCounts[post.id] = post.likes_count;
+    });
+    setLocalLikeCounts(initialCounts);
+  }, [posts]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -48,6 +58,40 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
       }
     };
     checkUser();
+  }, []);
+
+  // Set up real-time subscription for post likes
+  useEffect(() => {
+    const channel = supabase
+      .channel('post-likes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const postId = payload.new.post_id;
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: (prev[postId] || 0) + 1
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            const postId = payload.old.post_id;
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: Math.max((prev[postId] || 0) - 1, 0)
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const likePost = useMutation({
@@ -81,6 +125,12 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
             next.delete(postId);
             return next;
           });
+
+          // Update local count immediately
+          setLocalLikeCounts(prev => ({
+            ...prev,
+            [postId]: Math.max((prev[postId] || 0) - 1, 0)
+          }));
         } else {
           // Check if like already exists first
           const { data: existingLike, error: checkError } = await supabase
@@ -103,6 +153,12 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
             if (insertError) throw insertError;
             
             setLikedPosts(prev => new Set([...prev, postId]));
+
+            // Update local count immediately
+            setLocalLikeCounts(prev => ({
+              ...prev,
+              [postId]: (prev[postId] || 0) + 1
+            }));
           }
         }
 
@@ -167,7 +223,7 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
                 className={likedPosts.has(post.id) ? "text-primary" : ""}
               >
                 <Heart className={`h-4 w-4 mr-2 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
-                {post.likes_count || 0}
+                {localLikeCounts[post.id] || 0}
               </Button>
               <span>Posted on {new Date(post.created_at).toLocaleDateString()}</span>
             </div>
@@ -177,4 +233,3 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
     </div>
   );
 };
-
