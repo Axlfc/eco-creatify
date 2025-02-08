@@ -232,22 +232,21 @@ export const CommunityFeed = () => {
         throw new Error("Cannot like hidden posts");
       }
 
-      // Explicitly check if user is trying to like their own post
+      // Check if user is trying to like their own post
       if (post.user_id === currentUserId) {
         throw new Error("You cannot like your own posts");
       }
 
       try {
-        // Check if the user has already liked this post
         if (likedPosts.has(postId)) {
           // Unlike the post
-          const { error } = await supabase
+          const { error: unlikeError } = await supabase
             .from('post_likes')
             .delete()
             .eq('post_id', postId)
             .eq('user_id', currentUserId);
 
-          if (error) throw error;
+          if (unlikeError) throw unlikeError;
           
           setLikedPosts(prev => {
             const next = new Set(prev);
@@ -255,41 +254,38 @@ export const CommunityFeed = () => {
             return next;
           });
         } else {
-          // Like the post
-          const { error } = await supabase
+          // Check if like already exists first
+          const { data: existingLike, error: checkError } = await supabase
             .from('post_likes')
-            .insert([
-              { post_id: postId, user_id: currentUserId }
-            ])
-            .select()
+            .select('*')
+            .eq('post_id', postId)
+            .eq('user_id', currentUserId)
             .single();
 
-          // If we get a unique constraint violation, it means the like already exists
-          // This could happen if the client state is out of sync
-          if (error && error.code === '23505') {
-            // Refresh the likes to sync client state
-            const { data: likes } = await supabase
-              .from('post_likes')
-              .select('post_id')
-              .eq('user_id', currentUserId);
-            
-            if (likes) {
-              setLikedPosts(new Set(likes.map(like => like.post_id)));
-            }
-            return;
+          if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
+            throw checkError;
           }
 
-          if (error) throw error;
-          
-          setLikedPosts(prev => new Set([...prev, postId]));
+          // Only insert if no existing like
+          if (!existingLike) {
+            const { error: insertError } = await supabase
+              .from('post_likes')
+              .insert([
+                { post_id: postId, user_id: currentUserId }
+              ]);
+
+            if (insertError) throw insertError;
+            
+            setLikedPosts(prev => new Set([...prev, postId]));
+          }
         }
+
+        // Refresh likes count
+        queryClient.invalidateQueries({ queryKey: ['posts'] });
       } catch (error) {
         console.error("Error handling like operation:", error);
         throw error;
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
     onError: (error: Error) => {
       console.error("Error liking post:", error);
