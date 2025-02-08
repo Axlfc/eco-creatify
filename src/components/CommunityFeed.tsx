@@ -227,14 +227,17 @@ export const CommunityFeed = () => {
       const post = posts?.find(p => p.id === postId);
       if (!post) throw new Error("Post not found");
       
+      // Check if post is visible
       if (!post.is_visible) {
         throw new Error("Cannot like hidden posts");
       }
 
+      // Explicitly check if user is trying to like their own post
       if (post.user_id === currentUserId) {
-        throw new Error("Cannot like your own post");
+        throw new Error("You cannot like your own posts");
       }
 
+      // Handle like/unlike logic
       if (likedPosts.has(postId)) {
         // Unlike the post
         const { error } = await supabase
