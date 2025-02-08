@@ -15,6 +15,7 @@ type Post = {
   created_at: string;
   is_visible: boolean;
   likes_count: number;
+  user_id: string;  // Added this field to match PostList's type
 };
 
 const UserProfile = () => {
