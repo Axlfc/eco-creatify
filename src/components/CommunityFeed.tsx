@@ -237,31 +237,55 @@ export const CommunityFeed = () => {
         throw new Error("You cannot like your own posts");
       }
 
-      // Handle like/unlike logic
-      if (likedPosts.has(postId)) {
-        // Unlike the post
-        const { error } = await supabase
-          .from('post_likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('user_id', currentUserId);
+      try {
+        // Check if the user has already liked this post
+        if (likedPosts.has(postId)) {
+          // Unlike the post
+          const { error } = await supabase
+            .from('post_likes')
+            .delete()
+            .eq('post_id', postId)
+            .eq('user_id', currentUserId);
 
-        if (error) throw error;
-        setLikedPosts(prev => {
-          const next = new Set(prev);
-          next.delete(postId);
-          return next;
-        });
-      } else {
-        // Like the post
-        const { error } = await supabase
-          .from('post_likes')
-          .insert([
-            { post_id: postId, user_id: currentUserId }
-          ]);
+          if (error) throw error;
+          
+          setLikedPosts(prev => {
+            const next = new Set(prev);
+            next.delete(postId);
+            return next;
+          });
+        } else {
+          // Like the post
+          const { error } = await supabase
+            .from('post_likes')
+            .insert([
+              { post_id: postId, user_id: currentUserId }
+            ])
+            .select()
+            .single();
 
-        if (error) throw error;
-        setLikedPosts(prev => new Set([...prev, postId]));
+          // If we get a unique constraint violation, it means the like already exists
+          // This could happen if the client state is out of sync
+          if (error && error.code === '23505') {
+            // Refresh the likes to sync client state
+            const { data: likes } = await supabase
+              .from('post_likes')
+              .select('post_id')
+              .eq('user_id', currentUserId);
+            
+            if (likes) {
+              setLikedPosts(new Set(likes.map(like => like.post_id)));
+            }
+            return;
+          }
+
+          if (error) throw error;
+          
+          setLikedPosts(prev => new Set([...prev, postId]));
+        }
+      } catch (error) {
+        console.error("Error handling like operation:", error);
+        throw error;
       }
     },
     onSuccess: () => {
