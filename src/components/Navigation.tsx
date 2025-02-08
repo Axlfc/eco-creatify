@@ -57,19 +57,25 @@ export const Navigation = () => {
     try {
       setIsLoading(true);
       
+      // First check if we have a valid session
       const { data: { session } } = await supabase.auth.getSession();
       
+      // If no session exists, just update state and redirect
       if (!session) {
+        console.log("No active session found, cleaning up state");
         setIsAuthenticated(false);
         setIsLoading(false);
         navigate('/');
         return;
       }
 
+      // If we have a session, attempt to sign out
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        // If we get a session_not_found error, just clean up state
         if (error.message.includes('session_not_found')) {
+          console.log("Session not found during signout, cleaning up state");
           setIsAuthenticated(false);
           navigate('/');
           return;
