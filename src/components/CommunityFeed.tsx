@@ -227,12 +227,10 @@ export const CommunityFeed = () => {
       const post = posts?.find(p => p.id === postId);
       if (!post) throw new Error("Post not found");
       
-      // Check if post is visible
       if (!post.is_visible) {
         throw new Error("Cannot like hidden posts");
       }
 
-      // Check if user is trying to like their own post
       if (post.user_id === currentUserId) {
         throw new Error("You cannot like your own posts");
       }
@@ -260,11 +258,9 @@ export const CommunityFeed = () => {
             .select('*')
             .eq('post_id', postId)
             .eq('user_id', currentUserId)
-            .single();
+            .maybeSingle();
 
-          if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
-            throw checkError;
-          }
+          if (checkError) throw checkError;
 
           // Only insert if no existing like
           if (!existingLike) {
