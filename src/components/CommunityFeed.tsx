@@ -98,6 +98,17 @@ export const CommunityFeed = () => {
     },
   });
 
+  // Initialize local like counts from posts
+  useEffect(() => {
+    if (posts) {
+      const initialCounts: { [key: string]: number } = {};
+      posts.forEach(post => {
+        initialCounts[post.id] = post.likes_count;
+      });
+      setLocalLikeCounts(initialCounts);
+    }
+  }, [posts]);
+
   // Set up real-time subscription for post likes
   useEffect(() => {
     const channel = supabase
@@ -262,6 +273,7 @@ export const CommunityFeed = () => {
     },
   });
 
+  // Update the likePost mutation
   const likePost = useMutation({
     mutationFn: async (postId: string) => {
       if (!currentUserId) throw new Error("Must be logged in to like posts");
@@ -330,7 +342,7 @@ export const CommunityFeed = () => {
           }
         }
 
-        // Refresh the posts data
+        // Keep the queryClient invalidation
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       } catch (error) {
         console.error("Error handling like operation:", error);
@@ -372,6 +384,7 @@ export const CommunityFeed = () => {
     return <div className="text-center">Loading posts...</div>;
   }
 
+  // Update the like count display in the JSX to use localLikeCounts
   return (
     <div className="space-y-6">
       {currentUserId && (
@@ -494,7 +507,7 @@ export const CommunityFeed = () => {
                   className={isLiked ? "text-primary" : ""}
                 >
                   <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-                  {localLikeCounts[post.id] || 0}
+                  {localLikeCounts[post.id] ?? post.likes_count}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleShare(post)}>
                   <Share2 className="h-4 w-4 mr-2" />

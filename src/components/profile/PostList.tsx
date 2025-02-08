@@ -32,8 +32,8 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [localLikeCounts, setLocalLikeCounts] = useState<{ [key: string]: number }>({});
 
+  // Initialize local like counts from posts prop
   useEffect(() => {
-    // Initialize local like counts from posts
     const initialCounts: { [key: string]: number } = {};
     posts.forEach(post => {
       initialCounts[post.id] = post.likes_count;
@@ -223,7 +223,7 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
                 className={likedPosts.has(post.id) ? "text-primary" : ""}
               >
                 <Heart className={`h-4 w-4 mr-2 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
-                {localLikeCounts[post.id] || 0}
+                {localLikeCounts[post.id] ?? post.likes_count}
               </Button>
               <span>Posted on {new Date(post.created_at).toLocaleDateString()}</span>
             </div>
@@ -233,3 +233,4 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
     </div>
   );
 };
+
