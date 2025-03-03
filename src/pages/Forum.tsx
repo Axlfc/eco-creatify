@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Globe, 
@@ -41,7 +40,6 @@ type ForumThread = {
   isFact: boolean | null;
 };
 
-// Sample forum data for demonstration
 const sampleThreads: ForumThread[] = [
   {
     id: "1",
@@ -129,7 +127,6 @@ const sampleThreads: ForumThread[] = [
   }
 ];
 
-// Category definitions with icons and descriptions
 const categories = [
   { 
     id: "all", 
@@ -175,7 +172,6 @@ export default function Forum() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check authentication status
   useState(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -185,7 +181,6 @@ export default function Forum() {
     checkAuth();
   });
 
-  // Filter threads based on search query and category
   const filteredThreads = sampleThreads.filter(thread => {
     const matchesSearch = 
       thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -196,7 +191,6 @@ export default function Forum() {
     return matchesSearch && matchesCategory;
   });
 
-  // Handle thread creation
   const handleCreateThread = () => {
     if (!isAuthenticated) {
       toast({
@@ -217,20 +211,17 @@ export default function Forum() {
       return;
     }
 
-    // In a real app, we would save to the database here
     toast({
       title: "Thread submitted",
       description: "Your thread has been submitted for review and will be published soon.",
     });
 
-    // Reset form
     setNewThreadTitle("");
     setNewThreadContent("");
     setNewThreadCategory("");
     setIsCreatingThread(false);
   };
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', { 
@@ -240,7 +231,6 @@ export default function Forum() {
     }).format(date);
   };
 
-  // Get category icon
   const getCategoryIcon = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     if (!category) return Globe;
@@ -248,7 +238,6 @@ export default function Forum() {
     return category.icon;
   };
 
-  // Get badge classes for specific categories
   const getCategoryBadgeClasses = (categoryId: string) => {
     switch(categoryId) {
       case "media-analysis":
@@ -268,7 +257,6 @@ export default function Forum() {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      {/* Mission Statement Section */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
           <div className="flex items-center justify-center mb-6">
@@ -300,7 +288,6 @@ export default function Forum() {
         </div>
       </div>
 
-      {/* Category Overview Section */}
       <div className="bg-muted py-12">
         <div className="container mx-auto max-w-7xl px-4">
           <h2 className="text-3xl font-bold mb-8 text-center">Structured Discussion Categories</h2>
@@ -349,7 +336,6 @@ export default function Forum() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Main Content Area */}
           <div className="lg:col-span-2">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="relative w-full sm:w-72">
@@ -497,7 +483,6 @@ export default function Forum() {
             </Tabs>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
