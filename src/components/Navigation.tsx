@@ -1,208 +1,88 @@
-
-import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
-export const Navigation = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+type Props = {
+  isAuthenticated: boolean;
+  onSignOut: () => void;
+  username: string | null;
+};
+
+export default function Navigation() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [username, setUsername] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
-        
-        // Only redirect to auth if trying to access dashboard while not authenticated
-        if (!session && location.pathname === '/dashboard') {
-          navigate('/auth');
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      
-      if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        // Only redirect to home on sign out
-        navigate('/');
-      } else if (event === 'SIGNED_IN') {
-        setIsAuthenticated(true);
-        // Only redirect to dashboard if on auth page
-        if (location.pathname === '/auth') {
-          navigate('/dashboard');
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
+      setUsername(session?.user?.user_metadata?.username as string || null);
     };
-  }, [navigate, location.pathname]);
+    checkAuth();
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
-    try {
-      setIsLoading(true);
-      
-      // First check if we have a valid session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // If no session exists, just update state and redirect
-      if (!session) {
-        console.log("No active session found, cleaning up state");
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        navigate('/');
-        return;
-      }
-
-      // If we have a session, attempt to sign out
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        // If we get a session_not_found error, just clean up state
-        if (error.message.includes('session_not_found')) {
-          console.log("Session not found during signout, cleaning up state");
-          setIsAuthenticated(false);
-          navigate('/');
-          return;
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Error signing out",
-          description: "Please try again later",
-        });
-        return;
-      }
-
-      setIsAuthenticated(false);
-      navigate("/");
-    } catch (error) {
-      console.error("Sign out error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error signing out",
-        description: "Please try again later",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setUsername(null);
+    navigate("/auth");
   };
 
   return (
-    <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-sm z-50 border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="text-xl font-bold">
-            eco-creatify
+    <NavigationMenu>
+      <NavigationMenuList>
+        <NavigationMenuItem>
+          <Link to="/">
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+              Home
+            </NavigationMenuLink>
           </Link>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link to="/" className="hover:text-primary transition-colors">
-              Home
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <Link to="/dashboard">
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+              Dashboard
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <Link to="/forum">
+            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+              <Globe className="mr-1 h-4 w-4" />
+              Forum
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
+        {isAuthenticated ? (
+          <NavigationMenuItem>
+            <Link to={`/users/${username}`}>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                Profile
+              </NavigationMenuLink>
             </Link>
-            <Link to="#products" className="hover:text-primary transition-colors">
-              Products
+          </NavigationMenuItem>
+        ) : (
+          <NavigationMenuItem>
+            <Link to="/auth">
+              <Button size="sm">Sign In</Button>
             </Link>
-            <Link to="#features" className="hover:text-primary transition-colors">
-              Features
-            </Link>
-            {isLoading ? (
-              <Button disabled>Loading...</Button>
-            ) : isAuthenticated ? (
-              <>
-                <Link to="/dashboard" className="hover:text-primary transition-colors">
-                  Dashboard
-                </Link>
-                <Button onClick={handleSignOut} variant="outline" disabled={isLoading}>
-                  {isLoading ? "Signing out..." : "Sign Out"}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => navigate("/auth")}>Sign In</Button>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 hover:bg-accent rounded-lg"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="md:hidden py-4 space-y-4">
-            <Link
-              to="/"
-              className="block hover:text-primary transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              to="#products"
-              className="block hover:text-primary transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Products
-            </Link>
-            <Link
-              to="#features"
-              className="block hover:text-primary transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Features
-            </Link>
-            {isLoading ? (
-              <Button disabled className="w-full">Loading...</Button>
-            ) : isAuthenticated ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="block hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Button 
-                  onClick={handleSignOut} 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Signing out..." : "Sign Out"}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => {
-                setIsOpen(false);
-                navigate("/auth");
-              }} className="w-full">
-                Sign In
-              </Button>
-            )}
-          </div>
+          </NavigationMenuItem>
         )}
-      </div>
-    </nav>
+      </NavigationMenuList>
+    </NavigationMenu>
   );
-};
+}
