@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Navigation } from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { PostList } from "@/components/profile/PostList";
 

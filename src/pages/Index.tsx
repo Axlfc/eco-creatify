@@ -1,7 +1,8 @@
+
+import Navigation from "@/components/Navigation";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { Newsletter } from "@/components/Newsletter";
-import { Navigation } from "@/components/Navigation";
 import { ProductShowcase } from "@/components/ProductShowcase";
 import { ProductCustomizer } from "@/components/ProductCustomizer";
 import { SustainabilityMetrics } from "@/components/SustainabilityMetrics";
