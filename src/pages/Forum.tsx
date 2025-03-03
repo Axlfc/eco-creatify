@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -11,12 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import ThreadForm from "@/components/ThreadForm";
 
 type ForumThread = {
   id: string;
@@ -121,9 +118,6 @@ const categories = [
 
 export default function Forum() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [newThreadTitle, setNewThreadTitle] = useState("");
-  const [newThreadContent, setNewThreadContent] = useState("");
-  const [newThreadCategory, setNewThreadCategory] = useState("");
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("all");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -140,7 +134,6 @@ export default function Forum() {
     checkAuth();
   });
 
-  // Filter and sort threads chronologically
   const filteredThreads = sampleThreads
     .filter(thread => {
       const matchesSearch = 
@@ -153,7 +146,7 @@ export default function Forum() {
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const handleCreateThread = () => {
+  const handleCreateThreadClick = () => {
     if (!isAuthenticated) {
       toast({
         title: "Authentication required",
@@ -163,25 +156,7 @@ export default function Forum() {
       navigate("/auth");
       return;
     }
-
-    if (!newThreadTitle.trim() || !newThreadContent.trim() || !newThreadCategory) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a title, content, and category for your thread",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Thread submitted",
-      description: "Your thread has been submitted for review and will be published soon.",
-    });
-
-    setNewThreadTitle("");
-    setNewThreadContent("");
-    setNewThreadCategory("");
-    setIsCreatingThread(false);
+    setIsCreatingThread(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -234,7 +209,7 @@ export default function Forum() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Button onClick={() => setIsCreatingThread(true)} variant="outline" className="flex-1 sm:flex-auto">
+              <Button onClick={handleCreateThreadClick} variant="outline" className="flex-1 sm:flex-auto">
                 New Thread
               </Button>
               <Button variant="ghost" onClick={() => setCurrentCategory("all")} className="sm:hidden">
@@ -256,54 +231,11 @@ export default function Forum() {
           </div>
 
           {isCreatingThread && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Create New Thread</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Input 
-                    placeholder="Thread title" 
-                    value={newThreadTitle}
-                    onChange={(e) => setNewThreadTitle(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Textarea 
-                    placeholder="Thread content" 
-                    value={newThreadContent}
-                    onChange={(e) => setNewThreadContent(e.target.value)}
-                    rows={5}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thread-category">Category</Label>
-                  <Select 
-                    value={newThreadCategory} 
-                    onValueChange={setNewThreadCategory}
-                  >
-                    <SelectTrigger id="thread-category">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.filter(c => c.id !== "all").map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={() => setIsCreatingThread(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="outline" onClick={handleCreateThread}>
-                    Submit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ThreadForm 
+              onCancel={() => setIsCreatingThread(false)}
+              onSubmit={() => setIsCreatingThread(false)}
+              categories={categories}
+            />
           )}
 
           {filteredThreads.length > 0 ? (
