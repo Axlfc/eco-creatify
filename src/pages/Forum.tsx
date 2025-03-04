@@ -1,10 +1,16 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Book, 
   File, 
   Filter,
-  Search
+  Search,
+  Globe,
+  History,
+  Handshake,
+  ShieldCheck,
+  Cog
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

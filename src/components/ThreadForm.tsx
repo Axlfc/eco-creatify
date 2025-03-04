@@ -142,6 +142,9 @@ const ThreadForm = ({ onCancel, onSubmit, categories }: ThreadFormProps) => {
             rows={8}
             className={`${!isContentValid && content.length > 0 ? 'border-red-300' : ''}`}
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            Thoughtful contributions require depth. The character minimum encourages substantive posts.
+          </p>
         </div>
         
         <div className="space-y-2">
