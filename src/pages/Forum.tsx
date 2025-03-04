@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -35,7 +34,7 @@ const sampleThreads: ForumThread[] = [
     id: "1",
     title: "How to identify misinformation in social media",
     content: "In this thread, we'll discuss techniques to identify manipulated content and misinformation campaigns that spread on social media platforms...",
-    category: "media-analysis",
+    category: "source-evaluation",
     author: "MediaLiteracy101",
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
@@ -67,7 +66,7 @@ const sampleThreads: ForumThread[] = [
     id: "5",
     title: "Resolving polarization in political discussions",
     content: "How can we bridge the gap between opposing political viewpoints and find common ground for productive dialogue?",
-    category: "conflict-resolution",
+    category: "common-ground",
     author: "PeaceBuilder",
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
   },
@@ -83,9 +82,25 @@ const sampleThreads: ForumThread[] = [
     id: "7",
     title: "Strategies for mediating family conflicts over misinformation",
     content: "What techniques have worked for you when family members are divided by different information sources and facts?",
-    category: "conflict-resolution",
+    category: "solutions-workshop",
     author: "FamilyMediator",
     createdAt: new Date(Date.now() - 86400000 * 2.5).toISOString(),
+  },
+  {
+    id: "8",
+    title: "How historical conflicts inform modern political divides",
+    content: "Examining how unresolved historical tensions continue to shape current political discourse and social divisions...",
+    category: "historical-context",
+    author: "HistoryScholar",
+    createdAt: new Date(Date.now() - 86400000 * 3.2).toISOString(),
+  },
+  {
+    id: "9",
+    title: "Comparing news reporting across different countries",
+    content: "Analysis of how the same world events are reported differently based on cultural context and national interests...",
+    category: "cultural-perspectives",
+    author: "GlobalCitizen",
+    createdAt: new Date(Date.now() - 86400000 * 1.8).toISOString(),
   }
 ];
 
@@ -115,11 +130,35 @@ const categories = [
     description: "Developing skills to evaluate information objectively"
   },
   { 
-    id: "conflict-resolution", 
-    name: "Conflict Resolution", 
-    icon: File,
-    description: "Bridging divides and finding common ground"
+    id: "source-evaluation", 
+    name: "Source Evaluation", 
+    icon: ShieldCheck,
+    description: "Assessing reliability and bias of information sources"
   },
+  { 
+    id: "common-ground", 
+    name: "Common Ground", 
+    icon: Handshake,
+    description: "Finding shared values and agreements"
+  },
+  { 
+    id: "cultural-perspectives", 
+    name: "Cultural Perspectives", 
+    icon: Globe,
+    description: "Understanding different cultural contexts of conflicts"
+  },
+  { 
+    id: "historical-context", 
+    name: "Historical Context", 
+    icon: History,
+    description: "Examining how history shapes current conflicts"
+  },
+  { 
+    id: "solutions-workshop", 
+    name: "Solutions Workshop", 
+    icon: Cog,
+    description: "Collaborative problem-solving and proposal development"
+  }
 ];
 
 export default function Forum() {
