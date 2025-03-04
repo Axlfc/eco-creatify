@@ -19,6 +19,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import ThreadForm from "@/components/ThreadForm";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ForumThread = {
   id: string;
@@ -263,15 +270,43 @@ export default function Forum() {
             </div>
           </div>
 
-          <div className="hidden sm:block">
-            <Tabs defaultValue="all" onValueChange={setCurrentCategory}>
-              <TabsList className="mb-6">
+          <div className="block sm:hidden mb-6">
+            <Select 
+              value={currentCategory} 
+              onValueChange={setCurrentCategory}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
                 {categories.map((category) => (
-                  <TabsTrigger key={category.id} value={category.id}>
-                    {category.name}
-                  </TabsTrigger>
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      <category.icon className="h-4 w-4" />
+                      <span>{category.name}</span>
+                    </div>
+                  </SelectItem>
                 ))}
-              </TabsList>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="hidden sm:block">
+            <Tabs defaultValue="all" onValueChange={setCurrentCategory} value={currentCategory}>
+              <div className="relative overflow-x-auto pb-2">
+                <TabsList className="flex w-max no-scrollbar">
+                  {categories.map((category) => (
+                    <TabsTrigger 
+                      key={category.id} 
+                      value={category.id}
+                      className="flex items-center gap-1 px-3 py-1 text-xs sm:text-sm"
+                    >
+                      <category.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>{category.name}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
             </Tabs>
           </div>
 
