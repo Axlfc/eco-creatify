@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import ThreadForm from "@/components/ThreadForm";
 import ConflictResolutionForm from "@/components/ConflictResolutionForm";
+import FactCheckInterface from "@/components/FactCheckInterface";
 import { 
   Select,
   SelectContent,
@@ -177,6 +178,7 @@ export default function Forum() {
   const [currentCategory, setCurrentCategory] = useState("all");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks">("discussions");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -258,127 +260,150 @@ export default function Forum() {
       </div>
 
       <div id="forum-content" className="container mx-auto max-w-4xl py-10 px-4">
-        <header className="mb-10">
-          <h2 className="text-2xl font-medium mb-4">Discussions</h2>
-          <p className="text-base text-muted-foreground">
-            A focused space for dialogue and information verification.
+        <header className="mb-6">
+          <h2 className="text-2xl font-medium mb-4">Knowledge Commons</h2>
+          <p className="text-base text-muted-foreground mb-4">
+            A focused space for dialogue, information verification, and collaborative fact-checking.
           </p>
+          
+          <div className="border-b border-border/50">
+            <div className="flex space-x-6">
+              <button 
+                className={`pb-2 text-sm font-medium ${activeTab === "discussions" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("discussions")}
+              >
+                Discussions
+              </button>
+              <button 
+                className={`pb-2 text-sm font-medium ${activeTab === "fact-checks" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("fact-checks")}
+              >
+                Fact Checks
+              </button>
+            </div>
+          </div>
         </header>
 
         <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search threads..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="flex gap-2 flex-1 sm:flex-auto">
-                <Button onClick={handleCreateThreadClick} variant="outline" className="flex-1">
-                  New Thread
-                </Button>
-                <Button 
-                  onClick={handleCreateConflictResolutionClick} 
-                  variant="outline" 
-                  className="flex-1 flex items-center gap-1"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Conflict Resolution</span>
-                </Button>
-              </div>
-              <Button variant="ghost" onClick={() => setCurrentCategory("all")} className="sm:hidden">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="block sm:hidden mb-6">
-            <Select 
-              value={currentCategory} 
-              onValueChange={setCurrentCategory}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <category.icon className="h-4 w-4" />
-                      <span>{category.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="hidden sm:block">
-            <Tabs defaultValue="all" onValueChange={setCurrentCategory} value={currentCategory}>
-              <div className="relative overflow-x-auto pb-2">
-                <TabsList className="flex w-max no-scrollbar">
-                  {categories.map((category) => (
-                    <TabsTrigger 
-                      key={category.id} 
-                      value={category.id}
-                      className="flex items-center gap-1 px-3 py-1 text-xs sm:text-sm"
+          {activeTab === "discussions" ? (
+            <>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search threads..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="flex gap-2 flex-1 sm:flex-auto">
+                    <Button onClick={handleCreateThreadClick} variant="outline" className="flex-1">
+                      New Thread
+                    </Button>
+                    <Button 
+                      onClick={handleCreateConflictResolutionClick} 
+                      variant="outline" 
+                      className="flex-1 flex items-center gap-1"
                     >
-                      <category.icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{category.name}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Conflict Resolution</span>
+                    </Button>
+                  </div>
+                  <Button variant="ghost" onClick={() => setCurrentCategory("all")} className="sm:hidden">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </Tabs>
-          </div>
 
-          {isCreatingThread && (
-            <ThreadForm 
-              onCancel={() => setIsCreatingThread(false)}
-              onSubmit={() => setIsCreatingThread(false)}
-              categories={categories}
-            />
-          )}
+              <div className="block sm:hidden mb-6">
+                <Select 
+                  value={currentCategory} 
+                  onValueChange={setCurrentCategory}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <category.icon className="h-4 w-4" />
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {isCreatingConflictResolution && (
-            <ConflictResolutionForm 
-              onCancel={() => setIsCreatingConflictResolution(false)}
-              onSubmit={() => setIsCreatingConflictResolution(false)}
-            />
-          )}
+              <div className="hidden sm:block">
+                <Tabs defaultValue="all" onValueChange={setCurrentCategory} value={currentCategory}>
+                  <div className="relative overflow-x-auto pb-2">
+                    <TabsList className="flex w-max no-scrollbar">
+                      {categories.map((category) => (
+                        <TabsTrigger 
+                          key={category.id} 
+                          value={category.id}
+                          className="flex items-center gap-1 px-3 py-1 text-xs sm:text-sm"
+                        >
+                          <category.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>{category.name}</span>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+                </Tabs>
+              </div>
 
-          {filteredThreads.length > 0 ? (
-            <div className="space-y-4">
-              {filteredThreads.map((thread) => (
-                <Card key={thread.id} className="bg-white border-border/30 hover:border-border/70 transition-colors">
-                  <CardContent className="p-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-medium">{thread.title}</h3>
-                        <span className="text-xs text-muted-foreground">{formatDate(thread.createdAt)}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {categories.find(c => c.id === thread.category)?.name || "General"} • {thread.author}
-                      </p>
-                      <p className="text-sm mt-2 line-clamp-3">{thread.content}</p>
-                      <div className="pt-2">
-                        <Button variant="ghost" size="sm" className="px-0 text-primary/80 hover:text-primary">
-                          Read full thread
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+              {isCreatingThread && (
+                <ThreadForm 
+                  onCancel={() => setIsCreatingThread(false)}
+                  onSubmit={() => setIsCreatingThread(false)}
+                  categories={categories}
+                />
+              )}
+
+              {isCreatingConflictResolution && (
+                <ConflictResolutionForm 
+                  onCancel={() => setIsCreatingConflictResolution(false)}
+                  onSubmit={() => setIsCreatingConflictResolution(false)}
+                />
+              )}
+
+              {filteredThreads.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredThreads.map((thread) => (
+                    <Card key={thread.id} className="bg-white border-border/30 hover:border-border/70 transition-colors">
+                      <CardContent className="p-6">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-lg font-medium">{thread.title}</h3>
+                            <span className="text-xs text-muted-foreground">{formatDate(thread.createdAt)}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {categories.find(c => c.id === thread.category)?.name || "General"} • {thread.author}
+                          </p>
+                          <p className="text-sm mt-2 line-clamp-3">{thread.content}</p>
+                          <div className="pt-2">
+                            <Button variant="ghost" size="sm" className="px-0 text-primary/80 hover:text-primary">
+                              Read full thread
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 bg-muted/30 rounded-md">
+                  <p className="text-muted-foreground">No threads found matching your criteria</p>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="text-center py-10 bg-muted/30 rounded-md">
-              <p className="text-muted-foreground">No threads found matching your criteria</p>
-            </div>
+            <FactCheckInterface />
           )}
           
           <div className="py-6 mt-4">
