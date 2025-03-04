@@ -9,7 +9,8 @@ import {
   History,
   Handshake,
   ShieldCheck,
-  Cog
+  Cog,
+  MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import ThreadForm from "@/components/ThreadForm";
+import ConflictResolutionForm from "@/components/ConflictResolutionForm";
 import { 
   Select,
   SelectContent,
@@ -171,6 +173,7 @@ const categories = [
 export default function Forum() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreatingThread, setIsCreatingThread] = useState(false);
+  const [isCreatingConflictResolution, setIsCreatingConflictResolution] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("all");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -209,6 +212,19 @@ export default function Forum() {
       return;
     }
     setIsCreatingThread(true);
+  };
+
+  const handleCreateConflictResolutionClick = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a conflict resolution template",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    setIsCreatingConflictResolution(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -261,9 +277,19 @@ export default function Forum() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Button onClick={handleCreateThreadClick} variant="outline" className="flex-1 sm:flex-auto">
-                New Thread
-              </Button>
+              <div className="flex gap-2 flex-1 sm:flex-auto">
+                <Button onClick={handleCreateThreadClick} variant="outline" className="flex-1">
+                  New Thread
+                </Button>
+                <Button 
+                  onClick={handleCreateConflictResolutionClick} 
+                  variant="outline" 
+                  className="flex-1 flex items-center gap-1"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Conflict Resolution</span>
+                </Button>
+              </div>
               <Button variant="ghost" onClick={() => setCurrentCategory("all")} className="sm:hidden">
                 <Filter className="h-4 w-4" />
               </Button>
@@ -315,6 +341,13 @@ export default function Forum() {
               onCancel={() => setIsCreatingThread(false)}
               onSubmit={() => setIsCreatingThread(false)}
               categories={categories}
+            />
+          )}
+
+          {isCreatingConflictResolution && (
+            <ConflictResolutionForm 
+              onCancel={() => setIsCreatingConflictResolution(false)}
+              onSubmit={() => setIsCreatingConflictResolution(false)}
             />
           )}
 
