@@ -1,29 +1,32 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { ProductCustomizer } from "@/components/ProductCustomizer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { Navigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingTiers } from "@/components/PricingTiers";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { CommunityFeed } from "@/components/CommunityFeed";
 import { CampaignList } from "@/components/CampaignList";
 import { ProfileCard } from "@/components/ProfileCard";
+import { ProductCustomizer } from "@/components/ProductCustomizer";
+import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { isAuthenticated, isLoading, user, error } = useAuth();
   const hash = window.location.hash;
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-      }
-    };
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-    checkAuth();
-  }, [navigate]);
+  // Handle authentication errors
+  if (!isAuthenticated || error) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,7 +38,9 @@ const Dashboard = () => {
           <div className="space-y-6 px-4">
             <Card className="border-0 bg-secondary/5">
               <CardHeader className="text-center pb-2">
-                <CardTitle className="text-3xl">Welcome to Your Dashboard</CardTitle>
+                <CardTitle className="text-3xl">
+                  Welcome{user?.username ? `, ${user.username}` : ''} 
+                </CardTitle>
                 <p className="text-muted-foreground">
                   Manage your campaigns and customize your products.
                 </p>
