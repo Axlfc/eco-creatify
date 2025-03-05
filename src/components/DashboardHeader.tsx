@@ -1,9 +1,6 @@
-
-import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, Menu, MessageSquare, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import {
   Sheet,
   SheetContent,
@@ -23,115 +20,13 @@ import { Button } from "@/components/ui/button";
 
 export const DashboardHeader = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [username, setUsername] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [retryCount, setRetryCount] = useState<number>(0);
-  const MAX_RETRIES = 3;
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (session) {
-          const fetchedUsername = session.user.user_metadata.username as string || null;
-          setUsername(fetchedUsername);
-          console.log("User data retrieved successfully:", fetchedUsername);
-        } else {
-          console.log("No active session found");
-          navigate("/auth");
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-        
-        // Implement retry logic
-        if (retryCount < MAX_RETRIES) {
-          const nextRetry = retryCount + 1;
-          setRetryCount(nextRetry);
-          
-          toast({
-            variant: "destructive",
-            title: "Connection Error",
-            description: `Retrying to fetch user data (${nextRetry}/${MAX_RETRIES})...`,
-          });
-          
-          // Retry after a delay
-          setTimeout(() => fetchUserData(), 2000);
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Failed to retrieve user data",
-            description: "Please reload the page or sign in again",
-          });
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchUserData();
-  }, [navigate, toast, retryCount]);
-
-  // Skip customer creation during auth check to avoid errors
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          navigate("/auth");
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
-
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Sign out error:", error);
-        toast({
-          variant: "destructive",
-          title: "Error signing out",
-          description: "Please try again later",
-        });
-        return;
-      }
-      navigate("/");
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account",
-      });
-    } catch (error) {
-      console.error("Sign out failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Error signing out",
-        description: "Please try again later",
-      });
-    }
-  };
+  const { user, signOut } = useAuth();
 
   const navigateToProfile = () => {
-    if (!username) {
-      toast({
-        variant: "destructive",
-        title: "Profile Error",
-        description: "Username not available. Please sign in again."
-      });
-      navigate("/auth");
+    if (!user?.username) {
       return;
     }
-    navigate(`/users/${username}`);
+    navigate(`/users/${user.username}`);
   };
 
   const navigateToForum = () => {
@@ -141,6 +36,7 @@ export const DashboardHeader = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
+        {/* Mobile Menu */}
         <div className="mr-4 flex md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -166,11 +62,11 @@ export const DashboardHeader = () => {
                     Forum
                   </div>
                 </Button>
-                {username && (
+                {user?.username && (
                   <Button variant="ghost" className="justify-start" onClick={navigateToProfile}>
                     <div className="flex items-center">
                       <Users className="mr-2 h-4 w-4" />
-                      {username || "Profile"}
+                      {user.username}
                     </div>
                   </Button>
                 )}
@@ -179,6 +75,7 @@ export const DashboardHeader = () => {
           </Sheet>
         </div>
         
+        {/* Desktop Navigation */}
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-6 text-sm font-medium hidden md:flex">
             <a
@@ -204,9 +101,9 @@ export const DashboardHeader = () => {
               <MessageSquare className="mr-1 h-4 w-4" />
               Forum
             </a>
-            {username && (
+            {user?.username && (
               <a
-                href={`/users/${username}`}
+                href={`/users/${user.username}`}
                 className="transition-colors hover:text-foreground/80 text-foreground/60 flex items-center"
                 onClick={(e) => {
                   e.preventDefault();
@@ -214,7 +111,7 @@ export const DashboardHeader = () => {
                 }}
               >
                 <Users className="mr-1 h-4 w-4" />
-                {username || "Profile"}
+                {user.username}
               </a>
             )}
           </nav>
@@ -228,10 +125,10 @@ export const DashboardHeader = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {username && (
+              {user?.username && (
                 <DropdownMenuItem onClick={navigateToProfile} className="cursor-pointer">
                   <Users className="mr-2 h-4 w-4" />
-                  {username || "Profile"}
+                  {user.username}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
@@ -240,7 +137,7 @@ export const DashboardHeader = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-red-600 cursor-pointer"
-                onClick={handleSignOut}
+                onClick={signOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
