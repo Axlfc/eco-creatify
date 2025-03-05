@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Progress } from "@/components/ui/progress";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Post = {
   id: string;
@@ -31,6 +33,10 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [localLikeCounts, setLocalLikeCounts] = useState<{ [key: string]: number }>({});
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10;
 
   // Initialize local like counts from posts prop
   useEffect(() => {
@@ -182,6 +188,34 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
   // Get only visible posts for non-authenticated users
   const visiblePosts = posts.filter(post => post.is_visible === true);
 
+  // Calculate pagination values
+  const totalPosts = isAuthenticated ? posts.length : visiblePosts.length;
+  const totalPages = Math.ceil(totalPosts / postsPerPage);
+  
+  // Get current posts
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = isAuthenticated 
+    ? posts.slice(indexOfFirstPost, indexOfLastPost) 
+    : visiblePosts.slice(indexOfFirstPost, indexOfLastPost);
+  
+  // Change page
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  const goToPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
   // For non-authenticated users with no visible posts, show sign up prompt
   if (!isAuthenticated && visiblePosts.length === 0) {
     return (
@@ -200,12 +234,36 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
     return <p className="text-center text-muted-foreground">No posts yet</p>;
   }
 
-  // Show appropriate posts based on authentication status
-  const displayPosts = isAuthenticated ? posts : visiblePosts;
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <Button
+          key={i}
+          variant={currentPage === i ? "default" : "outline"}
+          size="icon"
+          onClick={() => goToPage(i)}
+          className="w-8 h-8"
+        >
+          {i}
+        </Button>
+      );
+    }
+    return pageNumbers;
+  };
 
   return (
     <div className="space-y-4">
-      {displayPosts.map((post) => (
+      {currentPosts.map((post) => (
         <Card key={post.id} className={!post.is_visible ? "opacity-50" : ""}>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
@@ -230,7 +288,41 @@ export const PostList = ({ posts, isCurrentUser, isAuthenticated }: PostListProp
           </CardContent>
         </Card>
       ))}
+      
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={goToPreviousPage} 
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          {renderPageNumbers()}
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={goToNextPage} 
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+          <span>
+            Showing {indexOfFirstPost + 1}-{Math.min(indexOfLastPost, totalPosts)} of {totalPosts} posts
+          </span>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
-
