@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -11,14 +12,8 @@ import {
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Globe } from "lucide-react";
+import { Globe, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-type Props = {
-  isAuthenticated: boolean;
-  onSignOut: () => void;
-  username: string | null;
-};
 
 export default function Navigation() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -40,6 +35,12 @@ export default function Navigation() {
     setIsAuthenticated(false);
     setUsername(null);
     navigate("/auth");
+  };
+
+  const navigateToProfile = () => {
+    if (username) {
+      navigate(`/users/${username}`);
+    }
   };
 
   return (
@@ -69,11 +70,13 @@ export default function Navigation() {
         </NavigationMenuItem>
         {isAuthenticated ? (
           <NavigationMenuItem>
-            <Link to={`/users/${username}`}>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                Profile
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink 
+              className={navigationMenuTriggerStyle()}
+              onClick={navigateToProfile}
+            >
+              <User className="mr-1 h-4 w-4" />
+              Profile
+            </NavigationMenuLink>
           </NavigationMenuItem>
         ) : (
           <NavigationMenuItem>

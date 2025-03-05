@@ -66,6 +66,10 @@ export const DashboardHeader = () => {
     }
   };
 
+  const navigateToForum = () => {
+    navigate("/forum");
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -88,14 +92,14 @@ export const DashboardHeader = () => {
                 <Button variant="ghost" className="justify-start" asChild>
                   <a href="#orders">Orders</a>
                 </Button>
-                <Button variant="ghost" className="justify-start" asChild onClick={() => navigate("/forum")}>
+                <Button variant="ghost" className="justify-start" onClick={navigateToForum}>
                   <div className="flex items-center">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Forum
                   </div>
                 </Button>
                 {username && (
-                  <Button variant="ghost" className="justify-start" asChild onClick={navigateToProfile}>
+                  <Button variant="ghost" className="justify-start" onClick={navigateToProfile}>
                     <div className="flex items-center">
                       <Users className="mr-2 h-4 w-4" />
                       Profile
@@ -126,7 +130,7 @@ export const DashboardHeader = () => {
               className="transition-colors hover:text-foreground/80 text-foreground/60 flex items-center"
               onClick={(e) => {
                 e.preventDefault();
-                navigate("/forum");
+                navigateToForum();
               }}
             >
               <MessageSquare className="mr-1 h-4 w-4" />
@@ -162,9 +166,6 @@ export const DashboardHeader = () => {
                   Profile
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem asChild>
-                <a href="#settings" className="cursor-pointer">Settings</a>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a href="#products" className="cursor-pointer">Manage Subscription</a>
               </DropdownMenuItem>
