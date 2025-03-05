@@ -1,5 +1,7 @@
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Menu } from "lucide-react";
+import { User, LogOut, Menu, MessageSquare, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,6 +24,18 @@ import { Button } from "@/components/ui/button";
 export const DashboardHeader = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUsername(session.user.user_metadata.username as string || null);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -43,6 +57,12 @@ export const DashboardHeader = () => {
         title: "Error signing out",
         description: "Please try again later",
       });
+    }
+  };
+
+  const navigateToProfile = () => {
+    if (username) {
+      navigate(`/users/${username}`);
     }
   };
 
@@ -68,9 +88,20 @@ export const DashboardHeader = () => {
                 <Button variant="ghost" className="justify-start" asChild>
                   <a href="#orders">Orders</a>
                 </Button>
-                <Button variant="ghost" className="justify-start" asChild>
-                  <a href="#settings">Settings</a>
+                <Button variant="ghost" className="justify-start" asChild onClick={() => navigate("/forum")}>
+                  <div className="flex items-center">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Forum
+                  </div>
                 </Button>
+                {username && (
+                  <Button variant="ghost" className="justify-start" asChild onClick={navigateToProfile}>
+                    <div className="flex items-center">
+                      <Users className="mr-2 h-4 w-4" />
+                      Profile
+                    </div>
+                  </Button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -91,11 +122,29 @@ export const DashboardHeader = () => {
               Orders
             </a>
             <a
-              href="#settings"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
+              href="/forum"
+              className="transition-colors hover:text-foreground/80 text-foreground/60 flex items-center"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/forum");
+              }}
             >
-              Settings
+              <MessageSquare className="mr-1 h-4 w-4" />
+              Forum
             </a>
+            {username && (
+              <a
+                href={`/users/${username}`}
+                className="transition-colors hover:text-foreground/80 text-foreground/60 flex items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateToProfile();
+                }}
+              >
+                <Users className="mr-1 h-4 w-4" />
+                Profile
+              </a>
+            )}
           </nav>
 
           <DropdownMenu>
@@ -107,9 +156,12 @@ export const DashboardHeader = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href="#profile" className="cursor-pointer">Profile</a>
-              </DropdownMenuItem>
+              {username && (
+                <DropdownMenuItem onClick={navigateToProfile} className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <a href="#settings" className="cursor-pointer">Settings</a>
               </DropdownMenuItem>
