@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, Menu, MessageSquare, Users } from "lucide-react";
@@ -35,14 +34,28 @@ export const DashboardHeader = () => {
         setIsLoading(true);
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        console.log("Dashboard session debug:", {
+          session: !!session,
+          user: session?.user,
+          metadata: session?.user?.user_metadata,
+          error
+        });
+
         if (error) {
           throw error;
         }
         
         if (session) {
           const fetchedUsername = session.user.user_metadata.username as string || null;
+          
+          console.log("Fetched username:", fetchedUsername);
+          
+          if (!fetchedUsername) {
+            console.warn("No username found in metadata");
+            throw new Error("Username not found");
+          }
+          
           setUsername(fetchedUsername);
-          console.log("User data retrieved successfully:", fetchedUsername);
         } else {
           console.log("No active session found");
           navigate("/auth");
@@ -66,9 +79,10 @@ export const DashboardHeader = () => {
         } else {
           toast({
             variant: "destructive",
-            title: "Failed to retrieve user data",
-            description: "Please reload the page or sign in again",
+            title: "Failed to retrieve customer data",
+            description: "Please check your internet connection or contact support",
           });
+          navigate("/auth");
         }
       } finally {
         setIsLoading(false);
