@@ -26,15 +26,37 @@ export default function Navigation() {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log("Session debug:", {
+          session: !!session,
+          user: session?.user,
+          metadata: session?.user?.user_metadata,
+          error
+        });
+
+        if (error) {
+          console.error("Session retrieval error:", error);
+          throw error;
+        }
+
         setIsAuthenticated(!!session);
         
         if (session?.user) {
           const usernameValue = session.user.user_metadata?.username as string || null;
+          
+          console.log("Username from metadata:", usernameValue);
+          
+          if (!usernameValue) {
+            console.warn("No username found in user metadata");
+          }
+          
           setUsername(usernameValue);
+        } else {
+          console.warn("No active session found");
         }
       } catch (error) {
-        console.error("Authentication check error:", error);
+        console.error("Authentication check comprehensive error:", error);
         toast({
           variant: "destructive",
           title: "Authentication Error",
@@ -44,41 +66,53 @@ export default function Navigation() {
         setIsLoading(false);
       }
     };
+    
     checkAuth();
   }, [location.pathname, toast]);
 
-  const handleSignOut = async () => {
+  const navigateToProfile = async () => {
     try {
-      await supabase.auth.signOut();
-      setIsAuthenticated(false);
-      setUsername(null);
-      navigate("/auth");
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account."
+      // Recheck authentication right before navigation
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      console.log("Pre-navigation session check:", {
+        session: !!session,
+        user: session?.user,
+        username: session?.user?.user_metadata?.username
       });
-    } catch (error) {
-      console.error("Sign out error:", error);
-      toast({
-        variant: "destructive",
-        title: "Sign Out Error",
-        description: "Failed to sign out. Please try again."
-      });
-    }
-  };
 
-  const navigateToProfile = () => {
-    if (!username) {
+      if (!session || !session.user) {
+        toast({
+          variant: "destructive",
+          title: "Session Expired",
+          description: "Your session has expired. Please sign in again."
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const usernameValue = session.user.user_metadata?.username as string;
+
+      if (!usernameValue) {
+        toast({
+          variant: "destructive",
+          title: "Profile Not Available",
+          description: "Username not found. Please update your profile or contact support."
+        });
+        navigate("/auth");
+        return;
+      }
+      
+      navigate(`/users/${usernameValue}`);
+    } catch (error) {
+      console.error("Profile navigation error:", error);
       toast({
         variant: "destructive",
-        title: "Profile Not Available",
-        description: "Unable to access profile. Please sign in again."
+        title: "Navigation Error",
+        description: "Unable to navigate to profile. Please try again."
       });
       navigate("/auth");
-      return;
     }
-    
-    navigate(`/users/${username}`);
   };
 
   // Get current route for active highlighting
@@ -138,7 +172,7 @@ export default function Navigation() {
             <NavigationMenuLink 
               className={cn(
                 navigationMenuTriggerStyle(),
-                isProfilePage && "bg-accent text-accent-foreground",
+                location.pathname.startsWith("/users/") && "bg-accent text-accent-foreground",
                 "cursor-pointer"
               )}
               onClick={navigateToProfile}
