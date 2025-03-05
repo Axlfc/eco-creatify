@@ -1,4 +1,3 @@
-
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -7,7 +6,6 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
@@ -34,7 +32,6 @@ export default function Navigation() {
         if (session?.user) {
           const usernameValue = session.user.user_metadata?.username as string || null;
           setUsername(usernameValue);
-          console.log("Username retrieved:", usernameValue);
         }
       } catch (error) {
         console.error("Authentication check error:", error);
