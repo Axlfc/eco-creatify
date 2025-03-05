@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect"; // Create this hook
 
 export const AuthForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const { redirectAfterAuth } = useAuthRedirect();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +57,8 @@ export const AuthForm = () => {
             throw error;
           }
         } else {
-          navigate("/dashboard");
+          // Use the redirect after successful authentication
+          redirectAfterAuth();
         }
       }
     } catch (error: any) {
