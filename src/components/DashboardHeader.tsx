@@ -76,7 +76,23 @@ export const DashboardHeader = () => {
     };
     
     fetchUserData();
-  }, [navigate, toast]);
+  }, [navigate, toast, retryCount]);
+
+  // Skip customer creation during auth check to avoid errors
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate("/auth");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleSignOut = async () => {
     try {
@@ -112,6 +128,7 @@ export const DashboardHeader = () => {
         title: "Profile Error",
         description: "Username not available. Please sign in again."
       });
+      navigate("/auth");
       return;
     }
     navigate(`/users/${username}`);
@@ -153,7 +170,7 @@ export const DashboardHeader = () => {
                   <Button variant="ghost" className="justify-start" onClick={navigateToProfile}>
                     <div className="flex items-center">
                       <Users className="mr-2 h-4 w-4" />
-                      Profile
+                      {username || "Profile"}
                     </div>
                   </Button>
                 )}
@@ -197,7 +214,7 @@ export const DashboardHeader = () => {
                 }}
               >
                 <Users className="mr-1 h-4 w-4" />
-                Profile
+                {username || "Profile"}
               </a>
             )}
           </nav>
@@ -214,7 +231,7 @@ export const DashboardHeader = () => {
               {username && (
                 <DropdownMenuItem onClick={navigateToProfile} className="cursor-pointer">
                   <Users className="mr-2 h-4 w-4" />
-                  Profile
+                  {username || "Profile"}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>

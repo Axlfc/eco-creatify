@@ -30,7 +30,12 @@ export default function Navigation() {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
-        setUsername(session?.user?.user_metadata?.username as string || null);
+        
+        if (session?.user) {
+          const usernameValue = session.user.user_metadata?.username as string || null;
+          setUsername(usernameValue);
+          console.log("Username retrieved:", usernameValue);
+        }
       } catch (error) {
         console.error("Authentication check error:", error);
         toast({
@@ -72,6 +77,7 @@ export default function Navigation() {
         title: "Profile Not Available",
         description: "Unable to access profile. Please sign in again."
       });
+      navigate("/auth");
       return;
     }
     
@@ -135,12 +141,13 @@ export default function Navigation() {
             <NavigationMenuLink 
               className={cn(
                 navigationMenuTriggerStyle(),
-                isProfilePage && "bg-accent text-accent-foreground"
+                isProfilePage && "bg-accent text-accent-foreground",
+                "cursor-pointer"
               )}
               onClick={navigateToProfile}
             >
               <User className="mr-1 h-4 w-4" />
-              Profile
+              {username || "Profile"}
             </NavigationMenuLink>
           </NavigationMenuItem>
         ) : (

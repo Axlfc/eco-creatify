@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Book, 
@@ -177,19 +177,31 @@ export default function Forum() {
   const [isCreatingConflictResolution, setIsCreatingConflictResolution] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("all");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [username, setUsername] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks">("discussions");
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useState(() => {
+  useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+        setUserId(session?.user?.id || null);
+        
+        if (session?.user) {
+          const usernameValue = session.user.user_metadata?.username as string || null;
+          setUsername(usernameValue);
+          console.log("Username retrieved in Forum:", usernameValue);
+        }
+      } catch (error) {
+        console.error("Auth check error in Forum:", error);
+      }
     };
+    
     checkAuth();
-  });
+  }, []);
 
   const filteredThreads = sampleThreads
     .filter(thread => {
@@ -236,6 +248,20 @@ export default function Forum() {
       day: 'numeric',
       year: 'numeric'
     }).format(date);
+  };
+
+  const navigateToProfile = () => {
+    if (!username) {
+      toast({
+        variant: "destructive",
+        title: "Profile Not Available",
+        description: "Unable to access profile. Please sign in again."
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    navigate(`/users/${username}`);
   };
 
   return (
