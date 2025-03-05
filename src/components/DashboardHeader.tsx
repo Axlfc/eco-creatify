@@ -25,17 +25,58 @@ export const DashboardHeader = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [username, setUsername] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setUsername(session.user.user_metadata.username as string || null);
+      try {
+        setIsLoading(true);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (session) {
+          const fetchedUsername = session.user.user_metadata.username as string || null;
+          setUsername(fetchedUsername);
+          console.log("User data retrieved successfully:", fetchedUsername);
+        } else {
+          console.log("No active session found");
+          navigate("/auth");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+        
+        // Implement retry logic
+        if (retryCount < MAX_RETRIES) {
+          const nextRetry = retryCount + 1;
+          setRetryCount(nextRetry);
+          
+          toast({
+            variant: "destructive",
+            title: "Connection Error",
+            description: `Retrying to fetch user data (${nextRetry}/${MAX_RETRIES})...`,
+          });
+          
+          // Retry after a delay
+          setTimeout(() => fetchUserData(), 2000);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Failed to retrieve user data",
+            description: "Please reload the page or sign in again",
+          });
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchUserData();
-  }, []);
+  }, [navigate, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -50,6 +91,10 @@ export const DashboardHeader = () => {
         return;
       }
       navigate("/");
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account",
+      });
     } catch (error) {
       console.error("Sign out failed:", error);
       toast({
@@ -61,9 +106,15 @@ export const DashboardHeader = () => {
   };
 
   const navigateToProfile = () => {
-    if (username) {
-      navigate(`/users/${username}`);
+    if (!username) {
+      toast({
+        variant: "destructive",
+        title: "Profile Error",
+        description: "Username not available. Please sign in again."
+      });
+      return;
     }
+    navigate(`/users/${username}`);
   };
 
   const navigateToForum = () => {
