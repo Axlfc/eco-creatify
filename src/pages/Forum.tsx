@@ -10,7 +10,9 @@ import {
   Handshake,
   ShieldCheck,
   Cog,
-  MessageSquare
+  MessageSquare,
+  AlertTriangle,
+  Shield
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +24,9 @@ import Navigation from "@/components/Navigation";
 import ThreadForm from "@/components/ThreadForm";
 import ConflictResolutionForm from "@/components/ConflictResolutionForm";
 import FactCheckInterface from "@/components/FactCheckInterface";
+import { ReportContentDialog } from "@/components/ReportContentDialog";
+import { ModeratorQueue } from "@/components/ModeratorQueue";
+import { CommunityGuidelines } from "@/components/CommunityGuidelines";
 import { 
   Select,
   SelectContent,
@@ -179,7 +184,11 @@ export default function Forum() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [username, setUsername] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks">("discussions");
+  const [isModerator, setIsModerator] = useState(false);
+  const [showModeratorQueue, setShowModeratorQueue] = useState(false);
+  const [showCommunityGuidelines, setShowCommunityGuidelines] = useState(false);
+  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks" | "moderation">("discussions");
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -202,6 +211,33 @@ export default function Forum() {
     
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    const checkModeratorStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+
+        const { data, error } = await supabase
+          .from('moderator_roles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('is_active', true)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
+          console.error("Error checking moderator status:", error);
+          return;
+        }
+
+        setIsModerator(!!data);
+      } catch (error) {
+        console.error("Failed to check moderator status:", error);
+      }
+    };
+
+    checkModeratorStatus();
+  }, [isAuthenticated]);
 
   const filteredThreads = sampleThreads
     .filter(thread => {
@@ -306,12 +342,21 @@ export default function Forum() {
               >
                 Fact Checks
               </button>
+              {isModerator && (
+                <button 
+                  className={`pb-2 text-sm font-medium flex items-center ${activeTab === "moderation" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                  onClick={() => setActiveTab("moderation")}
+                >
+                  <Shield className="h-4 w-4 mr-1" />
+                  Moderation
+                </button>
+              )}
             </div>
           </div>
         </header>
 
         <div className="space-y-8">
-          {activeTab === "discussions" ? (
+          {activeTab === "discussions" && (
             <>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div className="relative w-full sm:w-72">
@@ -337,11 +382,20 @@ export default function Forum() {
                       <span>Conflict Resolution</span>
                     </Button>
                   </div>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setShowCommunityGuidelines(!showCommunityGuidelines)} 
+                    className="sm:ml-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" onClick={() => setCurrentCategory("all")} className="sm:hidden">
                     <Filter className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
+
+              {showCommunityGuidelines && <CommunityGuidelines />}
 
               <div className="block sm:hidden mb-6">
                 <Select 
@@ -412,10 +466,25 @@ export default function Forum() {
                             {categories.find(c => c.id === thread.category)?.name || "General"} • {thread.author}
                           </p>
                           <p className="text-sm mt-2 line-clamp-3">{thread.content}</p>
-                          <div className="pt-2">
+                          <div className="pt-2 flex justify-between">
                             <Button variant="ghost" size="sm" className="px-0 text-primary/80 hover:text-primary">
                               Read full thread
                             </Button>
+                            
+                            {isAuthenticated && (
+                              <ReportContentDialog
+                                itemId={thread.id}
+                                itemType="thread"
+                                title={thread.title}
+                                content={thread.content}
+                                trigger={
+                                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                                    <AlertTriangle className="h-4 w-4 mr-1" />
+                                    Report
+                                  </Button>
+                                }
+                              />
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -428,9 +497,11 @@ export default function Forum() {
                 </div>
               )}
             </>
-          ) : (
-            <FactCheckInterface />
           )}
+          
+          {activeTab === "fact-checks" && <FactCheckInterface />}
+          
+          {activeTab === "moderation" && isModerator && <ModeratorQueue />}
           
           <div className="py-6 mt-4">
             <h3 className="text-lg font-medium mb-3">About This Forum</h3>

@@ -136,6 +136,39 @@ export type Database = {
           },
         ]
       }
+      community_guidelines: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          examples: string[] | null
+          id: string
+          severity_level: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          examples?: string[] | null
+          id?: string
+          severity_level: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          examples?: string[] | null
+          id?: string
+          severity_level?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       followers: {
         Row: {
           created_at: string
@@ -171,6 +204,134 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      moderation_decisions: {
+        Row: {
+          action_taken: string | null
+          created_at: string
+          decision: string
+          id: string
+          moderator_id: string
+          queue_item_id: string
+          rationale: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          created_at?: string
+          decision: string
+          id?: string
+          moderator_id: string
+          queue_item_id: string
+          rationale?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          created_at?: string
+          decision?: string
+          id?: string
+          moderator_id?: string
+          queue_item_id?: string
+          rationale?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_decisions_queue_item_id_fkey"
+            columns: ["queue_item_id"]
+            isOneToOne: false
+            referencedRelation: "moderation_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_queue: {
+        Row: {
+          automated_flags: Json | null
+          content: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          reported_at: string
+          reporter_id: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity_level: string | null
+          status: string
+          title: string | null
+          updated_at: string
+          violation_categories: string[] | null
+        }
+        Insert: {
+          automated_flags?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          reported_at?: string
+          reporter_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity_level?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          violation_categories?: string[] | null
+        }
+        Update: {
+          automated_flags?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          reported_at?: string
+          reporter_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity_level?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          violation_categories?: string[] | null
+        }
+        Relationships: []
+      }
+      moderator_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       post_likes: {
         Row: {
@@ -308,7 +469,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_moderator: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
