@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from 'react-router-dom';
@@ -38,23 +39,46 @@ export const useAuth = () => {
         }
 
         if (!session) {
-          // No active session, redirect to auth
+          // No active session
           setAuthState(prev => ({
             ...prev,
             isAuthenticated: false,
             isLoading: false,
             error: "No active session"
           }));
-          navigate("/auth");
           return;
+        }
+
+        // Try to get username from metadata
+        let username = session.user.user_metadata?.username as string | undefined;
+
+        // If not in metadata, try to get from profiles table
+        if (!username) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('id', session.user.id)
+              .single();
+
+            if (!profileError && profile) {
+              username = profile.username;
+            } else {
+              console.warn("Could not retrieve username from profiles:", profileError);
+            }
+          } catch (error) {
+            console.error("Error fetching profile:", error);
+          }
         }
 
         // Extract user information
         const user: User = {
           id: session.user.id,
           email: session.user.email || undefined,
-          username: session.user.user_metadata?.username || undefined
+          username: username
         };
+
+        console.log("User authenticated with username:", username);
 
         setAuthState({
           user,
@@ -80,9 +104,6 @@ export const useAuth = () => {
           title: "Authentication Error",
           description: "Failed to retrieve user data. Please sign in again."
         });
-
-        // Redirect to auth page
-        navigate("/auth");
       }
     };
 

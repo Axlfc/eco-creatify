@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -9,6 +10,7 @@ export const useAuthRedirect = () => {
   const storeIntendedDestination = () => {
     if (location.pathname !== '/auth') {
       localStorage.setItem('intendedDestination', location.pathname + location.search);
+      console.log('Stored intended destination:', location.pathname + location.search);
     }
   };
 
@@ -20,6 +22,8 @@ export const useAuthRedirect = () => {
   // Redirect to the intended destination or a default route
   const redirectAfterAuth = () => {
     const intendedDestination = localStorage.getItem('intendedDestination');
+    
+    console.log('Redirecting after auth to:', intendedDestination || '/dashboard');
     
     // Default to dashboard if no intended destination
     const destinationPath = intendedDestination || '/dashboard';

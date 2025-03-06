@@ -1,9 +1,10 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuthRedirect } from "@/hooks/use-auth-redirect"; // Create this hook
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
 export const AuthForm = () => {
   const [email, setEmail] = useState("");
@@ -11,7 +12,12 @@ export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
-  const { redirectAfterAuth } = useAuthRedirect();
+  const { redirectAfterAuth, storeIntendedDestination } = useAuthRedirect();
+
+  // Store the intended destination when the component mounts
+  useEffect(() => {
+    storeIntendedDestination();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

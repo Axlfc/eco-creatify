@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -13,14 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Globe, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
 export default function Navigation() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [username, setUsername] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { storeIntendedDestination } = useAuthRedirect();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,13 +31,6 @@ export default function Navigation() {
         setIsLoading(true);
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        console.log("Session debug:", {
-          session: !!session,
-          user: session?.user,
-          metadata: session?.user?.user_metadata,
-          error
-        });
-
         if (error) {
           console.error("Session retrieval error:", error);
           throw error;
@@ -43,42 +39,49 @@ export default function Navigation() {
         setIsAuthenticated(!!session);
         
         if (session?.user) {
-          const usernameValue = session.user.user_metadata?.username as string || null;
+          // First try to get username from user_metadata
+          let usernameValue = session.user.user_metadata?.username as string || null;
           
-          console.log("Username from metadata:", usernameValue);
-          
+          // If not found in metadata, try to fetch from profiles table
           if (!usernameValue) {
-            console.warn("No username found in user metadata");
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (profileError) {
+              console.warn("Profile retrieval error:", profileError);
+            } else if (profile) {
+              usernameValue = profile.username;
+            }
           }
           
+          console.log("Username retrieved in Navigation:", usernameValue);
           setUsername(usernameValue);
-        } else {
-          console.warn("No active session found");
         }
       } catch (error) {
-        console.error("Authentication check comprehensive error:", error);
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Failed to verify your login status. Please try again."
-        });
+        console.error("Authentication check error:", error);
       } finally {
         setIsLoading(false);
       }
     };
     
     checkAuth();
-  }, [location.pathname, toast]);
+  }, [location.pathname]);
 
   const navigateToProfile = async () => {
     try {
+      // Store the current path before navigation
+      storeIntendedDestination();
+      
       // Recheck authentication right before navigation
       const { data: { session } } = await supabase.auth.getSession();
       
       console.log("Pre-navigation session check:", {
         session: !!session,
         user: session?.user,
-        username: session?.user?.user_metadata?.username
+        username: username
       });
 
       if (!session || !session.user) {
@@ -91,9 +94,7 @@ export default function Navigation() {
         return;
       }
 
-      const usernameValue = session.user.user_metadata?.username as string;
-
-      if (!usernameValue) {
+      if (!username) {
         toast({
           variant: "destructive",
           title: "Profile Not Available",
@@ -103,7 +104,7 @@ export default function Navigation() {
         return;
       }
       
-      navigate(`/users/${usernameValue}`);
+      navigate(`/users/${username}`);
     } catch (error) {
       console.error("Profile navigation error:", error);
       toast({
@@ -172,7 +173,7 @@ export default function Navigation() {
             <NavigationMenuLink 
               className={cn(
                 navigationMenuTriggerStyle(),
-                location.pathname.startsWith("/users/") && "bg-accent text-accent-foreground",
+                isProfilePage && "bg-accent text-accent-foreground",
                 "cursor-pointer"
               )}
               onClick={navigateToProfile}
