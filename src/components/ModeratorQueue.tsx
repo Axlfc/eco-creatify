@@ -107,7 +107,15 @@ export const ModeratorQueue = () => {
         .order('reported_at', { ascending: false });
       
       if (error) throw error;
-      return data as ModerationItem[];
+      
+      // Transform data to ensure it matches the ModerationItem type
+      return (data as any[]).map(item => ({
+        ...item,
+        // Ensure profiles is properly typed
+        profiles: item.profiles && !('error' in item.profiles) 
+          ? item.profiles 
+          : { username: null }
+      })) as ModerationItem[];
     },
     enabled: isModeratorUser,
   });
