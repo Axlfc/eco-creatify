@@ -12,7 +12,8 @@ import {
   Cog,
   MessageSquare,
   AlertTriangle,
-  Shield
+  Shield,
+  Users
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ import FactCheckInterface from "@/components/FactCheckInterface";
 import { ReportContentDialog } from "@/components/ReportContentDialog";
 import { ModeratorQueue } from "@/components/ModeratorQueue";
 import { CommunityGuidelines } from "@/components/CommunityGuidelines";
+import DeliberationRoomsList from "@/components/DeliberationRoomsList";
 import { 
   Select,
   SelectContent,
@@ -187,7 +189,7 @@ export default function Forum() {
   const [isModerator, setIsModerator] = useState(false);
   const [showModeratorQueue, setShowModeratorQueue] = useState(false);
   const [showCommunityGuidelines, setShowCommunityGuidelines] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks" | "moderation">("discussions");
+  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks" | "moderation" | "deliberation">("discussions");
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -329,12 +331,21 @@ export default function Forum() {
           </p>
           
           <div className="border-b border-border/50">
-            <div className="flex space-x-6">
+            <div className="flex space-x-6 overflow-x-auto no-scrollbar">
               <button 
                 className={`pb-2 text-sm font-medium ${activeTab === "discussions" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
                 onClick={() => setActiveTab("discussions")}
               >
                 Discussions
+              </button>
+              <button 
+                className={`pb-2 text-sm font-medium ${activeTab === "deliberation" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("deliberation")}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  <span>Deliberation Rooms</span>
+                </div>
               </button>
               <button 
                 className={`pb-2 text-sm font-medium ${activeTab === "fact-checks" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
@@ -497,6 +508,14 @@ export default function Forum() {
                 </div>
               )}
             </>
+          )}
+          
+          {activeTab === "deliberation" && (
+            <DeliberationRoomsList 
+              isAuthenticated={isAuthenticated}
+              userId={userId}
+              username={username}
+            />
           )}
           
           {activeTab === "fact-checks" && <FactCheckInterface />}
