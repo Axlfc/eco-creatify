@@ -1,5 +1,5 @@
 
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   NavigationMenu,
@@ -24,6 +24,7 @@ export default function Navigation() {
   const location = useLocation();
   const { toast } = useToast();
   const { storeIntendedDestination } = useAuthRedirect();
+  const { username: profileUsername } = useParams<{ username?: string }>();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -122,6 +123,12 @@ export default function Navigation() {
   const isDashboardPage = currentPath === "/dashboard";
   const isForumPage = currentPath === "/forum";
   const isProfilePage = currentPath.startsWith("/users/");
+  
+  // Check if user is on their own profile page
+  const isOwnProfilePage = isProfilePage && profileUsername === username;
+  
+  // Check if user is on another user's profile page
+  const isOtherUserProfilePage = isProfilePage && profileUsername !== username;
 
   return (
     <NavigationMenu>
@@ -169,19 +176,22 @@ export default function Navigation() {
         )}
         
         {isAuthenticated ? (
-          <NavigationMenuItem>
-            <NavigationMenuLink 
-              className={cn(
-                navigationMenuTriggerStyle(),
-                isProfilePage && "bg-accent text-accent-foreground",
-                "cursor-pointer"
-              )}
-              onClick={navigateToProfile}
-            >
-              <User className="mr-1 h-4 w-4" />
-              {username || "Profile"}
-            </NavigationMenuLink>
-          </NavigationMenuItem>
+          /* Only show Profile link when not on own profile page */
+          !isOwnProfilePage && (
+            <NavigationMenuItem>
+              <NavigationMenuLink 
+                className={cn(
+                  navigationMenuTriggerStyle(),
+                  isOtherUserProfilePage && "bg-accent text-accent-foreground",
+                  "cursor-pointer"
+                )}
+                onClick={navigateToProfile}
+              >
+                <User className="mr-1 h-4 w-4" />
+                {username || "Profile"}
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          )
         ) : (
           <NavigationMenuItem>
             <Link to="/auth">

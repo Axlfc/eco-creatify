@@ -12,6 +12,8 @@ type ProfileHeaderProps = {
     username: string;
     join_date: string;
     is_verified: boolean;
+    rank?: string;
+    expertise?: string[];
   };
   currentUserId: string | null;
   isFollowing: boolean;
@@ -29,13 +31,21 @@ export const ProfileHeader = ({ profile, currentUserId, isFollowing, onFollowTog
             </div>
             <div>
               <h1 className="text-2xl">{profile?.username}</h1>
-              <div className="flex gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 <Badge variant="secondary">
                   Joined {new Date(profile?.join_date).toLocaleDateString()}
                 </Badge>
                 {profile?.is_verified && (
                   <Badge>Verified</Badge>
                 )}
+                {profile?.rank && (
+                  <Badge variant="outline">{profile.rank}</Badge>
+                )}
+                {profile?.expertise && profile.expertise.map((area, index) => (
+                  <Badge key={index} variant="secondary" className="bg-primary/10">
+                    {area}
+                  </Badge>
+                ))}
               </div>
             </div>
           </div>
