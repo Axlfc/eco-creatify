@@ -197,6 +197,13 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
             onChange={(e) => setComment(e.target.value)}
             className="mb-2"
             disabled={readingProgress < 100 || !isAuthenticated}
+            readOnlyMessage={
+              !isAuthenticated
+                ? "Please sign in to participate"
+                : readingProgress < 100
+                ? "Please read all perspectives first"
+                : undefined
+            }
             rows={4}
           />
           <Button 

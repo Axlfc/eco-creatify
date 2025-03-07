@@ -1,205 +1,166 @@
 
-import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Globe, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAuthRedirect } from "@/hooks/use-auth-redirect";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
-export default function Navigation() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+const Navigation: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
-  const { storeIntendedDestination } = useAuthRedirect();
-  const { username: profileUsername } = useParams<{ username?: string }>();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session retrieval error:", error);
-          throw error;
-        }
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
-        setIsAuthenticated(!!session);
-        
-        if (session?.user) {
-          // First try to get username from user_metadata
-          let usernameValue = session.user.user_metadata?.username as string || null;
-          
-          // If not found in metadata, try to fetch from profiles table
-          if (!usernameValue) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('username')
-              .eq('id', session.user.id)
-              .single();
-              
-            if (profileError) {
-              console.warn("Profile retrieval error:", profileError);
-            } else if (profile) {
-              usernameValue = profile.username;
-            }
-          }
-          
-          console.log("Username retrieved in Navigation:", usernameValue);
-          setUsername(usernameValue);
-        }
-      } catch (error) {
-        console.error("Authentication check error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, [location.pathname]);
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path;
+  };
 
-  const navigateToProfile = async () => {
-    try {
-      // Store the current path before navigation
-      storeIntendedDestination();
-      
-      // Recheck authentication right before navigation
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      console.log("Pre-navigation session check:", {
-        session: !!session,
-        user: session?.user,
-        username: username
-      });
-
-      if (!session || !session.user) {
-        toast({
-          variant: "destructive",
-          title: "Session Expired",
-          description: "Your session has expired. Please sign in again."
-        });
-        navigate("/auth");
-        return;
-      }
-
-      if (!username) {
-        toast({
-          variant: "destructive",
-          title: "Profile Not Available",
-          description: "Username not found. Please update your profile or contact support."
-        });
-        navigate("/auth");
-        return;
-      }
-      
-      navigate(`/users/${username}`);
-    } catch (error) {
-      console.error("Profile navigation error:", error);
-      toast({
-        variant: "destructive",
-        title: "Navigation Error",
-        description: "Unable to navigate to profile. Please try again."
-      });
-      navigate("/auth");
+  const navigateToProfile = () => {
+    if (user?.username) {
+      navigate(`/users/${user.username}`);
     }
   };
 
-  // Get current route for active highlighting
-  const currentPath = location.pathname;
-  const isHomePage = currentPath === "/";
-  const isDashboardPage = currentPath === "/dashboard";
-  const isForumPage = currentPath === "/forum";
-  const isProfilePage = currentPath.startsWith("/users/");
-  
-  // Check if user is on their own profile page
-  const isOwnProfilePage = isProfilePage && profileUsername === username;
-  
-  // Check if user is on another user's profile page
-  const isOtherUserProfilePage = isProfilePage && profileUsername !== username;
+  const links = [
+    {
+      href: "/",
+      label: "Home",
+    },
+    {
+      href: "/forum",
+      label: "Forum",
+    },
+    {
+      href: "/proposals",
+      label: "Proposals",
+      icon: Vote,
+    },
+  ];
 
   return (
-    <NavigationMenu>
-      <NavigationMenuList>
-        <NavigationMenuItem>
-          <Link to="/">
-            <NavigationMenuLink 
-              className={cn(
-                navigationMenuTriggerStyle(),
-                isHomePage && "bg-accent text-accent-foreground"
-              )}
+    <header className="border-b border-border bg-background">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <Link to="/" className="flex items-center gap-2">
+          <BookOpen className="h-6 w-6" />
+          <span className="text-lg font-medium">PeaceMedia</span>
+        </Link>
+
+        <nav className="hidden md:flex gap-6">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={`text-sm font-medium ${
+                isActiveRoute(link.href)
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              } transition-colors`}
             >
-              Home
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-        
-        <NavigationMenuItem>
-          <Link to="/dashboard">
-            <NavigationMenuLink 
-              className={cn(
-                navigationMenuTriggerStyle(),
-                isDashboardPage && "bg-accent text-accent-foreground"
-              )}
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-0.5">
+                    <p className="text-sm font-medium">{user?.username}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={navigateToProfile}>
+                  <User className="h-4 w-4 mr-2" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="outline"
+              className="h-9"
+              onClick={() => navigate("/auth")}
             >
-              Dashboard
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-        
-        {/* Only show Forum link when not on forum page */}
-        {!isForumPage && (
-          <NavigationMenuItem>
-            <Link to="/forum">
-              <NavigationMenuLink 
-                className={cn(
-                  navigationMenuTriggerStyle()
-                )}
-              >
-                <Globe className="mr-1 h-4 w-4" />
-                Forum
-              </NavigationMenuLink>
-            </Link>
-          </NavigationMenuItem>
-        )}
-        
-        {isAuthenticated ? (
-          /* Only show Profile link when not on own profile page */
-          !isOwnProfilePage && (
-            <NavigationMenuItem>
-              <NavigationMenuLink 
-                className={cn(
-                  navigationMenuTriggerStyle(),
-                  isOtherUserProfilePage && "bg-accent text-accent-foreground",
-                  "cursor-pointer"
-                )}
-                onClick={navigateToProfile}
-              >
-                <User className="mr-1 h-4 w-4" />
-                {username || "Profile"}
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-          )
-        ) : (
-          <NavigationMenuItem>
-            <Link to="/auth">
-              <Button size="sm">Sign In</Button>
-            </Link>
-          </NavigationMenuItem>
-        )}
-      </NavigationMenuList>
-    </NavigationMenu>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          )}
+
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader className="mb-4">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>
+                  Navigate to different sections of the app.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="grid gap-4">
+                {links.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center gap-2 text-base ${
+                      isActiveRoute(link.href)
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    } transition-colors`}
+                  >
+                    {link.icon && <link.icon className="h-5 w-5" />}
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
   );
-}
+};
+
+export default Navigation;

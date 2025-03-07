@@ -7,6 +7,9 @@ import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import UserProfile from "@/pages/UserProfile";
 import Forum from "@/pages/Forum";
+import Proposals from "@/pages/Proposals";
+import ProposalCreate from "@/pages/ProposalCreate";
+import ProposalView from "@/pages/ProposalView";
 import { UsernameSetupDialog } from "@/components/UsernameSetupDialog";
 import "./App.css";
 
@@ -22,6 +25,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users/:username" element={<UserProfile />} />
           <Route path="/forum" element={<Forum />} />
+          <Route path="/proposals" element={<Proposals />} />
+          <Route path="/proposals/create" element={<ProposalCreate />} />
+          <Route path="/proposals/:id" element={<ProposalView />} />
         </Routes>
         <UsernameSetupDialog />
         <Toaster />
