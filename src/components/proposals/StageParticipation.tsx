@@ -2,13 +2,12 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Send, AlertTriangle } from "lucide-react";
+import { Users, Send } from "lucide-react";
 import { DeliberationStage } from "./DeliberationStages";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { StageInputFields } from "./StageInputFields";
+import { StageRequirements } from "./StageRequirements";
 
 interface StageParticipationProps {
   proposalId: string;
@@ -26,71 +25,6 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
-
-  const getStagePrompt = (stageId: string) => {
-    switch (stageId) {
-      case "problem-identification":
-        return "What specific aspects of this issue need addressing? Describe the problem thoroughly.";
-      case "brainstorming":
-        return "What solutions could address the identified problems? Be creative and specific.";
-      case "evaluation":
-        return "What are the strengths and weaknesses of each proposed solution?";
-      case "refinement":
-        return "How can we improve the leading solutions? Suggest specific enhancements.";
-      case "decision":
-        return "Which refined solution do you support and why?";
-      default:
-        return "Share your thoughts on this stage of the deliberation process.";
-    }
-  };
-
-  const getInputFields = (stageId: string) => {
-    switch (stageId) {
-      case "problem-identification":
-        return (
-          <>
-            <Input 
-              placeholder="Problem title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mb-2"
-            />
-            <Textarea
-              placeholder={getStagePrompt(stageId)}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={5}
-            />
-          </>
-        );
-      case "brainstorming":
-        return (
-          <>
-            <Input 
-              placeholder="Solution title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mb-2"
-            />
-            <Textarea
-              placeholder={getStagePrompt(stageId)}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={5}
-            />
-          </>
-        );
-      default:
-        return (
-          <Textarea
-            placeholder={getStagePrompt(stageId)}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={5}
-          />
-        );
-    }
-  };
 
   const handleSubmit = async () => {
     if (!isAuthenticated) {
@@ -149,24 +83,6 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
     }
   };
 
-  const getRequirementsText = () => {
-    const remainingReqs = currentStage.requirements.filter(req => {
-      if (req.current === undefined) return true;
-      return req.current < req.value;
-    });
-    
-    if (remainingReqs.length === 0) return null;
-    
-    return (
-      <Alert className="mb-4">
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <AlertDescription>
-          This stage requires: {remainingReqs.map(r => r.description).join(", ")}
-        </AlertDescription>
-      </Alert>
-    );
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -179,7 +95,7 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {getRequirementsText()}
+        <StageRequirements requirements={currentStage.requirements} />
         
         <div className="space-y-4">
           <div className="text-sm">
@@ -190,7 +106,13 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
             participants
           </div>
           
-          {getInputFields(currentStage.id)}
+          <StageInputFields 
+            stageId={currentStage.id}
+            title={title}
+            content={content}
+            onTitleChange={setTitle}
+            onContentChange={setContent}
+          />
         </div>
       </CardContent>
       <CardFooter>
