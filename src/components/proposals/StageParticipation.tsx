@@ -158,7 +158,7 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
     if (remainingReqs.length === 0) return null;
     
     return (
-      <Alert variant="warning" className="mb-4">
+      <Alert className="mb-4">
         <AlertTriangle className="h-4 w-4 mr-2" />
         <AlertDescription>
           This stage requires: {remainingReqs.map(r => r.description).join(", ")}

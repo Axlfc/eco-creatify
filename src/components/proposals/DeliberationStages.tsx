@@ -86,7 +86,7 @@ const DeliberationStages: React.FC<DeliberationStagesProps> = ({
                     stage.isActive 
                       ? "default" 
                       : stage.isCompleted 
-                        ? "success" 
+                        ? "secondary" 
                         : "outline"
                   }
                 >
