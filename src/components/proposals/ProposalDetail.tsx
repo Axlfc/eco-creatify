@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -174,7 +173,7 @@ const mockProposalData = {
       against: 23,
       abstain: 8
     },
-    result: "approved"
+    result: "approved" as const
   }
 };
 
@@ -219,11 +218,9 @@ const ProposalDetail: React.FC = () => {
   const [isSubmittingArgument, setIsSubmittingArgument] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
   
-  // Mock data fetch
   useEffect(() => {
     setLoading(true);
     
-    // Simulating API call delay
     setTimeout(() => {
       if (id && mockProposalData[id as keyof typeof mockProposalData]) {
         setProposal(mockProposalData[id as keyof typeof mockProposalData]);
@@ -239,7 +236,6 @@ const ProposalDetail: React.FC = () => {
     }, 500);
   }, [id, navigate, toast]);
 
-  // Update time remaining
   useEffect(() => {
     if (!proposal) return;
 
@@ -260,7 +256,7 @@ const ProposalDetail: React.FC = () => {
     };
 
     calculateTimeRemaining();
-    const interval = setInterval(calculateTimeRemaining, 60000); // Update every minute
+    const interval = setInterval(calculateTimeRemaining, 60000);
     
     return () => clearInterval(interval);
   }, [proposal]);
@@ -321,11 +317,8 @@ const ProposalDetail: React.FC = () => {
     setIsSubmittingArgument(true);
 
     try {
-      // Here we would submit to Supabase
-      // For now, we'll just simulate a successful submission
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Update local state to reflect the new argument
       const newArgumentObj: Argument = {
         id: `arg-${Date.now()}`,
         author: user?.username || "Anonymous",
@@ -399,17 +392,13 @@ const ProposalDetail: React.FC = () => {
     setIsSubmittingVote(true);
 
     try {
-      // Here we would submit to Supabase
-      // For now, we'll just simulate a successful submission
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Update local state to reflect the new vote
       setUserVote(vote);
       
       setProposal(prev => {
         if (!prev) return prev;
         
-        // If changing vote, adjust previous vote count
         const updatedVotes = { ...prev.votes };
         
         if (userVote) {
@@ -440,7 +429,6 @@ const ProposalDetail: React.FC = () => {
     }
   };
 
-  // Calculate total votes for progress bar
   const totalVotes = proposal.votes.for + proposal.votes.against + proposal.votes.abstain;
   const approvalPercentage = totalVotes > 0 
     ? Math.round((proposal.votes.for / totalVotes) * 100) 
@@ -525,7 +513,7 @@ const ProposalDetail: React.FC = () => {
               <Progress 
                 value={approvalPercentage} 
                 className="h-2" 
-                indicatorColor={
+                color={
                   approvalPercentage >= 66 ? "bg-green-500" :
                   approvalPercentage >= 33 ? "bg-amber-500" :
                   "bg-red-500"
