@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award, LayoutDashboard, GitMerge } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const Navigation: React.FC = () => {
@@ -53,6 +53,11 @@ const Navigation: React.FC = () => {
       href: "/proposals",
       label: "Proposals",
       icon: Vote,
+    },
+    {
+      href: "/proposals/consensus",
+      label: "Consensus",
+      icon: GitMerge,
     },
   ];
 
