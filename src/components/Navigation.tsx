@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const Navigation: React.FC = () => {
@@ -102,9 +102,9 @@ const Navigation: React.FC = () => {
                   <User className="h-4 w-4 mr-2" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>Settings</span>
+                <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  <span>Dashboard</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
@@ -154,6 +154,20 @@ const Navigation: React.FC = () => {
                     {link.label}
                   </Link>
                 ))}
+                {isAuthenticated && (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center gap-2 text-base ${
+                      isActiveRoute("/dashboard")
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    } transition-colors`}
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    Dashboard
+                  </Link>
+                )}
               </div>
             </SheetContent>
           </Sheet>
