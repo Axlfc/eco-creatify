@@ -1,29 +1,25 @@
 
-// Setup file for Jest tests
+// Jest setup file
+import '@testing-library/jest-dom';
 
-// Mock localStorage
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn()
-  },
-  writable: true
-});
+// Mock the server environment variables
+process.env.SUPABASE_URL = 'https://example.com';
+process.env.SUPABASE_ANON_KEY = 'test-anon-key';
 
 // Mock fetch API
 global.fetch = jest.fn();
 
-// Silence console errors during tests
-const originalConsoleError = console.error;
-console.error = (...args) => {
-  if (args[0]?.includes?.('Warning:')) {
-    return;
-  }
-  originalConsoleError(...args);
+// Mock the browser APIs that might not be available in the test environment
+global.console = {
+  ...console,
+  // Uncomment to suppress console.log during tests
+  // log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
 };
 
-// Set up environment variables for testing
-process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://example.supabase.co';
-process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'test-key';
+// Clean up after each test
+afterEach(() => {
+  jest.clearAllMocks();
+});

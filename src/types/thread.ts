@@ -1,5 +1,22 @@
 
-// Thread system types
+// Thread-related types
+
+// Form data for creating a thread
+export interface ThreadFormData {
+  title: string;
+  content: string;
+  category: string;
+  tags?: string[];
+  format?: "plain" | "markdown" | "html";
+}
+
+// Form data for creating a thread comment
+export interface ThreadCommentFormData {
+  content: string;
+  parent_id?: string;
+}
+
+// Thread data returned from the database
 export interface Thread {
   id: string;
   title: string;
@@ -14,6 +31,7 @@ export interface Thread {
   flags_count: number;
 }
 
+// Thread comment data returned from the database
 export interface ThreadComment {
   id: string;
   thread_id: string;
@@ -25,10 +43,10 @@ export interface ThreadComment {
   upvotes_count: number;
   flags_count: number;
   depth: number;
-  // For nested comments rendering
   replies?: ThreadComment[];
 }
 
+// Thread upvote data
 export interface ThreadUpvote {
   id: string;
   thread_id: string | null;
@@ -37,18 +55,20 @@ export interface ThreadUpvote {
   created_at: string;
 }
 
+// Thread flag data
 export interface ThreadFlag {
   id: string;
   thread_id: string | null;
   comment_id: string | null;
   user_id: string;
   reason: string;
-  status: 'pending' | 'reviewed' | 'dismissed' | 'actioned';
+  status: string;
   moderator_id: string | null;
   resolved_at: string | null;
   created_at: string;
 }
 
+// Thread subscription data
 export interface ThreadSubscription {
   id: string;
   thread_id: string;
@@ -56,29 +76,14 @@ export interface ThreadSubscription {
   created_at: string;
 }
 
+// Thread notification data
 export interface ThreadNotification {
   id: string;
   thread_id: string;
   comment_id: string | null;
   user_id: string;
   actor_id: string;
-  type: 'new_thread' | 'new_comment' | 'upvote' | 'flag';
+  type: string;
   is_read: boolean;
   created_at: string;
-}
-
-export type ThreadContentFormat = 'plain' | 'markdown' | 'html';
-
-export interface ThreadFormData {
-  title: string;
-  content: string;
-  category: string;
-  tags: string[];
-  format?: ThreadContentFormat;
-}
-
-export interface ThreadCommentFormData {
-  content: string;
-  parent_id?: string | null;
-  format?: ThreadContentFormat;
 }

@@ -464,6 +464,269 @@ export type Database = {
         }
         Relationships: []
       }
+      thread_comments: {
+        Row: {
+          content: string
+          created_at: string
+          depth: number
+          flags_count: number | null
+          id: string
+          parent_id: string | null
+          thread_id: string
+          updated_at: string
+          upvotes_count: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          depth?: number
+          flags_count?: number | null
+          id?: string
+          parent_id?: string | null
+          thread_id: string
+          updated_at?: string
+          upvotes_count?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          depth?: number
+          flags_count?: number | null
+          id?: string
+          parent_id?: string | null
+          thread_id?: string
+          updated_at?: string
+          upvotes_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "thread_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_comments_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_flags: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          moderator_id: string | null
+          reason: string
+          resolved_at: string | null
+          status: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          moderator_id?: string | null
+          reason: string
+          resolved_at?: string | null
+          status?: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          moderator_id?: string | null
+          reason?: string
+          resolved_at?: string | null
+          status?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_flags_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "thread_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_flags_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_notifications: {
+        Row: {
+          actor_id: string
+          comment_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          thread_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          thread_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          thread_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "thread_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_notifications_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_subscriptions_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_upvotes: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_upvotes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "thread_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_upvotes_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      threads: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          flags_count: number | null
+          id: string
+          is_visible: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          upvotes_count: number | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          flags_count?: number | null
+          id?: string
+          is_visible?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          upvotes_count?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          flags_count?: number | null
+          id?: string
+          is_visible?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          upvotes_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
