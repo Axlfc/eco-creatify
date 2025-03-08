@@ -13,7 +13,8 @@ import {
   MessageSquare,
   AlertTriangle,
   Shield,
-  Users
+  Users,
+  BarChart4
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +30,7 @@ import { ReportContentDialog } from "@/components/ReportContentDialog";
 import { ModeratorQueue } from "@/components/ModeratorQueue";
 import { CommunityGuidelines } from "@/components/CommunityGuidelines";
 import DeliberationRoomsList from "@/components/DeliberationRoomsList";
+import PastDecisionsList from "@/components/PastDecisionsList";
 import { 
   Select,
   SelectContent,
@@ -189,7 +191,7 @@ export default function Forum() {
   const [isModerator, setIsModerator] = useState(false);
   const [showModeratorQueue, setShowModeratorQueue] = useState(false);
   const [showCommunityGuidelines, setShowCommunityGuidelines] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks" | "moderation" | "deliberation">("discussions");
+  const [activeTab, setActiveTab] = useState<"discussions" | "fact-checks" | "moderation" | "deliberation" | "feedback">("discussions");
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -352,6 +354,15 @@ export default function Forum() {
                 onClick={() => setActiveTab("fact-checks")}
               >
                 Fact Checks
+              </button>
+              <button 
+                className={`pb-2 text-sm font-medium ${activeTab === "feedback" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("feedback")}
+              >
+                <div className="flex items-center gap-1.5">
+                  <BarChart4 className="h-4 w-4" />
+                  <span>Decision Feedback</span>
+                </div>
               </button>
               {isModerator && (
                 <button 
@@ -519,6 +530,8 @@ export default function Forum() {
           )}
           
           {activeTab === "fact-checks" && <FactCheckInterface />}
+          
+          {activeTab === "feedback" && <PastDecisionsList />}
           
           {activeTab === "moderation" && isModerator && <ModeratorQueue />}
           
