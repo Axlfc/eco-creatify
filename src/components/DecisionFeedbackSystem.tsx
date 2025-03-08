@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +90,7 @@ const DecisionFeedbackSystem: React.FC<DecisionFeedbackProps> = ({
   const [submittedFeedback, setSubmittedFeedback] = useState(false);
   
   const { toast } = useToast();
-  const { isAuthenticated, userId } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Fetch existing stats on component mount
   useEffect(() => {
@@ -100,19 +99,16 @@ const DecisionFeedbackSystem: React.FC<DecisionFeedbackProps> = ({
   }, [decisionId]);
 
   const checkSubmittedFeedback = async () => {
-    if (!isAuthenticated || !userId) return;
+    if (!isAuthenticated || !user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('decision_feedback')
-        .select('id')
-        .eq('decision_id', decisionId)
-        .eq('user_id', userId)
-        .single();
-        
-      if (data) {
-        setSubmittedFeedback(true);
-      }
+      // Since we don't have a decision_feedback table yet, we're using a mock check
+      // In a real implementation, this would query the database
+      console.log("Would check if user", user.id, "has submitted feedback for decision", decisionId);
+      
+      // Mock implementation - in a real app, this would be a database query
+      // For now, we'll just set submittedFeedback to false to allow testing
+      setSubmittedFeedback(false);
     } catch (error) {
       console.error("Error checking feedback submission:", error);
     }
@@ -216,7 +212,7 @@ const DecisionFeedbackSystem: React.FC<DecisionFeedbackProps> = ({
         lessonsLearned,
         suggestedAdjustments,
         demographicGroup: demographicGroup || customGroup,
-        userId
+        userId: user?.id
       });
       
       // Mock successful submission
