@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,19 +7,14 @@ import { StageRequirements } from "./StageRequirements";
 import { StageInputFields } from "./StageInputFields";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useTranslation } from "@/hooks/use-translation";
+import { StageRequirement } from "./DeliberationStages";
 
 interface StageParticipationProps {
   proposalId: string;
   currentStage: {
     id: string;
     name: string;
-    requirements: {
-      type: string;
-      value: number;
-      description: string;
-      current?: number;
-    }[];
+    requirements: StageRequirement[];
   };
   onParticipate: (data: any) => Promise<void>;
 }
