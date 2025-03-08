@@ -1,81 +1,86 @@
-
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Send } from "lucide-react";
-import { DeliberationStage } from "./DeliberationStages";
+import { Loader2 } from "lucide-react";
+import { StageRequirements } from "./StageRequirements";
+import { StageInputFields } from "./StageInputFields";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { StageInputFields } from "./StageInputFields";
-import { StageRequirements } from "./StageRequirements";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface StageParticipationProps {
   proposalId: string;
-  currentStage: DeliberationStage;
+  currentStage: {
+    id: string;
+    name: string;
+    requirements: {
+      type: string;
+      value: number;
+      description: string;
+      current?: number;
+    }[];
+  };
   onParticipate: (data: any) => Promise<void>;
 }
 
 const StageParticipation: React.FC<StageParticipationProps> = ({
   proposalId,
   currentStage,
-  onParticipate
+  onParticipate,
 }) => {
-  const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [language, setLanguage] = useState("en"); // Add language state
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!isAuthenticated) {
       toast({
         title: "Authentication required",
-        description: "Please sign in to participate in deliberations",
+        description: "Please sign in to participate",
         variant: "destructive",
       });
       return;
     }
 
-    if (currentStage.id === "problem-identification" || currentStage.id === "brainstorming") {
-      if (!title || !content) {
-        toast({
-          title: "Both fields required",
-          description: "Please provide both a title and details",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else if (!content) {
+    if (content.trim() === "") {
       toast({
-        title: "Empty content",
-        description: "Please write something before submitting",
+        title: "Input required",
+        description: "Please share your thoughts before submitting",
         variant: "destructive",
       });
       return;
     }
 
     setIsSubmitting(true);
-
+    
     try {
-      await onParticipate({
+      const participationData = {
         stageId: currentStage.id,
-        title: title || undefined,
+        title: title || undefined, // Only include title for stages that use it
         content,
-        userId: user?.id
-      });
+        language // Include language in the submission
+      };
+      
+      await onParticipate(participationData);
+      
+      // Reset form after successful submission
+      setTitle("");
+      setContent("");
       
       toast({
         title: "Contribution submitted",
-        description: "Your input has been added to the deliberation process",
+        description: "Thank you for your input on this stage!"
       });
-      
-      setContent("");
-      setTitle("");
     } catch (error) {
-      console.error("Error submitting contribution:", error);
+      console.error("Error submitting participation:", error);
       toast({
-        title: "Error",
-        description: "Failed to submit your contribution. Please try again.",
+        title: "Submission failed",
+        description: "There was a problem submitting your input. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -86,45 +91,41 @@ const StageParticipation: React.FC<StageParticipationProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <currentStage.icon className="h-5 w-5" />
-          Participate in {currentStage.name}
-        </CardTitle>
+        <CardTitle>Participate in this Stage</CardTitle>
         <CardDescription>
-          This stage ends in {Math.ceil((currentStage.endDate?.getTime() || 0 - Date.now()) / (1000 * 60 * 60 * 24))} days
+          Share your perspective on the {currentStage.name.toLowerCase()} stage
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <StageRequirements requirements={currentStage.requirements} />
-        
-        <div className="space-y-4">
-          <div className="text-sm">
-            Current participation: <Users className="h-3.5 w-3.5 inline ml-1" /> 
-            <span className="font-medium mx-1">
-              {currentStage.requirements.find(r => r.type === "participation")?.current || 0}
-            </span> 
-            participants
-          </div>
+        <form onSubmit={handleSubmit}>
+          <StageRequirements requirements={currentStage.requirements} />
           
-          <StageInputFields 
+          <StageInputFields
             stageId={currentStage.id}
             title={title}
             content={content}
+            language={language}
             onTitleChange={setTitle}
             onContentChange={setContent}
+            onLanguageChange={setLanguage}
           />
-        </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full mt-6"
+            disabled={isSubmitting || !isAuthenticated}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Perspective"
+            )}
+          </Button>
+        </form>
       </CardContent>
-      <CardFooter>
-        <Button 
-          className="w-full"
-          onClick={handleSubmit}
-          disabled={isSubmitting || !isAuthenticated}
-        >
-          <Send className="mr-2 h-4 w-4" />
-          Submit Contribution
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

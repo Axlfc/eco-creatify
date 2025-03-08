@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, MessageSquare, ThumbsUp, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TranslatableText } from "@/components/TranslatableText";
 
 interface Perspective {
   id: string;
@@ -16,6 +16,7 @@ interface Perspective {
   content: string;
   author: string;
   viewpoint: string;
+  language?: string;
 }
 
 interface DeliberationRoomProps {
@@ -45,20 +46,18 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Calculate reading progress percentage
     if (perspectives.length > 0) {
       const progress = (readPerspectives.size / perspectives.length) * 100;
       setReadingProgress(progress);
     }
   }, [readPerspectives, perspectives.length]);
 
-  // Mark a perspective as read after spending at least 30 seconds on it
   useEffect(() => {
     if (!activeTab) return;
     
     const timer = setTimeout(() => {
       setReadPerspectives(prev => new Set([...prev, activeTab]));
-    }, 10000); // 10 seconds for testing, use 30000 for production
+    }, 10000);
     
     return () => clearTimeout(timer);
   }, [activeTab]);
@@ -98,8 +97,6 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Here you would submit the comment to your database
-      // For now, we'll just simulate success
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
@@ -125,8 +122,12 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">{description}</p>
+            <CardTitle className="text-xl">
+              <TranslatableText text={title} />
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              <TranslatableText text={description} />
+            </p>
           </div>
           <Badge variant="outline" className="flex items-center gap-1">
             <Users size={14} />
@@ -150,7 +151,12 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
           <TabsList className="w-full grid grid-cols-3 mb-4">
             {perspectives.map((perspective) => (
               <TabsTrigger key={perspective.id} value={perspective.id} className="relative">
-                <span>{perspective.viewpoint}</span>
+                <span>
+                  <TranslatableText 
+                    text={perspective.viewpoint} 
+                    sourceLanguage={perspective.language || "en"}
+                  />
+                </span>
                 {readPerspectives.has(perspective.id) && (
                   <BookOpen className="h-3 w-3 absolute top-1 right-1 text-green-500" />
                 )}
@@ -162,12 +168,22 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
             <TabsContent key={perspective.id} value={perspective.id}>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">{perspective.title}</CardTitle>
-                  <div className="text-sm text-muted-foreground">By {perspective.author}</div>
+                  <CardTitle className="text-lg">
+                    <TranslatableText 
+                      text={perspective.title} 
+                      sourceLanguage={perspective.language || "en"}
+                    />
+                  </CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    By {perspective.author}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="prose max-w-none">
-                    <p>{perspective.content}</p>
+                    <TranslatableText 
+                      text={perspective.content}
+                      sourceLanguage={perspective.language || "en"}
+                    />
                   </div>
                 </CardContent>
               </Card>

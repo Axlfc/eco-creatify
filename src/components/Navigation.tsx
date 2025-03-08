@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, UserPlus, BookOpen, MessageSquare, Vote, Award, LayoutDashboard, GitMerge } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,8 +62,8 @@ const Navigation: React.FC = () => {
   ];
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
         <Link to="/" className="flex items-center gap-2">
           <BookOpen className="h-6 w-6" />
           <span className="text-lg font-medium">PeaceMedia</span>
@@ -85,7 +85,9 @@ const Navigation: React.FC = () => {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <LanguageSelector />
+
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
