@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   ConflictResolution,
@@ -324,7 +325,7 @@ describe("Conflict Resolution System End-to-End", () => {
           ],
           stage_progress: {
             ...testConflict.progress.stage_progress,
-            [Stage.CONSENSUS]: 100
+            [Stage.Consensus]: 100
           }
         }
       });
@@ -336,8 +337,8 @@ describe("Conflict Resolution System End-to-End", () => {
       );
       
       expect(updatedConflict.consensusReached).toBe(true);
-      expect(updatedConflict.progress.completed_stages).toContain(Stage.CONSENSUS);
-      expect(updatedConflict.progress.stage_progress[Stage.CONSENSUS]).toBe(100);
+      expect(updatedConflict.progress.completed_stages).toContain(Stage.Consensus);
+      expect(updatedConflict.progress.stage_progress[Stage.Consensus]).toBe(100);
       
       console.log("Consensus building stage test completed");
     });
@@ -513,33 +514,34 @@ describe("Conflict Resolution System End-to-End", () => {
       const fixtures = testUtils.createConflictFixtures();
       
       // Test with a policy conflict
+      const policyFixture = fixtures.policyConflict;
       (conflictResolutionService.createConflictResolution as jest.Mock).mockResolvedValue({
         id: "policy-conflict-id",
-        ...fixtures.policyConflict,
-        createdBy: testUserId,
+        title: policyFixture.title,
+        description: policyFixture.description,
+        partyA: policyFixture.partyA,
+        partyB: policyFixture.partyB,
+        userId: testUserId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         positionA: {
-          content: fixtures.policyConflict.positionA,
-          author: testUserId,
-          createdAt: new Date().toISOString()
+          content: policyFixture.positionA,
+          createdBy: testUserId
         },
         positionB: {
-          content: fixtures.policyConflict.positionB,
-          author: testUserId,
-          createdAt: new Date().toISOString()
+          content: policyFixture.positionB,
+          createdBy: testUserId
         },
         progress: {
           current_stage: Stage.Articulation,
           completed_stages: [],
-          lastModified: new Date().toISOString(),
           stage_progress: {
             [Stage.Articulation]: 100,
             [Stage.CommonGround]: 0,
-            [Stage.DISAGREEMENT]: 0,
-            [Stage.EVIDENCE]: 0,
-            [Stage.SOLUTION]: 0,
-            [Stage.CONSENSUS]: 0
+            [Stage.Disagreement]: 0,
+            [Stage.Evidence]: 0,
+            [Stage.Solution]: 0,
+            [Stage.Consensus]: 0
           }
         },
         consensusReached: false,
@@ -547,39 +549,55 @@ describe("Conflict Resolution System End-to-End", () => {
       });
       
       // Create a policy conflict
-      const policyConflict = await conflictResolutionService.createConflictResolution(fixtures.policyConflict);
+      const policyConflictData = {
+        title: policyFixture.title,
+        description: policyFixture.description,
+        partyA: policyFixture.partyA,
+        partyB: policyFixture.partyB,
+        positionA: {
+          content: policyFixture.positionA,
+          createdBy: testUserId
+        },
+        positionB: {
+          content: policyFixture.positionB,
+          createdBy: testUserId
+        },
+        userId: testUserId
+      };
+      const policyConflict = await conflictResolutionService.createConflictResolution(policyConflictData);
       
       expect(policyConflict).toBeTruthy();
       expect(policyConflict.title).toContain("Education Policy Dispute");
       
       // Test with a community conflict
+      const communityFixture = fixtures.communityConflict;
       (conflictResolutionService.createConflictResolution as jest.Mock).mockResolvedValue({
         id: "community-conflict-id",
-        ...fixtures.communityConflict,
-        createdBy: testUserId,
+        title: communityFixture.title,
+        description: communityFixture.description,
+        partyA: communityFixture.partyA,
+        partyB: communityFixture.partyB,
+        userId: testUserId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         positionA: {
-          content: fixtures.communityConflict.positionA,
-          author: testUserId,
-          createdAt: new Date().toISOString()
+          content: communityFixture.positionA,
+          createdBy: testUserId
         },
         positionB: {
-          content: fixtures.communityConflict.positionB,
-          author: testUserId,
-          createdAt: new Date().toISOString()
+          content: communityFixture.positionB,
+          createdBy: testUserId
         },
         progress: {
           current_stage: Stage.Articulation,
           completed_stages: [],
-          lastModified: new Date().toISOString(),
           stage_progress: {
             [Stage.Articulation]: 100,
             [Stage.CommonGround]: 0,
-            [Stage.DISAGREEMENT]: 0,
-            [Stage.EVIDENCE]: 0,
-            [Stage.SOLUTION]: 0,
-            [Stage.CONSENSUS]: 0
+            [Stage.Disagreement]: 0,
+            [Stage.Evidence]: 0,
+            [Stage.Solution]: 0,
+            [Stage.Consensus]: 0
           }
         },
         consensusReached: false,
@@ -587,7 +605,22 @@ describe("Conflict Resolution System End-to-End", () => {
       });
       
       // Create a community conflict
-      const communityConflict = await conflictResolutionService.createConflictResolution(fixtures.communityConflict);
+      const communityConflictData = {
+        title: communityFixture.title,
+        description: communityFixture.description,
+        partyA: communityFixture.partyA,
+        partyB: communityFixture.partyB,
+        positionA: {
+          content: communityFixture.positionA,
+          createdBy: testUserId
+        },
+        positionB: {
+          content: communityFixture.positionB,
+          createdBy: testUserId
+        },
+        userId: testUserId
+      };
+      const communityConflict = await conflictResolutionService.createConflictResolution(communityConflictData);
       
       expect(communityConflict).toBeTruthy();
       expect(communityConflict.title).toContain("Community Resource Allocation");

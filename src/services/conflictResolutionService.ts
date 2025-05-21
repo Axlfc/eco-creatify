@@ -179,18 +179,18 @@ export async function updateConflictResolution(id: string, updates: Partial<Conf
     // Convert from our application structure to the database structure
     const dbUpdates: any = {};
     
-    if (updates.title) dbUpdates.title = updates.title;
-    if (updates.description) dbUpdates.description = updates.description;
-    if (updates.partyA) dbUpdates.party_a = updates.partyA;
-    if (updates.partyB) dbUpdates.party_b = updates.partyB;
-    if (updates.positionA) dbUpdates.position_a = updates.positionA;
-    if (updates.positionB) dbUpdates.position_b = updates.positionB;
-    if (updates.commonGround) dbUpdates.common_ground = updates.commonGround;
-    if (updates.disagreementPoints) dbUpdates.disagreement_points = updates.disagreementPoints;
-    if (updates.evidenceList) dbUpdates.evidence_list = updates.evidenceList;
-    if (updates.proposedSolutions) dbUpdates.proposed_solutions = updates.proposedSolutions;
-    if (updates.mediationRequest) dbUpdates.mediation_request = updates.mediationRequest;
-    if (updates.progress) dbUpdates.progress = updates.progress;
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.partyA !== undefined) dbUpdates.party_a = updates.partyA;
+    if (updates.partyB !== undefined) dbUpdates.party_b = updates.partyB;
+    if (updates.positionA !== undefined) dbUpdates.position_a = updates.positionA;
+    if (updates.positionB !== undefined) dbUpdates.position_b = updates.positionB;
+    if (updates.commonGround !== undefined) dbUpdates.common_ground = updates.commonGround;
+    if (updates.disagreementPoints !== undefined) dbUpdates.disagreement_points = updates.disagreementPoints;
+    if (updates.evidenceList !== undefined) dbUpdates.evidence_list = updates.evidenceList;
+    if (updates.proposedSolutions !== undefined) dbUpdates.proposed_solutions = updates.proposedSolutions;
+    if (updates.mediationRequest !== undefined) dbUpdates.mediation_request = updates.mediationRequest;
+    if (updates.progress !== undefined) dbUpdates.progress = updates.progress;
     if (updates.consensusReached !== undefined) dbUpdates.consensus_reached = updates.consensusReached;
     if (updates.isPublic !== undefined) dbUpdates.is_public = updates.isPublic;
     
@@ -229,6 +229,126 @@ export async function deleteConflictResolution(id: string): Promise<void> {
   }
 }
 
+// Specific method implementations for use in tests
+async function updateCommonGround(id: string, points: string[]): Promise<ConflictResolution> {
+  const resolution = await getConflictResolutionById(id);
+  const commonGround: CommonGround = {
+    points,
+    agreedBy: [resolution.userId],
+    createdAt: new Date().toISOString()
+  };
+  
+  await updateConflictResolution(id, { 
+    commonGround,
+    progress: {
+      ...resolution.progress,
+      current_stage: Stage.Disagreement,
+      completed_stages: [...resolution.progress.completed_stages, Stage.CommonGround],
+      stage_progress: {
+        ...resolution.progress.stage_progress,
+        [Stage.CommonGround]: 100
+      }
+    } 
+  });
+  
+  return getConflictResolutionById(id);
+}
+
+async function updateDisagreementPoints(id: string, points: DisagreementPoint[]): Promise<ConflictResolution> {
+  const resolution = await getConflictResolutionById(id);
+  
+  await updateConflictResolution(id, { 
+    disagreementPoints: points,
+    progress: {
+      ...resolution.progress,
+      current_stage: Stage.Evidence,
+      completed_stages: [...resolution.progress.completed_stages, Stage.Disagreement],
+      stage_progress: {
+        ...resolution.progress.stage_progress,
+        [Stage.Disagreement]: 100
+      }
+    } 
+  });
+  
+  return getConflictResolutionById(id);
+}
+
+async function addEvidence(id: string, evidence: Evidence[]): Promise<ConflictResolution> {
+  const resolution = await getConflictResolutionById(id);
+  
+  await updateConflictResolution(id, { 
+    evidenceList: evidence,
+    progress: {
+      ...resolution.progress,
+      current_stage: Stage.Solution,
+      completed_stages: [...resolution.progress.completed_stages, Stage.Evidence],
+      stage_progress: {
+        ...resolution.progress.stage_progress,
+        [Stage.Evidence]: 100
+      }
+    } 
+  });
+  
+  return getConflictResolutionById(id);
+}
+
+async function proposeSolutions(id: string, solutions: ProposedSolution[]): Promise<ConflictResolution> {
+  const resolution = await getConflictResolutionById(id);
+  
+  await updateConflictResolution(id, { 
+    proposedSolutions: solutions,
+    progress: {
+      ...resolution.progress,
+      current_stage: Stage.Consensus,
+      completed_stages: [...resolution.progress.completed_stages, Stage.Solution],
+      stage_progress: {
+        ...resolution.progress.stage_progress,
+        [Stage.Solution]: 100
+      }
+    } 
+  });
+  
+  return getConflictResolutionById(id);
+}
+
+async function buildConsensus(id: string, solutionDescription: string): Promise<ConflictResolution> {
+  const resolution = await getConflictResolutionById(id);
+  
+  await updateConflictResolution(id, { 
+    consensusReached: true,
+    progress: {
+      ...resolution.progress,
+      completed_stages: [...resolution.progress.completed_stages, Stage.Consensus],
+      stage_progress: {
+        ...resolution.progress.stage_progress,
+        [Stage.Consensus]: 100
+      }
+    } 
+  });
+  
+  return getConflictResolutionById(id);
+}
+
+async function getProgressHistory(id: string): Promise<any[]> {
+  // Mock implementation for tests
+  return [];
+}
+
+async function getVisualizationData(id: string): Promise<any> {
+  // Mock implementation for tests
+  return {};
+}
+
+async function requestMediation(id: string, reason: string): Promise<ConflictResolution> {
+  // Mock implementation for tests
+  return {} as ConflictResolution;
+}
+
+async function assignMediator(id: string, mediatorId: string): Promise<ConflictResolution> {
+  // Mock implementation for tests
+  return {} as ConflictResolution;
+}
+
 // Create a single export for mocking in tests
 export const conflictResolutionService = {
   getConflictResolutions,
@@ -237,14 +357,14 @@ export const conflictResolutionService = {
   updateConflictResolution,
   deleteConflictResolution,
   // Mock methods for tests
-  updateCommonGround: async () => ({} as ConflictResolution),
-  updateDisagreementPoints: async () => ({} as ConflictResolution),
-  addEvidence: async () => ({} as ConflictResolution),
-  proposeolutions: async () => ({} as ConflictResolution),
-  buildConsensus: async () => ({} as ConflictResolution),
-  getProgressHistory: async () => [] as any[],
-  getVisualizationData: async () => ({} as any),
-  requestMediation: async () => ({} as ConflictResolution),
-  assignMediator: async () => ({} as ConflictResolution),
+  updateCommonGround,
+  updateDisagreementPoints,
+  addEvidence,
+  proposeSolutions, // Fixed typo in the name
+  buildConsensus,
+  getProgressHistory,
+  getVisualizationData,
+  requestMediation,
+  assignMediator,
   getConflictResolution: getConflictResolutionById
 };
