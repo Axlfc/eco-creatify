@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,9 @@ import {
   Diff
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { createConflictResolution } from "@/services/conflictResolutionService";
+import { Stage } from "@/types/conflictResolution";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConflictResolutionFormProps {
   onCancel: () => void;
@@ -109,16 +111,64 @@ const ConflictResolutionForm = ({ onCancel, onSubmit }: ConflictResolutionFormPr
     setStep(Math.max(1, step - 1));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateCurrentStep()) return;
     
-    // Here we would normally submit the data to the server
-    toast({
-      title: "Conflict resolution submitted",
-      description: "Your conflict resolution template has been submitted for review.",
-    });
-    
-    onSubmit();
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "You need to be logged in to submit a conflict resolution.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create the conflict resolution in our database
+      await createConflictResolution({
+        title,
+        description: "Conflict resolution process",
+        partyA,
+        partyB,
+        details: {
+          positionA: {
+            content: positionA,
+            createdBy: user.id
+          },
+          positionB: {
+            content: positionB,
+            createdBy: user.id
+          },
+          progress: {
+            current_stage: Stage.Articulation,
+            completed_stages: [],
+            stage_progress: {}
+          }
+        },
+        commonGround: { content: commonGround },
+        proposedSolutions: { content: proposedSolution },
+        consensusReached: false,
+        isPublic: true,
+        userId: user.id
+      });
+      
+      toast({
+        title: "Conflict resolution submitted",
+        description: "Your conflict resolution template has been submitted.",
+      });
+      
+      onSubmit();
+    } catch (error) {
+      console.error("Error submitting conflict resolution:", error);
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting your conflict resolution.",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderStep = () => {
