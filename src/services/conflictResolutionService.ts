@@ -360,7 +360,7 @@ export const conflictResolutionService = {
   updateCommonGround,
   updateDisagreementPoints,
   addEvidence,
-  proposeSolutions, // Fixed typo in the name
+  proposeSolutions,
   buildConsensus,
   getProgressHistory,
   getVisualizationData,
