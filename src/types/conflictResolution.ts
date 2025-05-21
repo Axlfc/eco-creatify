@@ -3,6 +3,15 @@
  * Types for the conflict resolution system
  */
 
+export enum Stage {
+  Articulation = "articulation",
+  CommonGround = "commonGround",
+  Disagreement = "disagreement",
+  Evidence = "evidence",
+  Solution = "solution",
+  Consensus = "consensus"
+}
+
 export enum ConflictStage {
   ARTICULATION = "articulation",
   COMMON_GROUND = "commonGround",
@@ -18,6 +27,11 @@ export enum MediationStatus {
   IN_PROGRESS = "inProgress",
   COMPLETED = "completed",
   REJECTED = "rejected"
+}
+
+export interface ConflictPosition {
+  content: string;
+  createdBy?: string;
 }
 
 export interface Position {
@@ -66,32 +80,30 @@ export interface MediationRequest {
 }
 
 export interface ConflictResolutionProgress {
-  currentStage: ConflictStage;
-  completedStages: ConflictStage[];
-  lastModified: string;
-  stageProgress: Record<ConflictStage, number>; // 0-100 percentage
+  current_stage: Stage;
+  completed_stages: Stage[];
+  stage_progress: Record<string, number>; // 0-100 percentage
 }
 
 export interface ConflictResolution {
   id: string;
   title: string;
   description?: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
   partyA: string;
   partyB: string;
-  positionA: Position;
-  positionB: Position;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  positionA: ConflictPosition;
+  positionB: ConflictPosition;
+  progress: ConflictResolutionProgress;
   commonGround?: CommonGround;
   disagreementPoints?: DisagreementPoint[];
   evidenceList?: Evidence[];
   proposedSolutions?: ProposedSolution[];
   mediationRequest?: MediationRequest;
-  progress: ConflictResolutionProgress;
   consensusReached: boolean;
   isPublic: boolean;
-  tags?: string[];
 }
 
 export interface ConflictResolutionFormData {

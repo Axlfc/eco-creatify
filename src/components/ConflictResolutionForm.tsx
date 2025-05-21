@@ -133,23 +133,30 @@ const ConflictResolutionForm = ({ onCancel, onSubmit }: ConflictResolutionFormPr
         description: "Conflict resolution process",
         partyA,
         partyB,
-        details: {
-          positionA: {
-            content: positionA,
-            createdBy: user.id
-          },
-          positionB: {
-            content: positionB,
-            createdBy: user.id
-          },
-          progress: {
-            current_stage: Stage.Articulation,
-            completed_stages: [],
-            stage_progress: {}
-          }
+        positionA: {
+          content: positionA,
+          createdBy: user.id
         },
-        commonGround: { content: commonGround },
-        proposedSolutions: { content: proposedSolution },
+        positionB: {
+          content: positionB,
+          createdBy: user.id
+        },
+        progress: {
+          current_stage: Stage.Articulation,
+          completed_stages: [],
+          stage_progress: {}
+        },
+        commonGround: {
+          points: [commonGround],
+          agreedBy: [user.id],
+          createdAt: new Date().toISOString()
+        },
+        proposedSolutions: [{
+          description: proposedSolution,
+          addressesPoints: [],
+          proposedBy: user.id,
+          createdAt: new Date().toISOString()
+        }],
         consensusReached: false,
         isPublic: true,
         userId: user.id

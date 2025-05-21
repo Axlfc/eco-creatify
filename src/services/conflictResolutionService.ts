@@ -1,6 +1,11 @@
 
 import { supabase, ConflictResolutionData } from '@/integrations/supabase/client';
-import { ConflictResolution, ConflictResolutionProgress, Stage, ConflictPosition } from '@/types/conflictResolution';
+import { 
+  ConflictResolution, 
+  ConflictResolutionProgress, 
+  Stage, 
+  ConflictPosition 
+} from '@/types/conflictResolution';
 
 export interface ConflictResolutionWithDetails extends ConflictResolution {
   details: {
@@ -10,7 +15,7 @@ export interface ConflictResolutionWithDetails extends ConflictResolution {
   }
 }
 
-export async function getConflictResolutions(): Promise<ConflictResolutionWithDetails[]> {
+export async function getConflictResolutions(): Promise<ConflictResolution[]> {
   try {
     const { data, error } = await supabase
       .from('conflict_resolutions')
@@ -26,7 +31,7 @@ export async function getConflictResolutions(): Promise<ConflictResolutionWithDe
     }
     
     // Transform the data into our application's expected structure
-    return data.map((item: ConflictResolutionData) => ({
+    return data.map((item) => ({
       id: item.id,
       title: item.title,
       description: item.description,
@@ -35,11 +40,9 @@ export async function getConflictResolutions(): Promise<ConflictResolutionWithDe
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       userId: item.created_by || '',
-      details: {
-        positionA: item.position_a as ConflictPosition,
-        positionB: item.position_b as ConflictPosition,
-        progress: item.progress as ConflictResolutionProgress,
-      },
+      positionA: item.position_a as ConflictPosition,
+      positionB: item.position_b as ConflictPosition,
+      progress: item.progress as ConflictResolutionProgress,
       commonGround: item.common_ground,
       disagreementPoints: item.disagreement_points,
       evidenceList: item.evidence_list,
@@ -54,7 +57,7 @@ export async function getConflictResolutions(): Promise<ConflictResolutionWithDe
   }
 }
 
-export async function getConflictResolutionById(id: string): Promise<ConflictResolutionWithDetails> {
+export async function getConflictResolutionById(id: string): Promise<ConflictResolution> {
   try {
     const { data, error } = await supabase
       .from('conflict_resolutions')
@@ -81,11 +84,9 @@ export async function getConflictResolutionById(id: string): Promise<ConflictRes
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       userId: data.created_by || '',
-      details: {
-        positionA: data.position_a as ConflictPosition,
-        positionB: data.position_b as ConflictPosition,
-        progress: data.progress as ConflictResolutionProgress,
-      },
+      positionA: data.position_a as ConflictPosition,
+      positionB: data.position_b as ConflictPosition,
+      progress: data.progress as ConflictResolutionProgress,
       commonGround: data.common_ground,
       disagreementPoints: data.disagreement_points,
       evidenceList: data.evidence_list,
@@ -110,21 +111,21 @@ export async function createConflictResolution(resolution: Partial<ConflictResol
         description: resolution.description,
         party_a: resolution.partyA,
         party_b: resolution.partyB,
-        position_a: resolution.details?.positionA,
-        position_b: resolution.details?.positionB,
+        position_a: resolution.positionA,
+        position_b: resolution.positionB,
         common_ground: resolution.commonGround,
         disagreement_points: resolution.disagreementPoints,
         evidence_list: resolution.evidenceList,
         proposed_solutions: resolution.proposedSolutions,
         mediation_request: resolution.mediationRequest,
-        progress: resolution.details?.progress || {
+        progress: resolution.progress || {
           current_stage: Stage.Articulation,
           completed_stages: [],
           stage_progress: {}
         },
         consensus_reached: resolution.consensusReached,
         is_public: resolution.isPublic,
-        created_by: supabase.auth.getUser().then(res => res.data.user?.id)
+        created_by: resolution.userId
       })
       .select('id')
       .single();
@@ -154,14 +155,14 @@ export async function updateConflictResolution(id: string, updates: Partial<Conf
     if (updates.description) dbUpdates.description = updates.description;
     if (updates.partyA) dbUpdates.party_a = updates.partyA;
     if (updates.partyB) dbUpdates.party_b = updates.partyB;
-    if (updates.details?.positionA) dbUpdates.position_a = updates.details.positionA;
-    if (updates.details?.positionB) dbUpdates.position_b = updates.details.positionB;
+    if (updates.positionA) dbUpdates.position_a = updates.positionA;
+    if (updates.positionB) dbUpdates.position_b = updates.positionB;
     if (updates.commonGround) dbUpdates.common_ground = updates.commonGround;
     if (updates.disagreementPoints) dbUpdates.disagreement_points = updates.disagreementPoints;
     if (updates.evidenceList) dbUpdates.evidence_list = updates.evidenceList;
     if (updates.proposedSolutions) dbUpdates.proposed_solutions = updates.proposedSolutions;
     if (updates.mediationRequest) dbUpdates.mediation_request = updates.mediationRequest;
-    if (updates.details?.progress) dbUpdates.progress = updates.details.progress;
+    if (updates.progress) dbUpdates.progress = updates.progress;
     if (updates.consensusReached !== undefined) dbUpdates.consensus_reached = updates.consensusReached;
     if (updates.isPublic !== undefined) dbUpdates.is_public = updates.isPublic;
     
