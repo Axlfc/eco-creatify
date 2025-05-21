@@ -1,10 +1,15 @@
 
-import { supabase, ConflictResolutionData } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ConflictResolution, 
   ConflictResolutionProgress, 
   Stage, 
-  ConflictPosition 
+  ConflictPosition,
+  CommonGround,
+  DisagreementPoint,
+  Evidence,
+  ProposedSolution,
+  MediationRequest
 } from '@/types/conflictResolution';
 
 export interface ConflictResolutionWithDetails extends ConflictResolution {
@@ -13,6 +18,21 @@ export interface ConflictResolutionWithDetails extends ConflictResolution {
     positionB: ConflictPosition;
     progress: ConflictResolutionProgress;
   }
+}
+
+// Helper function to safely cast JSON data to specific types
+function safeCast<T>(data: any, defaultValue?: T): T {
+  if (!data) {
+    return defaultValue as T;
+  }
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data) as T;
+    } catch (e) {
+      return defaultValue as T;
+    }
+  }
+  return data as T;
 }
 
 export async function getConflictResolutions(): Promise<ConflictResolution[]> {
@@ -40,14 +60,18 @@ export async function getConflictResolutions(): Promise<ConflictResolution[]> {
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       userId: item.created_by || '',
-      positionA: item.position_a as ConflictPosition,
-      positionB: item.position_b as ConflictPosition,
-      progress: item.progress as ConflictResolutionProgress,
-      commonGround: item.common_ground,
-      disagreementPoints: item.disagreement_points,
-      evidenceList: item.evidence_list,
-      proposedSolutions: item.proposed_solutions,
-      mediationRequest: item.mediation_request,
+      positionA: safeCast<ConflictPosition>(item.position_a, { content: '' }),
+      positionB: safeCast<ConflictPosition>(item.position_b, { content: '' }),
+      progress: safeCast<ConflictResolutionProgress>(item.progress, {
+        current_stage: Stage.Articulation,
+        completed_stages: [],
+        stage_progress: {}
+      }),
+      commonGround: safeCast<CommonGround>(item.common_ground),
+      disagreementPoints: safeCast<DisagreementPoint[]>(item.disagreement_points, []),
+      evidenceList: safeCast<Evidence[]>(item.evidence_list, []),
+      proposedSolutions: safeCast<ProposedSolution[]>(item.proposed_solutions, []),
+      mediationRequest: safeCast<MediationRequest>(item.mediation_request),
       consensusReached: item.consensus_reached || false,
       isPublic: item.is_public || false
     }));
@@ -84,14 +108,18 @@ export async function getConflictResolutionById(id: string): Promise<ConflictRes
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       userId: data.created_by || '',
-      positionA: data.position_a as ConflictPosition,
-      positionB: data.position_b as ConflictPosition,
-      progress: data.progress as ConflictResolutionProgress,
-      commonGround: data.common_ground,
-      disagreementPoints: data.disagreement_points,
-      evidenceList: data.evidence_list,
-      proposedSolutions: data.proposed_solutions,
-      mediationRequest: data.mediation_request,
+      positionA: safeCast<ConflictPosition>(data.position_a, { content: '' }),
+      positionB: safeCast<ConflictPosition>(data.position_b, { content: '' }),
+      progress: safeCast<ConflictResolutionProgress>(data.progress, {
+        current_stage: Stage.Articulation,
+        completed_stages: [],
+        stage_progress: {}
+      }),
+      commonGround: safeCast<CommonGround>(data.common_ground),
+      disagreementPoints: safeCast<DisagreementPoint[]>(data.disagreement_points, []),
+      evidenceList: safeCast<Evidence[]>(data.evidence_list, []),
+      proposedSolutions: safeCast<ProposedSolution[]>(data.proposed_solutions, []),
+      mediationRequest: safeCast<MediationRequest>(data.mediation_request),
       consensusReached: data.consensus_reached || false,
       isPublic: data.is_public || false
     };
@@ -200,3 +228,23 @@ export async function deleteConflictResolution(id: string): Promise<void> {
     throw error;
   }
 }
+
+// Create a single export for mocking in tests
+export const conflictResolutionService = {
+  getConflictResolutions,
+  getConflictResolutionById,
+  createConflictResolution,
+  updateConflictResolution,
+  deleteConflictResolution,
+  // Mock methods for tests
+  updateCommonGround: async () => ({} as ConflictResolution),
+  updateDisagreementPoints: async () => ({} as ConflictResolution),
+  addEvidence: async () => ({} as ConflictResolution),
+  proposeolutions: async () => ({} as ConflictResolution),
+  buildConsensus: async () => ({} as ConflictResolution),
+  getProgressHistory: async () => [] as any[],
+  getVisualizationData: async () => ({} as any),
+  requestMediation: async () => ({} as ConflictResolution),
+  assignMediator: async () => ({} as ConflictResolution),
+  getConflictResolution: getConflictResolutionById
+};

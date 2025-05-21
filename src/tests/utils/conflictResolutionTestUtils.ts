@@ -1,6 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ConflictResolution, ConflictResolutionFormData, ConflictStage } from "@/types/conflictResolution";
+import { 
+  ConflictResolution, 
+  ConflictResolutionFormData, 
+  ConflictStage,
+  ConflictPosition,
+  Stage
+} from "@/types/conflictResolution";
 
 const TEST_PREFIX = "TEST_E2E_";
 
@@ -46,38 +52,35 @@ export const createTestConflictResolution = async (
   // Mock the database insert operation
   const mockResolution: ConflictResolution = {
     id: "test-conflict-" + Date.now().toString(),
-    createdBy: userId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     consensusReached: false,
     isPublic: true,
+    userId: userId,
     progress: {
-      currentStage: ConflictStage.ARTICULATION,
-      completedStages: [],
-      lastModified: new Date().toISOString(),
-      stageProgress: {
-        [ConflictStage.ARTICULATION]: 100,
-        [ConflictStage.COMMON_GROUND]: 0,
-        [ConflictStage.DISAGREEMENT]: 0,
-        [ConflictStage.EVIDENCE]: 0,
-        [ConflictStage.SOLUTION]: 0,
-        [ConflictStage.CONSENSUS]: 0
+      current_stage: Stage.Articulation,
+      completed_stages: [],
+      stage_progress: {
+        [Stage.Articulation]: 100,
+        [Stage.CommonGround]: 0,
+        [Stage.Disagreement]: 0,
+        [Stage.Evidence]: 0,
+        [Stage.Solution]: 0,
+        [Stage.Consensus]: 0
       }
     },
     partyA: formData.partyA,
     partyB: formData.partyB,
     positionA: {
       content: formData.positionA,
-      author: userId,
-      createdAt: new Date().toISOString()
+      createdBy: userId
     },
     positionB: {
       content: formData.positionB,
-      author: userId,
-      createdAt: new Date().toISOString()
+      createdBy: userId
     },
     title: formData.title,
-    description: formData.description
+    description: formData.description || ""
   };
 
   (supabase.from as jest.Mock).mockReturnValue({

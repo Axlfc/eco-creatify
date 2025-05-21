@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import {
   ConflictResolution,
@@ -7,7 +6,8 @@ import {
   DisagreementPoint,
   Evidence,
   ProposedSolution,
-  MediationStatus
+  MediationStatus,
+  Stage
 } from "@/types/conflictResolution";
 import * as testUtils from "./utils/conflictResolutionTestUtils";
 
@@ -41,7 +41,7 @@ jest.mock("@/integrations/supabase/client", () => ({
   }
 }));
 
-// Mock conflict resolution service (we'll create this later)
+// Mock conflict resolution service
 import { conflictResolutionService } from "../services/conflictResolutionService";
 jest.mock("../services/conflictResolutionService");
 
@@ -75,8 +75,8 @@ describe("Conflict Resolution System End-to-End", () => {
       expect(testConflict).toBeTruthy();
       expect(testConflict.positionA.content).toBe(fixtures.environmentalConflict.positionA);
       expect(testConflict.positionB.content).toBe(fixtures.environmentalConflict.positionB);
-      expect(testConflict.progress.currentStage).toBe(ConflictStage.ARTICULATION);
-      expect(testConflict.progress.stageProgress[ConflictStage.ARTICULATION]).toBe(100);
+      expect(testConflict.progress.current_stage).toBe(Stage.Articulation);
+      expect(testConflict.progress.stage_progress[Stage.Articulation]).toBe(100);
       
       console.log("Articulation stage test completed");
     });
@@ -102,11 +102,11 @@ describe("Conflict Resolution System End-to-End", () => {
         commonGround,
         progress: {
           ...testConflict.progress,
-          currentStage: ConflictStage.DISAGREEMENT,
-          completedStages: [ConflictStage.ARTICULATION, ConflictStage.COMMON_GROUND],
-          stageProgress: {
-            ...testConflict.progress.stageProgress,
-            [ConflictStage.COMMON_GROUND]: 100
+          current_stage: Stage.Disagreement,
+          completed_stages: [Stage.Articulation, Stage.CommonGround],
+          stage_progress: {
+            ...testConflict.progress.stage_progress,
+            [Stage.CommonGround]: 100
           }
         }
       });
@@ -119,8 +119,8 @@ describe("Conflict Resolution System End-to-End", () => {
       
       expect(updatedConflict.commonGround).toBeTruthy();
       expect(updatedConflict.commonGround?.points.length).toBe(4);
-      expect(updatedConflict.progress.currentStage).toBe(ConflictStage.DISAGREEMENT);
-      expect(updatedConflict.progress.stageProgress[ConflictStage.COMMON_GROUND]).toBe(100);
+      expect(updatedConflict.progress.current_stage).toBe(Stage.Disagreement);
+      expect(updatedConflict.progress.stage_progress[Stage.CommonGround]).toBe(100);
       
       // Update our test object
       testConflict = updatedConflict;
@@ -153,15 +153,15 @@ describe("Conflict Resolution System End-to-End", () => {
         disagreementPoints,
         progress: {
           ...testConflict.progress,
-          currentStage: ConflictStage.EVIDENCE,
-          completedStages: [
-            ConflictStage.ARTICULATION, 
-            ConflictStage.COMMON_GROUND, 
-            ConflictStage.DISAGREEMENT
+          current_stage: Stage.Evidence,
+          completed_stages: [
+            Stage.Articulation, 
+            Stage.CommonGround, 
+            Stage.Disagreement
           ],
-          stageProgress: {
-            ...testConflict.progress.stageProgress,
-            [ConflictStage.DISAGREEMENT]: 100
+          stage_progress: {
+            ...testConflict.progress.stage_progress,
+            [Stage.Disagreement]: 100
           }
         }
       });
@@ -174,8 +174,8 @@ describe("Conflict Resolution System End-to-End", () => {
       
       expect(updatedConflict.disagreementPoints).toBeTruthy();
       expect(updatedConflict.disagreementPoints?.length).toBe(2);
-      expect(updatedConflict.progress.currentStage).toBe(ConflictStage.EVIDENCE);
-      expect(updatedConflict.progress.stageProgress[ConflictStage.DISAGREEMENT]).toBe(100);
+      expect(updatedConflict.progress.current_stage).toBe(Stage.Evidence);
+      expect(updatedConflict.progress.stage_progress[Stage.Disagreement]).toBe(100);
       
       // Update our test object
       testConflict = updatedConflict;
@@ -214,16 +214,16 @@ describe("Conflict Resolution System End-to-End", () => {
         evidenceList,
         progress: {
           ...testConflict.progress,
-          currentStage: ConflictStage.SOLUTION,
-          completedStages: [
-            ConflictStage.ARTICULATION, 
-            ConflictStage.COMMON_GROUND, 
-            ConflictStage.DISAGREEMENT,
-            ConflictStage.EVIDENCE
+          current_stage: Stage.Solution,
+          completed_stages: [
+            Stage.Articulation, 
+            Stage.CommonGround, 
+            Stage.Disagreement,
+            Stage.Evidence
           ],
-          stageProgress: {
-            ...testConflict.progress.stageProgress,
-            [ConflictStage.EVIDENCE]: 100
+          stage_progress: {
+            ...testConflict.progress.stage_progress,
+            [Stage.Evidence]: 100
           }
         }
       });
@@ -236,8 +236,8 @@ describe("Conflict Resolution System End-to-End", () => {
       
       expect(updatedConflict.evidenceList).toBeTruthy();
       expect(updatedConflict.evidenceList?.length).toBe(2);
-      expect(updatedConflict.progress.currentStage).toBe(ConflictStage.SOLUTION);
-      expect(updatedConflict.progress.stageProgress[ConflictStage.EVIDENCE]).toBe(100);
+      expect(updatedConflict.progress.current_stage).toBe(Stage.Solution);
+      expect(updatedConflict.progress.stage_progress[Stage.Evidence]).toBe(100);
       
       // Update our test object
       testConflict = updatedConflict;
@@ -271,31 +271,31 @@ describe("Conflict Resolution System End-to-End", () => {
         proposedSolutions,
         progress: {
           ...testConflict.progress,
-          currentStage: ConflictStage.CONSENSUS,
-          completedStages: [
-            ConflictStage.ARTICULATION, 
-            ConflictStage.COMMON_GROUND, 
-            ConflictStage.DISAGREEMENT,
-            ConflictStage.EVIDENCE,
-            ConflictStage.SOLUTION
+          current_stage: Stage.Consensus,
+          completed_stages: [
+            Stage.Articulation, 
+            Stage.CommonGround, 
+            Stage.Disagreement,
+            Stage.Evidence,
+            Stage.Solution
           ],
-          stageProgress: {
-            ...testConflict.progress.stageProgress,
-            [ConflictStage.SOLUTION]: 100
+          stage_progress: {
+            ...testConflict.progress.stage_progress,
+            [Stage.Solution]: 100
           }
         }
       });
       
       // Update the test conflict with proposed solutions
-      const updatedConflict = await conflictResolutionService.proposeolutions(
+      const updatedConflict = await conflictResolutionService.proposeSolutions(
         testConflictId,
         proposedSolutions
       );
       
       expect(updatedConflict.proposedSolutions).toBeTruthy();
       expect(updatedConflict.proposedSolutions?.length).toBe(2);
-      expect(updatedConflict.progress.currentStage).toBe(ConflictStage.CONSENSUS);
-      expect(updatedConflict.progress.stageProgress[ConflictStage.SOLUTION]).toBe(100);
+      expect(updatedConflict.progress.current_stage).toBe(Stage.Consensus);
+      expect(updatedConflict.progress.stage_progress[Stage.Solution]).toBe(100);
       
       // Update our test object
       testConflict = updatedConflict;
@@ -313,18 +313,18 @@ describe("Conflict Resolution System End-to-End", () => {
         consensusReached: true,
         progress: {
           ...testConflict.progress,
-          currentStage: ConflictStage.CONSENSUS,
-          completedStages: [
-            ConflictStage.ARTICULATION, 
-            ConflictStage.COMMON_GROUND, 
-            ConflictStage.DISAGREEMENT,
-            ConflictStage.EVIDENCE,
-            ConflictStage.SOLUTION,
-            ConflictStage.CONSENSUS
+          current_stage: Stage.Consensus,
+          completed_stages: [
+            Stage.Articulation, 
+            Stage.CommonGround, 
+            Stage.Disagreement,
+            Stage.Evidence,
+            Stage.Solution,
+            Stage.Consensus
           ],
-          stageProgress: {
-            ...testConflict.progress.stageProgress,
-            [ConflictStage.CONSENSUS]: 100
+          stage_progress: {
+            ...testConflict.progress.stage_progress,
+            [Stage.CONSENSUS]: 100
           }
         }
       });
@@ -336,8 +336,8 @@ describe("Conflict Resolution System End-to-End", () => {
       );
       
       expect(updatedConflict.consensusReached).toBe(true);
-      expect(updatedConflict.progress.completedStages).toContain(ConflictStage.CONSENSUS);
-      expect(updatedConflict.progress.stageProgress[ConflictStage.CONSENSUS]).toBe(100);
+      expect(updatedConflict.progress.completed_stages).toContain(Stage.CONSENSUS);
+      expect(updatedConflict.progress.stage_progress[Stage.CONSENSUS]).toBe(100);
       
       console.log("Consensus building stage test completed");
     });
@@ -462,27 +462,27 @@ describe("Conflict Resolution System End-to-End", () => {
       
       const progressHistory = [
         {
-          stage: ConflictStage.ARTICULATION,
+          stage: Stage.Articulation,
           completedAt: threeWeeksAgo.toISOString(),
           durationDays: 2
         },
         {
-          stage: ConflictStage.COMMON_GROUND,
+          stage: Stage.CommonGround,
           completedAt: new Date(threeWeeksAgo.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
           durationDays: 5
         },
         {
-          stage: ConflictStage.DISAGREEMENT,
+          stage: Stage.Disagreement,
           completedAt: new Date(threeWeeksAgo.getTime() + 9 * 24 * 60 * 60 * 1000).toISOString(),
           durationDays: 4
         },
         {
-          stage: ConflictStage.EVIDENCE,
+          stage: Stage.Evidence,
           completedAt: new Date(threeWeeksAgo.getTime() + 16 * 24 * 60 * 60 * 1000).toISOString(),
           durationDays: 7
         },
         {
-          stage: ConflictStage.SOLUTION,
+          stage: Stage.Solution,
           completedAt: oneWeekAgo.toISOString(),
           durationDays: 5
         }
@@ -495,8 +495,8 @@ describe("Conflict Resolution System End-to-End", () => {
       
       expect(history).toBeTruthy();
       expect(history.length).toBe(5);
-      expect(history[0].stage).toBe(ConflictStage.ARTICULATION);
-      expect(history[4].stage).toBe(ConflictStage.SOLUTION);
+      expect(history[0].stage).toBe(Stage.Articulation);
+      expect(history[4].stage).toBe(Stage.Solution);
       
       // Verify that durations add up correctly
       const totalDays = history.reduce((sum, entry) => sum + entry.durationDays, 0);
@@ -530,16 +530,16 @@ describe("Conflict Resolution System End-to-End", () => {
           createdAt: new Date().toISOString()
         },
         progress: {
-          currentStage: ConflictStage.ARTICULATION,
-          completedStages: [],
+          current_stage: Stage.Articulation,
+          completed_stages: [],
           lastModified: new Date().toISOString(),
-          stageProgress: {
-            [ConflictStage.ARTICULATION]: 100,
-            [ConflictStage.COMMON_GROUND]: 0,
-            [ConflictStage.DISAGREEMENT]: 0,
-            [ConflictStage.EVIDENCE]: 0,
-            [ConflictStage.SOLUTION]: 0,
-            [ConflictStage.CONSENSUS]: 0
+          stage_progress: {
+            [Stage.Articulation]: 100,
+            [Stage.CommonGround]: 0,
+            [Stage.DISAGREEMENT]: 0,
+            [Stage.EVIDENCE]: 0,
+            [Stage.SOLUTION]: 0,
+            [Stage.CONSENSUS]: 0
           }
         },
         consensusReached: false,
@@ -570,16 +570,16 @@ describe("Conflict Resolution System End-to-End", () => {
           createdAt: new Date().toISOString()
         },
         progress: {
-          currentStage: ConflictStage.ARTICULATION,
-          completedStages: [],
+          current_stage: Stage.Articulation,
+          completed_stages: [],
           lastModified: new Date().toISOString(),
-          stageProgress: {
-            [ConflictStage.ARTICULATION]: 100,
-            [ConflictStage.COMMON_GROUND]: 0,
-            [ConflictStage.DISAGREEMENT]: 0,
-            [ConflictStage.EVIDENCE]: 0,
-            [ConflictStage.SOLUTION]: 0,
-            [ConflictStage.CONSENSUS]: 0
+          stage_progress: {
+            [Stage.Articulation]: 100,
+            [Stage.CommonGround]: 0,
+            [Stage.DISAGREEMENT]: 0,
+            [Stage.EVIDENCE]: 0,
+            [Stage.SOLUTION]: 0,
+            [Stage.CONSENSUS]: 0
           }
         },
         consensusReached: false,
