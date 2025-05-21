@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ConflictResolution, 
@@ -130,7 +131,7 @@ export async function getConflictResolutionById(id: string): Promise<ConflictRes
 
 export async function createConflictResolution(resolution: Partial<ConflictResolution>): Promise<string> {
   try {
-    // Convert from our application structure to the database structure
+    // Convert from our application structure to the database structure using snake_case
     const { data, error } = await supabase
       .from('conflict_resolutions')
       .insert({
