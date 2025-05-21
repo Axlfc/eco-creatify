@@ -1,22 +1,27 @@
+
+import Navigation from "@/components/Navigation";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { Newsletter } from "@/components/Newsletter";
-import { Navigation } from "@/components/Navigation";
 import { ProductShowcase } from "@/components/ProductShowcase";
+import { ProductCustomizer } from "@/components/ProductCustomizer";
 import { SustainabilityMetrics } from "@/components/SustainabilityMetrics";
 import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <Navigation />
-      <Hero />
-      <ProductShowcase />
-      <SustainabilityMetrics />
-      <Features />
-      <Newsletter />
-      <Footer />
-    </div>
+      <div className="pt-16">
+        <Hero />
+        <ProductShowcase />
+        <ProductCustomizer />
+        <Features />
+        <SustainabilityMetrics />
+        <Newsletter />
+        <Footer />
+      </div>
+    </main>
   );
 };
 
