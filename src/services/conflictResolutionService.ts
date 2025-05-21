@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ConflictResolution, 
@@ -134,7 +133,7 @@ export async function createConflictResolution(resolution: Partial<ConflictResol
     // Convert from our application structure to the database structure
     const { data, error } = await supabase
       .from('conflict_resolutions')
-      .insert([{
+      .insert({
         title: resolution.title,
         description: resolution.description,
         party_a: resolution.partyA,
@@ -154,7 +153,7 @@ export async function createConflictResolution(resolution: Partial<ConflictResol
         consensus_reached: resolution.consensusReached,
         is_public: resolution.isPublic,
         created_by: resolution.userId
-      }])
+      })
       .select('id')
       .single();
     
