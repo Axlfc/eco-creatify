@@ -165,7 +165,13 @@ contract Governance is AccessControl, Pausable, ReentrancyGuard {
         Proposal storage p = proposals[proposalId];
         require(p.id != 0, "Propuesta inexistente");
         require(p.state == ProposalState.Active, "Propuesta no activa");
-        require(isRevealPhase[proposalId], "Debe estar en fase reveal");
+        
+        // Verificar si es una propuesta con votación secreta
+        if (!p.openVoting) {
+            // Para votación secreta, requerir fase de revelado
+            require(isRevealPhase[proposalId], "Debe estar en fase reveal");
+        }
+        
         require(block.timestamp > p.endTime || (p.votesFor + p.votesAgainst) >= p.quorum, "No se puede cerrar: tiempo o quorum insuficiente");
         p.state = ProposalState.Closed;
         bool approved = p.votesFor > p.votesAgainst && (p.votesFor + p.votesAgainst) >= p.quorum;
