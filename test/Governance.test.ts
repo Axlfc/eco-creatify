@@ -35,26 +35,28 @@ describe("Governance", function () {
   it("flujo completo de commit-reveal y ejecución", async function () {
     // Crear propuesta
     await governance.connect(voter1).createProposal("Propuesta 2", 3600, 2, true);
-    // Commit de ambos votantes
+    // Commit de ambos votantes (ambos a favor)
     const commit1 = keccak256Packed(["bool","string"],[true, salt1]);
-    const commit2 = keccak256Packed(["bool","string"],[false, salt2]);
+    const commit2 = keccak256Packed(["bool","string"],[true, salt2]);
     await governance.connect(voter1).commitVote(1, commit1);
     await governance.connect(voter2).commitVote(1, commit2);
     // Iniciar fase reveal
     await governance.connect(owner).startRevealPhase(1);
     // Reveal de ambos
     await expect(governance.connect(voter1).revealVote(1, true, salt1)).to.emit(governance, "Voted");
-    await expect(governance.connect(voter2).revealVote(1, false, salt2)).to.emit(governance, "Voted");
+    await expect(governance.connect(voter2).revealVote(1, true, salt2)).to.emit(governance, "Voted");
     // Cerrar propuesta
     await governance.connect(owner).closeProposal(1);
-    const proposal = await governance.getProposal(1);
-    expect(proposal.votesFor).to.equal(1);
-    expect(proposal.votesAgainst).to.equal(1);
-    expect(proposal.state).to.equal(2); // Closed
+    let proposal = await governance.getProposal(1);
+    expect(proposal.votesFor).to.equal(2);
+    expect(proposal.votesAgainst).to.equal(0);
+    expect(proposal.state).to.equal(2); // Closed (enum: 2)
     // Ejecutar propuesta
     await expect(
       governance.connect(owner).executeProposal(1)
     ).to.emit(governance, "ProposalExecuted");
+    proposal = await governance.getProposal(1);
+    expect(proposal.state).to.equal(3); // Executed (enum: 3)
   });
 
   it("no permite commit después de iniciar fase reveal", async function () {
