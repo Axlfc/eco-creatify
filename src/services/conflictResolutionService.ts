@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ConflictResolution, 
@@ -10,6 +11,7 @@ import {
   ProposedSolution,
   MediationRequest
 } from '@/types/conflictResolution';
+import { ConflictResolutionData } from '@/integrations/supabase/client';
 
 export interface ConflictResolutionWithDetails extends ConflictResolution {
   details: {
