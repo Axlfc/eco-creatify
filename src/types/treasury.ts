@@ -1,5 +1,7 @@
+
 // Modelos base para el sistema de tesorería DAO
 // Definición de tipos y estructuras principales
+import { Json } from '../integrations/supabase/types';
 
 export type WalletType = 'EOA' | 'Contract';
 
@@ -20,13 +22,15 @@ export interface Transaction {
   type: TransactionType;
   amount: string; // Usar string para precisión en activos
   asset: AssetType;
-  assetAddress?: string; // Dirección del token si aplica
-  tokenId?: string; // Para ERC-721
-  from: string; // Wallet origen
-  to: string; // Wallet destino
+  asset_address?: string; // Dirección del token si aplica
+  token_id?: string; // Para ERC-721
+  from_address: string; // Wallet origen
+  to_address: string; // Wallet destino
   timestamp: Date;
   description?: string;
-  budgetId?: string;
+  budget_id?: string;
+  created_at: Date;
+  created_by?: string;
   // TODO: Agregar hash de transacción y firma digital
 }
 
@@ -36,14 +40,14 @@ export interface Budget {
   description?: string;
   amount: string;
   asset: AssetType;
-  assetAddress?: string;
-  createdBy: string;
-  createdAt: Date;
+  asset_address?: string;
+  created_by: string;
+  created_at: Date;
   approved: boolean;
-  approvedBy?: string;
-  approvedAt?: Date;
+  approved_by?: string;
+  approved_at?: Date;
   executed: boolean;
-  executedAt?: Date;
+  executed_at?: Date;
   // TODO: Flujos de aprobación y ejecución
 }
 
@@ -51,10 +55,10 @@ export interface AuditLog {
   id: string;
   action: string;
   entity: 'TRANSACTION' | 'BUDGET' | 'WALLET';
-  entityId: string;
-  performedBy: string;
+  entity_id: string;
+  performed_by: string;
   timestamp: Date;
-  details?: string;
+  details?: Json;
   // TODO: Incluir hash de auditoría y trazabilidad
 }
 

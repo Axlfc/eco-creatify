@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          entity: string
+          entity_id: string
+          id: string
+          performed_by: string
+          timestamp: string
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          entity: string
+          entity_id: string
+          id?: string
+          performed_by: string
+          timestamp?: string
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          entity?: string
+          entity_id?: string
+          id?: string
+          performed_by?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      budgets: {
+        Row: {
+          amount: string
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          asset: string
+          asset_address: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          executed: boolean
+          executed_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          amount: string
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          asset: string
+          asset_address?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          executed?: boolean
+          executed_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: string
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          asset?: string
+          asset_address?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          executed?: boolean
+          executed_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       campaign_products: {
         Row: {
           campaign_id: string
@@ -789,6 +867,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: string
+          asset: string
+          asset_address: string | null
+          budget_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          from_address: string
+          id: string
+          timestamp: string
+          to_address: string
+          token_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: string
+          asset: string
+          asset_address?: string | null
+          budget_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          from_address: string
+          id?: string
+          timestamp?: string
+          to_address: string
+          token_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: string
+          asset?: string
+          asset_address?: string | null
+          budget_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          from_address?: string
+          id?: string
+          timestamp?: string
+          to_address?: string
+          token_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_transactions_budgets"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
