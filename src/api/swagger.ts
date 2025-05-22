@@ -223,6 +223,70 @@ Para más detalles, revisa los esquemas y ejemplos de cada endpoint abajo.
         },
       },
     },
+    '/api/proposals/{id}/snapshots': {
+      get: {
+        summary: 'Obtener historial de snapshots de una propuesta',
+        description: 'Devuelve la cadena de snapshots (auditoría de estado y votos) de una propuesta. Requiere autenticación JWT Supabase.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'ID de la propuesta',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Cadena de snapshots de la propuesta',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    snapshots: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/VoteSnapshot' },
+                    },
+                  },
+                },
+                examples: {
+                  ejemplo: {
+                    value: {
+                      snapshots: [
+                        {
+                          id: '1',
+                          timestamp: 1716400000000,
+                          state: 'open',
+                          votes: [],
+                          event: 'created',
+                          prevSnapshotHash: null,
+                          hash: 'abc123...'
+                        },
+                        {
+                          id: '1',
+                          timestamp: 1716400010000,
+                          state: 'open',
+                          votes: [
+                            { voterHash: 'hash1', option: 'yes', voteTimestamp: 1716400010000 }
+                          ],
+                          event: 'vote',
+                          prevSnapshotHash: 'abc123...',
+                          hash: 'def456...'
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '401': { description: 'No autenticado' },
+          '404': { description: 'Propuesta no encontrada' }
+        }
+      }
+    },
   },
   components: {
     securitySchemes: {
@@ -242,6 +306,28 @@ Para más detalles, revisa los esquemas y ejemplos de cada endpoint abajo.
           createdBy: { type: 'string' },
           createdAt: { type: 'string', format: 'date-time' },
         },
+      },
+      VoteSnapshot: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          timestamp: { type: 'integer' },
+          state: { type: 'string' },
+          votes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                voterHash: { type: 'string' },
+                option: { type: 'string' },
+                voteTimestamp: { type: 'integer' },
+              }
+            }
+          },
+          event: { type: 'string' },
+          prevSnapshotHash: { type: 'string', nullable: true },
+          hash: { type: 'string' },
+        }
       },
     },
   },

@@ -2,8 +2,25 @@ import { Router, Request, Response } from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { proposals, votes, getProposalResults, Proposal, Vote } from '../data/proposals';
 import { v4 as uuidv4 } from 'uuid';
+import { createSnapshot, saveSnapshot, getSnapshots, VoteSnapshot } from '../../lib/snapshots';
 
 const router = Router();
+
+// Utilidad para obtener el último snapshot de una propuesta
+function getLastSnapshot(proposalId: string): VoteSnapshot | null {
+  const chain = getSnapshots().filter(s => s.id === proposalId);
+  if (chain.length === 0) return null;
+  // Ordenar por timestamp ascendente
+  return chain.sort((a, b) => a.timestamp - b.timestamp)[chain.length - 1];
+}
+
+// Utilidad para obtener el estado y votos actuales de una propuesta
+function getProposalStateAndVotes(proposalId: string) {
+  const proposal = proposals.find(p => p.id === proposalId);
+  if (!proposal) return null;
+  const votos = votes.filter(v => v.proposalId === proposalId);
+  return { proposal, votos };
+}
 
 // GET /api/proposals (protegido, con paginación y filtrado)
 router.get('/', authenticateJWT, (req, res) => {
@@ -50,6 +67,15 @@ router.post('/', authenticateJWT, (req, res) => {
     createdAt: new Date().toISOString(),
   };
   proposals.push(newProposal);
+  // Generar snapshot inicial
+  const snapshot = createSnapshot({
+    id: newProposal.id,
+    state: 'open',
+    votes: [],
+    event: 'created',
+    prevSnapshotHash: null,
+  });
+  saveSnapshot(snapshot);
   res.status(201).json(newProposal);
 });
 
@@ -72,6 +98,21 @@ router.post('/:id/vote', authenticateJWT, (req, res) => {
   }
   const vote: Vote = { proposalId: id, userId, value };
   votes.push(vote);
+  // Generar snapshot tras el voto
+  const prev = getLastSnapshot(id);
+  const votosActuales = votes.filter(v => v.proposalId === id).map(v => ({
+    voterHash: v.userId, // Hash simplificado para demo
+    option: v.value,
+    voteTimestamp: Date.now(),
+  }));
+  const snapshot = createSnapshot({
+    id,
+    state: 'open',
+    votes: votosActuales,
+    event: 'vote',
+    prevSnapshotHash: prev ? prev.hash : null,
+  });
+  saveSnapshot(snapshot);
   res.status(201).json({ message: 'Voto registrado' });
 });
 
@@ -84,6 +125,18 @@ router.get('/:id/results', authenticateJWT, (req, res) => {
   }
   const results = getProposalResults(id);
   res.json(results);
+});
+
+// GET /api/proposals/:id/snapshots (protegido)
+router.get('/:id/snapshots', authenticateJWT, function (req, res) {
+  const { id } = req.params;
+  if (!proposals.find(p => p.id === id)) {
+    res.status(404).json({ message: 'Propuesta no encontrada' });
+    return;
+  }
+  const chain = getSnapshots().filter(s => s.id === id);
+  res.json({ snapshots: chain });
+  // TODO: Exportar a IPFS/blockchain si se requiere persistencia extra
 });
 
 export default router;

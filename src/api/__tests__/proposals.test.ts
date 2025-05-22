@@ -193,3 +193,37 @@ describe('Autenticación con JWT de Supabase', () => {
     expect([401, 403]).toContain(res.status);
   });
 });
+
+describe('GET /api/proposals/:id/snapshots', () => {
+  const token = require('jsonwebtoken').sign({ sub: 'user6' }, 'dev-secret');
+  let proposalId: string;
+  it('requiere autenticación', async () => {
+    // Crear propuesta para test
+    const res = await request(app)
+      .post('/api/proposals')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Auditable', description: 'Desc' });
+    proposalId = res.body.id;
+    const resNoAuth = await request(app).get(`/api/proposals/${proposalId}/snapshots`);
+    expect(resNoAuth.status).toBe(401);
+  });
+  it('devuelve la cadena de snapshots solo si el usuario está autenticado', async () => {
+    // Votar para generar más snapshots
+    await request(app)
+      .post(`/api/proposals/${proposalId}/vote`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ value: 'yes' });
+    const res = await request(app)
+      .get(`/api/proposals/${proposalId}/snapshots`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.snapshots)).toBe(true);
+    // Debe haber al menos dos snapshots: creación y voto
+    expect(res.body.snapshots.length).toBeGreaterThanOrEqual(2);
+    // Verifica la trazabilidad de hashes
+    const chain = res.body.snapshots;
+    for (let i = 1; i < chain.length; i++) {
+      expect(chain[i].prevSnapshotHash).toBe(chain[i - 1].hash);
+    }
+  });
+});
