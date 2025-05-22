@@ -1,10 +1,10 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { proposals, votes, getProposalResults, Proposal, Vote } from '../data/proposals';
 import { v4 as uuidv4 } from 'uuid';
 import { createSnapshot, saveSnapshot, getSnapshots, VoteSnapshot } from '../../lib/snapshots';
 
-const router = Router();
+const router = express.Router();
 
 // Utilidad para obtener el último snapshot de una propuesta
 function getLastSnapshot(proposalId: string): VoteSnapshot | null {

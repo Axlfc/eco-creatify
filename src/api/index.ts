@@ -3,6 +3,7 @@ import proposalsRouter from './routes/proposals';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 import path from 'path';
+import treasuryRouter from './treasury';
 
 const app = express();
 app.use(express.json());
@@ -19,6 +20,7 @@ app.get(/^\/(?!api\/).*/, (req, res) => {
 
 // Rutas de API (deben ir después del static/catch-all para no ser sobreescritas)
 app.use('/api/proposals', proposalsRouter);
+app.use('/api/treasury', treasuryRouter);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const PORT = process.env['PORT'] || 3001;

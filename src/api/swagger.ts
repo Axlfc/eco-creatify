@@ -287,6 +287,204 @@ Para más detalles, revisa los esquemas y ejemplos de cada endpoint abajo.
         }
       }
     },
+    '/api/treasury/transactions': {
+      get: {
+        summary: 'Listar transacciones de tesorería',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Lista de transacciones',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/TreasuryTransaction' },
+                    },
+                  },
+                },
+                examples: {
+                  ejemplo: {
+                    value: {
+                      data: [
+                        {
+                          id: 'tx1',
+                          type: 'INCOME',
+                          amount: '1000',
+                          asset: 'ERC20',
+                          from: '0x...',
+                          to: '0x...',
+                          timestamp: '2025-05-22T12:00:00Z',
+                          description: 'Ingreso inicial',
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Token requerido' },
+        },
+      },
+      post: {
+        summary: 'Registrar transacción de tesorería',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/TreasuryTransaction' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Transacción registrada',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TreasuryTransaction' },
+              },
+            },
+          },
+          '400': { description: 'Datos inválidos' },
+          '401': { description: 'Token requerido' },
+        },
+      },
+    },
+    '/api/treasury/budgets': {
+      get: {
+        summary: 'Listar presupuestos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Lista de presupuestos',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/TreasuryBudget' },
+                    },
+                  },
+                },
+                examples: {
+                  ejemplo: {
+                    value: {
+                      data: [
+                        {
+                          id: 'b1',
+                          name: 'Presupuesto 2025',
+                          amount: '5000',
+                          asset: 'ERC20',
+                          createdBy: '0x...',
+                          approved: false,
+                          executed: false,
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Token requerido' },
+        },
+      },
+      post: {
+        summary: 'Crear presupuesto',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/TreasuryBudget' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Presupuesto creado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TreasuryBudget' },
+              },
+            },
+          },
+          '400': { description: 'Datos inválidos' },
+          '401': { description: 'Token requerido' },
+        },
+      },
+    },
+    '/api/treasury/audits': {
+      get: {
+        summary: 'Listar logs de auditoría',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Lista de logs de auditoría',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/TreasuryAudit' },
+                    },
+                  },
+                },
+                examples: {
+                  ejemplo: {
+                    value: {
+                      data: [
+                        {
+                          id: 'a1',
+                          action: 'CREATE_BUDGET',
+                          entity: 'BUDGET',
+                          entityId: 'b1',
+                          performedBy: '0x...',
+                          timestamp: '2025-05-22T12:00:00Z',
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Token requerido' },
+        },
+      },
+      post: {
+        summary: 'Registrar evento de auditoría',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/TreasuryAudit' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Evento de auditoría registrado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/TreasuryAudit' },
+              },
+            },
+          },
+          '400': { description: 'Datos inválidos' },
+          '401': { description: 'Token requerido' },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -328,6 +526,52 @@ Para más detalles, revisa los esquemas y ejemplos de cada endpoint abajo.
           prevSnapshotHash: { type: 'string', nullable: true },
           hash: { type: 'string' },
         }
+      },
+      TreasuryTransaction: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          type: { type: 'string', enum: ['INCOME', 'EXPENSE'] },
+          amount: { type: 'string' },
+          asset: { type: 'string', enum: ['ERC20', 'ERC721', 'NATIVE'] },
+          assetAddress: { type: 'string', nullable: true },
+          tokenId: { type: 'string', nullable: true },
+          from: { type: 'string' },
+          to: { type: 'string' },
+          timestamp: { type: 'string', format: 'date-time' },
+          description: { type: 'string', nullable: true },
+          budgetId: { type: 'string', nullable: true },
+        },
+      },
+      TreasuryBudget: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          description: { type: 'string', nullable: true },
+          amount: { type: 'string' },
+          asset: { type: 'string', enum: ['ERC20', 'ERC721', 'NATIVE'] },
+          assetAddress: { type: 'string', nullable: true },
+          createdBy: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+          approved: { type: 'boolean' },
+          approvedBy: { type: 'string', nullable: true },
+          approvedAt: { type: 'string', format: 'date-time', nullable: true },
+          executed: { type: 'boolean' },
+          executedAt: { type: 'string', format: 'date-time', nullable: true },
+        },
+      },
+      TreasuryAudit: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          action: { type: 'string' },
+          entity: { type: 'string', enum: ['TRANSACTION', 'BUDGET', 'WALLET'] },
+          entityId: { type: 'string' },
+          performedBy: { type: 'string' },
+          timestamp: { type: 'string', format: 'date-time' },
+          details: { type: 'string', nullable: true },
+        },
       },
     },
   },
