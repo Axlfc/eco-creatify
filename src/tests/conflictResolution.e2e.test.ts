@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import {
   ConflictResolution,
@@ -43,8 +42,35 @@ jest.mock("@/integrations/supabase/client", () => ({
 }));
 
 // Mock conflict resolution service
-import { conflictResolutionService } from "../services/conflictResolutionService";
-jest.mock("../services/conflictResolutionService");
+jest.mock("../services/conflictResolutionService", () => ({
+  updateCommonGround: jest.fn(),
+  updateDisagreementPoints: jest.fn(),
+  addEvidence: jest.fn(),
+  proposeSolutions: jest.fn(),
+  buildConsensus: jest.fn(),
+  getConflictResolution: jest.fn(),
+  getVisualizationData: jest.fn(),
+  requestMediation: jest.fn(),
+  assignMediator: jest.fn(),
+  getProgressHistory: jest.fn(),
+  createConflictResolution: jest.fn(),
+  listConflictResolutions: jest.fn(),
+}));
+
+const conflictResolutionService = {
+  updateCommonGround: jest.fn(),
+  updateDisagreementPoints: jest.fn(),
+  addEvidence: jest.fn(),
+  proposeSolutions: jest.fn(),
+  buildConsensus: jest.fn(),
+  getConflictResolution: jest.fn(),
+  getVisualizationData: jest.fn(),
+  requestMediation: jest.fn(),
+  assignMediator: jest.fn(),
+  getProgressHistory: jest.fn(),
+  createConflictResolution: jest.fn(),
+  listConflictResolutions: jest.fn(),
+};
 
 describe("Conflict Resolution System End-to-End", () => {
   let testUserId: string;

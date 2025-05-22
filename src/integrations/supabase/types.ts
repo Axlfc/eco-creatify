@@ -47,6 +47,7 @@ export type Database = {
           approved_by: string | null
           asset: string
           asset_address: string | null
+          blockchain_hash: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -62,6 +63,7 @@ export type Database = {
           approved_by?: string | null
           asset: string
           asset_address?: string | null
+          blockchain_hash?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           approved_by?: string | null
           asset?: string
           asset_address?: string | null
+          blockchain_hash?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -873,6 +876,7 @@ export type Database = {
           amount: string
           asset: string
           asset_address: string | null
+          blockchain_hash: string | null
           budget_id: string | null
           created_at: string
           created_by: string | null
@@ -888,6 +892,7 @@ export type Database = {
           amount: string
           asset: string
           asset_address?: string | null
+          blockchain_hash?: string | null
           budget_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -903,6 +908,7 @@ export type Database = {
           amount?: string
           asset?: string
           asset_address?: string | null
+          blockchain_hash?: string | null
           budget_id?: string | null
           created_at?: string
           created_by?: string | null

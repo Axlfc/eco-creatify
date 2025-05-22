@@ -1,11 +1,10 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import { version } from '../../package.json';
 
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
     title: 'API DAO',
-    version,
+    version: '1.0.0', // Valor fijo para evitar error de importación
     description: 'Endpoints para el sistema de gobernanza DAO',
     license: {
       name: 'Licensed Under MIT',
@@ -229,7 +228,7 @@ const swaggerDefinition = {
           approved_at: '2025-05-22T12:10:00Z',
           executed: true,
           executed_at: '2025-05-22T12:20:00Z',
-          blockchain_hash: '0xHASHBLOCKCHAIN_EXECUTE...',
+          blockchain_hash: '0xHASHBLOCKCHAIN...',
         },
       },
       AuditLog: {

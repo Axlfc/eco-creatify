@@ -1,5 +1,10 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import "@nomicfoundation/hardhat-chai-matchers";
+
+chai.use(chaiAsPromised);
 
 // Utilidades para commit-reveal compatibles con ethers v6 y abi.encodePacked
 const keccak256Packed = ethers.solidityPackedKeccak256;
