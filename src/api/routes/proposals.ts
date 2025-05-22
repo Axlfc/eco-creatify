@@ -1,0 +1,89 @@
+import { Router, Request, Response } from 'express';
+import { authenticateJWT } from '../middleware/auth';
+import { proposals, votes, getProposalResults, Proposal, Vote } from '../data/proposals';
+import { v4 as uuidv4 } from 'uuid';
+
+const router = Router();
+
+// GET /api/proposals (protegido, con paginación y filtrado)
+router.get('/', authenticateJWT, (req, res) => {
+  let { page = '1', limit = '10', sort = 'createdAt', order = 'desc', title } = req.query as Record<string, string>;
+  let filtered = proposals;
+  if (title) {
+    filtered = filtered.filter(p => p.title.toLowerCase().includes(title.toLowerCase()));
+  }
+  filtered = filtered.sort((a, b) => {
+    if (sort === 'createdAt') {
+      return order === 'asc'
+        ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    return 0;
+  });
+  const pageNum = Math.max(1, parseInt(page, 10));
+  const limitNum = Math.max(1, parseInt(limit, 10));
+  const start = (pageNum - 1) * limitNum;
+  const end = start + limitNum;
+  const paginated = filtered.slice(start, end);
+  res.json({
+    data: paginated,
+    page: pageNum,
+    limit: limitNum,
+    total: filtered.length,
+    totalPages: Math.ceil(filtered.length / limitNum),
+  });
+});
+
+// POST /api/proposals (protegido)
+router.post('/', authenticateJWT, (req, res) => {
+  const { title, description } = req.body;
+  if (!title || !description) {
+    res.status(400).json({ message: 'Título y descripción requeridos' });
+    return;
+  }
+  const userId = (req as any).user?.sub || 'unknown';
+  const newProposal: Proposal = {
+    id: uuidv4(),
+    title,
+    description,
+    createdBy: userId,
+    createdAt: new Date().toISOString(),
+  };
+  proposals.push(newProposal);
+  res.status(201).json(newProposal);
+});
+
+// POST /api/proposals/:id/vote (protegido)
+router.post('/:id/vote', authenticateJWT, (req, res) => {
+  const { id } = req.params;
+  const { value } = req.body;
+  if (value !== 'yes' && value !== 'no') {
+    res.status(400).json({ message: 'El voto debe ser "yes" o "no"' });
+    return;
+  }
+  const userId = (req as any).user?.sub || 'unknown';
+  if (!proposals.find(p => p.id === id)) {
+    res.status(404).json({ message: 'Propuesta no encontrada' });
+    return;
+  }
+  if (votes.find(v => v.proposalId === id && v.userId === userId)) {
+    res.status(409).json({ message: 'Ya has votado en esta propuesta' });
+    return;
+  }
+  const vote: Vote = { proposalId: id, userId, value };
+  votes.push(vote);
+  res.status(201).json({ message: 'Voto registrado' });
+});
+
+// GET /api/proposals/:id/results (protegido)
+router.get('/:id/results', authenticateJWT, (req, res) => {
+  const { id } = req.params;
+  if (!proposals.find(p => p.id === id)) {
+    res.status(404).json({ message: 'Propuesta no encontrada' });
+    return;
+  }
+  const results = getProposalResults(id);
+  res.json(results);
+});
+
+export default router;
