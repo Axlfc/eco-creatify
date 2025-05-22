@@ -7,17 +7,17 @@ import path from 'path';
 const app = express();
 app.use(express.json());
 
-// Solo servir frontend estático y catch-all si NO estamos en test
-if (process.env.NODE_ENV !== 'test') {
-  app.use(express.static(path.join(__dirname, '../dist')));
+// --- SERVIR FRONTEND SPA DESDE /build ---
+// 1. Servir archivos estáticos del frontend compilado (Vite/React/etc)
+app.use(express.static(path.join(__dirname, '../../build')));
 
-  // Catch-all para SPA: cualquier ruta no-API devuelve index.html
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
-  });
-}
+// 2. Catch-all: cualquier ruta que NO sea /api/* devuelve index.html (soporte SPA)
+app.get(/^\/(?!api\/).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../../build', 'index.html'));
+});
+// --- FIN SERVIR FRONTEND SPA ---
 
-// Las rutas de API deben ir antes de este fallback
+// Rutas de API (deben ir después del static/catch-all para no ser sobreescritas)
 app.use('/api/proposals', proposalsRouter);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
