@@ -1,83 +1,145 @@
+
 // Prototipo base de sistema DID con validación comunitaria
 // --------------------------------------------------------
-// Este ejemplo usa Veramo para generar un DID, simula validaciones comunitarias
-// (como si fueran de BrightID/Proof of Humanity) y emite una credencial verificable
-// cuando se alcanza el umbral de validaciones.
+// Este código es un ejemplo simplificado que simula la funcionalidad DID
 
-import { createAgent, ICredentialIssuer, IDIDManager, IKeyManager } from '@veramo/core'
-import { DIDManager } from '@veramo/did-manager'
-import { KeyManager } from '@veramo/key-manager'
-import { KeyManagementSystem, MemoryPrivateKeyStore } from '@veramo/key-manager'
-import { DIDProvider } from '@veramo/did-provider-key'
-import { CredentialIssuer } from '@veramo/credential-w3c'
-import { MemoryDIDStore } from '@veramo/did-manager'
-import { MemoryKeyStore } from '@veramo/key-manager'
-import { getMockValidators, mockCommunityValidation } from './lib/did-demo-utils'
-import { CommunityValidation } from './types/did-demo'
+// Tipos básicos
+interface DID {
+  did: string;
+  keys: {
+    id: string;
+    type: string;
+    controller: string;
+    publicKeyHex: string;
+  }[];
+}
 
-// Parámetros de la demo
-const VALIDATION_THRESHOLD = 3 // Número de validaciones necesarias
+interface Validator {
+  id: string;
+  name: string;
+  publicKey: string;
+}
 
-// Simulación de validadores comunitarios (mock)
-const communityValidators = getMockValidators()
+interface Validation {
+  validatorId: string;
+  validatorName: string;
+  timestamp: Date;
+  signature: string;
+}
 
-// Estado de validaciones comunitarias
-const communityValidations: CommunityValidation[] = []
+interface VerifiableCredential {
+  id: string;
+  type: string[];
+  issuer: {
+    id: string;
+  };
+  issuanceDate: string;
+  credentialSubject: {
+    id: string;
+    [key: string]: any;
+  };
+  proof: {
+    type: string;
+    jwt: string;
+  };
+}
 
-// Inicializa el agente Veramo con almacenamiento en memoria
-const agent = createAgent<IDIDManager & IKeyManager & ICredentialIssuer>({
-  plugins: [
-    new KeyManager({
-      store: new MemoryKeyStore(),
-      kms: { local: new KeyManagementSystem(new MemoryPrivateKeyStore()) },
-    }),
-    new DIDManager({
-      store: new MemoryDIDStore(),
-      defaultProvider: 'did:key',
-      providers: {
-        'did:key': new DIDProvider({ defaultKms: 'local' }),
+// Funciones de simulación
+function generateDID(): DID {
+  const id = `did:key:${Math.random().toString(36).substring(2, 15)}`;
+  return {
+    did: id,
+    keys: [
+      {
+        id: `${id}#keys-1`,
+        type: 'Ed25519VerificationKey2018',
+        controller: id,
+        publicKeyHex: Math.random().toString(36).substring(2, 15),
       },
-    }),
-    new CredentialIssuer(),
-  ],
-})
+    ],
+  };
+}
 
+function getMockValidators(): Validator[] {
+  return [
+    { id: 'val1', name: 'Validador 1', publicKey: 'key1' },
+    { id: 'val2', name: 'Validador 2', publicKey: 'key2' },
+    { id: 'val3', name: 'Validador 3', publicKey: 'key3' },
+    { id: 'val4', name: 'Validador 4', publicKey: 'key4' },
+  ];
+}
+
+function mockValidation(validator: Validator): Validation {
+  return {
+    validatorId: validator.id,
+    validatorName: validator.name,
+    timestamp: new Date(),
+    signature: `sig_${Math.random().toString(36).substring(2, 15)}`,
+  };
+}
+
+function createVerifiableCredential(did: DID, validations: Validation[]): VerifiableCredential {
+  return {
+    id: `vc_${Math.random().toString(36).substring(2, 15)}`,
+    type: ['VerifiableCredential', 'ProofOfHumanity'],
+    issuer: { id: did.did },
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: {
+      id: did.did,
+      proofOfHumanity: true,
+      validations: validations.map(v => v.validatorId),
+    },
+    proof: {
+      type: 'JwtProof2020',
+      jwt: `header.${btoa(JSON.stringify({ iss: did.did, sub: did.did }))}.signature`,
+    },
+  };
+}
+
+// Simulación del flujo principal
 async function main() {
-  // 1. Generar un DID para el usuario
-  console.log('Generando DID para el usuario...')
-  const identifier = await agent.didManagerCreate()
-  console.log('DID generado:', identifier.did)
-
-  // 2. Simular solicitudes de validación comunitaria
+  console.log('Simulando sistema DID con validación comunitaria');
+  
+  // Parámetros
+  const VALIDATION_THRESHOLD = 3;
+  
+  // 1. Generar DID
+  console.log('Generando DID para el usuario...');
+  const identifier = generateDID();
+  console.log('DID generado:', identifier.did);
+  
+  // 2. Obtener validadores
+  const validators = getMockValidators();
+  console.log(`${validators.length} validadores disponibles`);
+  
+  // 3. Solicitar y recibir validaciones
+  const validations: Validation[] = [];
   for (let i = 0; i < VALIDATION_THRESHOLD; i++) {
-    const validator = communityValidators[i]
-    // Simula la "aprobación" de un validador
-    communityValidations.push(mockCommunityValidation(validator))
-    console.log(`Validación recibida de ${validator.name}`)
+    validations.push(mockValidation(validators[i]));
+    console.log(`Validación recibida de ${validators[i].name}`);
   }
-
-  // 3. Emitir credencial verificable si se alcanza el umbral
-  if (communityValidations.length >= VALIDATION_THRESHOLD) {
-    console.log('\nUmbral de validaciones alcanzado. Emisión de credencial verificable...')
-    const credential = await agent.createVerifiableCredential({
-      credential: {
-        issuer: { id: identifier.did },
-        '@context': ['https://www.w3.org/2018/credentials/v1'],
-        type: ['VerifiableCredential', 'ProofOfHumanity'],
-        issuanceDate: new Date().toISOString(),
-        credentialSubject: {
-          id: identifier.did,
-          proofOfHumanity: true,
-          validations: communityValidations.map(v => v.validatorId),
-        },
-      },
-      proofFormat: 'jwt',
-    })
-    console.log('Credencial emitida (JWT):')
-    console.log(credential.proof.jwt)
+  
+  // 4. Emitir credencial si se alcanza el umbral
+  if (validations.length >= VALIDATION_THRESHOLD) {
+    console.log('\nUmbral de validaciones alcanzado. Emisión de credencial verificable...');
+    const credential = createVerifiableCredential(identifier, validations);
+    console.log('Credencial emitida (JWT):');
+    console.log(credential.proof.jwt);
   } else {
-    console.log('No se alcanzó el umbral de validaciones.')
+    console.log('No se alcanzó el umbral de validaciones.');
   }
 }
 
-main().catch(console.error)
+// Ejecutar simulación
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+// Exportar para uso en otros módulos
+export const didDemo = {
+  generateDID,
+  getMockValidators,
+  mockValidation: mockValidation,
+  createVerifiableCredential,
+  main,
+};
