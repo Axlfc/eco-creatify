@@ -136,6 +136,7 @@ export async function createConflictResolution(resolution: Partial<ConflictResol
     const { data, error } = await supabase
       .from('conflict_resolutions')
       .insert({
+        // Use snake_case column names as expected by Supabase
         title: resolution.title,
         description: resolution.description,
         party_a: resolution.partyA,
