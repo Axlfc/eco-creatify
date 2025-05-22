@@ -1,4 +1,3 @@
-
 // Mock del middleware de autenticación SOLO para tests
 jest.mock('../middleware/auth', () => ({
   authenticateJWT: (_req: any, _res: any, next: any) => next(),
@@ -6,7 +5,12 @@ jest.mock('../middleware/auth', () => ({
 
 // Mock para el cliente de Supabase
 jest.mock('../../integrations/supabase/client', () => {
-  const mockData = {
+  const mockData: {
+    transactions: any[];
+    budgets: any[];
+    audit_logs: any[];
+    [key: string]: any[];
+  } = {
     transactions: [],
     budgets: [],
     audit_logs: [],

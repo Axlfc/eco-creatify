@@ -1,5 +1,5 @@
+
 // Jest setup file
-// import '@testing-library/jest-dom'; // ← Solo necesario para tests de React DOM
 
 // Mock the server environment variables
 process.env.SUPABASE_URL = 'https://example.com';
