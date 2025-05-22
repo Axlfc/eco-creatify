@@ -1,4 +1,3 @@
-
 import swaggerJSDoc from 'swagger-jsdoc';
 import { version } from '../../package.json';
 
@@ -129,6 +128,25 @@ const swaggerDefinition = {
             format: 'uuid',
             description: 'ID del usuario que creó el registro',
           },
+          blockchain_hash: {
+            type: 'string',
+            description: 'Hash de la transacción en blockchain (si aplica, se actualiza en creación, aprobación o ejecución)',
+          },
+        },
+        example: {
+          id: 'uuid',
+          type: 'INCOME',
+          amount: '100',
+          asset: 'ERC20',
+          asset_address: '0x...',
+          from_address: '0x1',
+          to_address: '0x2',
+          timestamp: '2025-05-22T12:00:00Z',
+          description: 'Ingreso test',
+          budget_id: 'budget-uuid',
+          created_at: '2025-05-22T12:00:00Z',
+          created_by: 'user-id',
+          blockchain_hash: '0xHASHBLOCKCHAIN...',
         },
       },
       Budget: {
@@ -193,6 +211,25 @@ const swaggerDefinition = {
             format: 'date-time',
             description: 'Fecha de ejecución del presupuesto',
           },
+          blockchain_hash: {
+            type: 'string',
+            description: 'Hash de la transacción en blockchain (si aplica, se actualiza en aprobación/ejecución)',
+          },
+        },
+        example: {
+          id: 'uuid',
+          name: 'Presupuesto ejemplo',
+          amount: '1000',
+          asset: 'ERC20',
+          asset_address: '0x...',
+          created_by: 'user-id',
+          created_at: '2025-05-22T12:00:00Z',
+          approved: true,
+          approved_by: 'user-id',
+          approved_at: '2025-05-22T12:10:00Z',
+          executed: true,
+          executed_at: '2025-05-22T12:20:00Z',
+          blockchain_hash: '0xHASHBLOCKCHAIN_EXECUTE...',
         },
       },
       AuditLog: {

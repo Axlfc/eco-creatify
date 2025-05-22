@@ -1,4 +1,3 @@
-
 // Modelos base para el sistema de tesorería DAO
 // Definición de tipos y estructuras principales
 import { Json } from '../integrations/supabase/types';
@@ -31,8 +30,11 @@ export interface Transaction {
   budget_id?: string;
   created_at: Date;
   created_by?: string;
-  // TODO: Agregar hash de transacción y firma digital
+  blockchain_hash?: string | null; // NUEVO: hash de la transacción en blockchain
 }
+
+// Extiende los tipos para incluir blockchain_hash en Transaction y Budget
+export interface TransactionWithHash extends Transaction {}
 
 export interface Budget {
   id: string;
@@ -48,8 +50,10 @@ export interface Budget {
   approved_at?: Date;
   executed: boolean;
   executed_at?: Date;
-  // TODO: Flujos de aprobación y ejecución
+  blockchain_hash?: string | null; // NUEVO: hash de la transacción en blockchain
 }
+
+export interface BudgetWithHash extends Budget {}
 
 export interface AuditLog {
   id: string;

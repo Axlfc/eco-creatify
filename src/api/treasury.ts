@@ -1,6 +1,7 @@
-
 import express from 'express';
 import { transactionService, budgetService, auditService } from '../services/treasuryService';
+import { getOnChainTransaction, getOnChainBudget } from '../lib/treasury-explorer';
+import { TransactionWithHash, BudgetWithHash } from '../types/treasury';
 
 const router = express.Router();
 
@@ -53,6 +54,25 @@ router.get('/transactions/:id', async (req, res) => {
   } catch (error) {
     console.error('Error al consultar transacción:', error);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+  }
+});
+
+// Consultar estado on-chain de una transacción
+router.get('/transactions/:id/onchain', async (req, res) => {
+  try {
+    const transaction = await transactionService.getTransactionById(req.params.id) as TransactionWithHash;
+    if (!transaction || !transaction.blockchain_hash) {
+      return res.status(404).json({ message: 'Transacción o hash no encontrado' });
+    }
+    const onchain = await getOnChainTransaction(transaction.blockchain_hash);
+    res.json({
+      blockchain_hash: transaction.blockchain_hash,
+      confirmed: onchain?.confirmed,
+      explorer_url: onchain?.explorer_url,
+      receipt: onchain
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al consultar estado on-chain', error: error.message });
   }
 });
 
@@ -120,6 +140,26 @@ router.post('/budgets/:id/execute', async (req, res) => {
   } catch (error) {
     console.error('Error al ejecutar presupuesto:', error);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+  }
+});
+
+// Consultar estado on-chain de un presupuesto
+router.get('/budgets/:id/onchain', async (req, res) => {
+  try {
+    const budget = await budgetService.getBudgetById(req.params.id) as BudgetWithHash;
+    if (!budget || !budget.blockchain_hash) {
+      return res.status(404).json({ message: 'Presupuesto o hash no encontrado' });
+    }
+    const onchain = await getOnChainBudget(req.params.id);
+    res.json({
+      blockchain_hash: budget.blockchain_hash,
+      explorer_url: onchain?.explorer_url,
+      approved: onchain?.approved,
+      executed: onchain?.executed,
+      onchain
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al consultar estado on-chain', error: error.message });
   }
 });
 
