@@ -5,7 +5,58 @@ const swaggerSpec: OpenAPIV3.Document = {
   info: {
     title: 'API de Propuestas y Votaciones',
     version: '1.0.0',
-    description: 'Documentación de la API para gestión de propuestas y votaciones',
+    description: `Documentación de la API para gestión de propuestas y votaciones.
+
+# Autenticación con Supabase
+
+Esta API utiliza **JWT emitidos por Supabase Auth** para autenticar y autorizar a los usuarios. No existen endpoints propios de registro/login: el flujo de autenticación debe realizarse en el frontend/web usando Supabase, y el JWT obtenido se debe enviar en la cabecera HTTP Authorization.
+
+## ¿Cómo obtener el JWT de Supabase?
+
+En el frontend, tras iniciar sesión con Supabase, puedes obtener el JWT así:
+
+**JavaScript (Supabase JS v2):**
+\`\`\`js
+const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+const jwt = data.session.access_token;
+\`\`\`
+
+## Uso de la cabecera Authorization
+
+Incluye el JWT en cada petición protegida:
+
+\`\`\`
+Authorization: Bearer <JWT_SUPABASE>
+\`\`\`
+
+## Ejemplos prácticos
+
+### curl
+\`\`\`bash
+curl -H "Authorization: Bearer <JWT_SUPABASE>" http://localhost:3001/api/proposals
+\`\`\`
+
+### Postman
+- En la pestaña Authorization, selecciona tipo "Bearer Token" e ingresa el JWT de Supabase.
+
+### JavaScript fetch
+\`\`\`js
+fetch('http://localhost:3001/api/proposals', {
+  headers: { 'Authorization': 'Bearer ' + jwt }
+})
+  .then(r => r.json())
+  .then(console.log);
+\`\`\`
+
+> **Nota:** Si el token es inválido o falta, la API responderá con 401/403.
+
+# Interoperabilidad
+
+- La API acepta cualquier JWT válido emitido por Supabase Auth.
+- Puedes integrar clientes web, móviles o servidores externos que usen Supabase Auth.
+
+Para más detalles, revisa los esquemas y ejemplos de cada endpoint abajo.
+`,
   },
   servers: [
     { url: 'http://localhost:3001' },

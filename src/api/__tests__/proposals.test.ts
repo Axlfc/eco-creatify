@@ -167,3 +167,29 @@ describe('GET /api/proposals paginación y filtrado', () => {
     expect(fechas[0]).toBeLessThanOrEqual(fechas[1]);
   });
 });
+
+describe('Autenticación con JWT de Supabase', () => {
+  // Simula un JWT de Supabase (formato válido, firma dummy)
+  // En producción, la clave pública de Supabase debe usarse para verificar la firma
+  const supabaseJwt = require('jsonwebtoken').sign({ sub: 'supabase-user', email: 'user@supabase.io' }, 'dev-secret');
+
+  it('acepta un JWT de Supabase en la cabecera Authorization', async () => {
+    const res = await request(app)
+      .get('/api/proposals')
+      .set('Authorization', `Bearer ${supabaseJwt}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('rechaza peticiones sin token', async () => {
+    const res = await request(app).get('/api/proposals');
+    expect(res.status).toBe(401);
+  });
+
+  it('rechaza peticiones con token inválido', async () => {
+    const res = await request(app)
+      .get('/api/proposals')
+      .set('Authorization', 'Bearer token-invalido');
+    expect([401, 403]).toContain(res.status);
+  });
+});
