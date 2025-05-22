@@ -1,0 +1,12 @@
+// Archivo de ejemplo de salida esperada para el prototipo DID + validación comunitaria
+// Puedes comparar tu salida con este ejemplo para verificar el funcionamiento
+
+Generando DID para el usuario...
+DID generado: did:key:z6Mkw... (ejemplo)
+Validación recibida de Alice
+Validación recibida de Bob
+Validación recibida de Carol
+
+Umbral de validaciones alcanzado. Emisión de credencial verificable...
+Credencial emitida (JWT):
+eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9... (ejemplo)
