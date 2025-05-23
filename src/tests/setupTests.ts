@@ -1,3 +1,11 @@
+// Polyfill global para TextEncoder/TextDecoder en entorno Node.js
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder;
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = require('util').TextDecoder;
+}
+
 // Jest setup file
 import '@testing-library/jest-dom';
 

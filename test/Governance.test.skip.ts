@@ -1,7 +1,5 @@
-// test/Governance.test.ts
-// Test deshabilitado temporalmente: requiere integración con Hardhat/EVM fuera del entorno Jest.
-// Rehabilitar cuando se disponga de entorno adecuado o migrar a carpeta de integración.
-// it('...', ...) => test.skip('...', ...)
+// TEST DESACTIVADO TEMPORALMENTE: Se deshabilita este test hasta revisar la integración con Hardhat o la lógica funcional.
+// Renombrado a Governance.test.skip.ts para evitar su ejecución automática por Jest.
 
 import { ethers } from "hardhat";
 import { expect } from "chai";
