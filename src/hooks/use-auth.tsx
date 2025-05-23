@@ -36,6 +36,32 @@ export const useAuth = () => {
     }));
   };
 
+  const checkUsernameAndRedirect = async (userId: string, currentPath: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching profile:", error);
+        return false;
+      }
+
+      // Si no tiene username y no está ya en la página de setup
+      if ((!profile || !profile.username) && currentPath !== '/setup-username') {
+        navigate('/setup-username', { replace: true });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error checking username:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkAuthAndFetchUser = async () => {
       try {
@@ -52,7 +78,7 @@ export const useAuth = () => {
             ...prev,
             isAuthenticated: false,
             isLoading: false,
-            error: "No active session"
+            error: null
           }));
           return;
         }
@@ -93,6 +119,12 @@ export const useAuth = () => {
           error: null
         });
 
+        // Check if user needs to set up username
+        const currentPath = window.location.pathname;
+        if (!username && currentPath !== '/setup-username' && currentPath !== '/auth') {
+          navigate('/setup-username', { replace: true });
+        }
+
       } catch (error) {
         setAuthState({
           user: null,
@@ -107,7 +139,33 @@ export const useAuth = () => {
         });
       }
     };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Check username requirement on sign in
+          const currentPath = window.location.pathname;
+          const hasUsername = await checkUsernameAndRedirect(session.user.id, currentPath);
+          
+          if (hasUsername) {
+            // Refresh auth state
+            checkAuthAndFetchUser();
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
+        }
+      }
+    );
+
     checkAuthAndFetchUser();
+
+    return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
   const signOut = async () => {

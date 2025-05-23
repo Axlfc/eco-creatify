@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +34,7 @@ export const AuthForm = () => {
           description: "Please check your email to verify your account.",
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -62,9 +61,20 @@ export const AuthForm = () => {
           } else {
             throw error;
           }
-        } else {
-          // Use the redirect after successful authentication
-          redirectAfterAuth();
+        } else if (data.user) {
+          // Check if user has username in profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', data.user.id)
+            .single();
+
+          // If no username, the auth hook will handle redirection to setup-username
+          // Otherwise use the normal redirect logic
+          if (profile?.username) {
+            redirectAfterAuth();
+          }
+          // If no username, the useAuth hook will automatically redirect to /setup-username
         }
       }
     } catch (error: any) {
@@ -95,6 +105,7 @@ export const AuthForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -104,6 +115,7 @@ export const AuthForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
@@ -116,6 +128,7 @@ export const AuthForm = () => {
           variant="link"
           onClick={() => setIsSignUp(!isSignUp)}
           className="text-sm"
+          disabled={isLoading}
         >
           {isSignUp
             ? "Already have an account? Sign in"

@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -14,12 +15,26 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user && !user.username) {
-      // Guarda la ruta original para redirigir después
-      navigate("/setup-username", { replace: true, state: { from: location.pathname } });
+    // Solo verificar si no está cargando y está autenticado
+    if (!isLoading && isAuthenticated) {
+      if (!user) {
+        // Usuario no encontrado, redirigir a auth
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      if (!user.username) {
+        // Usuario sin username, redirigir a setup
+        navigate("/setup-username", { 
+          replace: true, 
+          state: { from: location.pathname } 
+        });
+        return;
+      }
     }
   }, [isLoading, isAuthenticated, user, navigate, location]);
 
+  // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
     return (
       <div role="status" aria-busy="true" tabIndex={-1} className="flex justify-center items-center min-h-screen focus:outline-none">
@@ -28,13 +43,17 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!user || !isAuthenticated) {
-    // Bloquea acceso si no está autenticado
+
+  // Bloquear acceso si no está autenticado
+  if (!isAuthenticated || !user) {
     return null;
   }
+
+  // Bloquear renderizado hasta que tenga username
   if (!user.username) {
-    // Bloquea renderizado hasta que tenga username
     return null;
   }
+
+  // Todo correcto, renderizar los children
   return <>{children}</>;
 }
