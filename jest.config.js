@@ -33,5 +33,10 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons']
+  },
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
   }
 };

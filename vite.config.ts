@@ -15,4 +15,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query']
+  }
 }));
