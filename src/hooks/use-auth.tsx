@@ -28,8 +28,9 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Permite actualizar el username en el estado global
+  // Update username in global state
   const updateUsername = (username: string) => {
+    console.log('useAuth: Updating username to:', username);
     setAuthState((prev) => ({
       ...prev,
       user: prev.user ? { ...prev.user, username } : null,
@@ -37,8 +38,12 @@ export const useAuth = () => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const checkAuthAndFetchUser = async () => {
       try {
+        console.log('useAuth: Checking auth state...');
+        
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -47,15 +52,19 @@ export const useAuth = () => {
         }
 
         if (!session) {
-          // No active session
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null
-          });
+          console.log('useAuth: No active session');
+          if (mounted) {
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null
+            });
+          }
           return;
         }
+
+        console.log('useAuth: Active session found for user:', session.user.id);
 
         // Try to get username from profiles table
         let username: string | undefined;
@@ -68,97 +77,105 @@ export const useAuth = () => {
 
           if (!profileError && profile) {
             username = profile.username;
+            console.log('useAuth: Username found:', username);
+          } else {
+            console.log('useAuth: No username found in profile');
           }
         } catch (error) {
-          console.error("Error fetching profile:", error);
+          console.error("useAuth: Error fetching profile:", error);
         }
 
-        // Extract user information
+        // Create user object
         const user: User = {
           id: session.user.id,
           email: session.user.email || undefined,
           username: username
         };
 
-        setAuthState({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null
-        });
-
-        // IMPORTANTE: Solo redirigir a setup-username si:
-        // 1. El usuario está autenticado
-        // 2. No tiene username
-        // 3. No está ya en las rutas permitidas sin username
-        const currentPath = window.location.pathname;
-        const allowedPathsWithoutUsername = ['/auth', '/setup-username', '/'];
-        
-        if (!username && !allowedPathsWithoutUsername.includes(currentPath)) {
-          console.log('User authenticated but no username, redirecting to setup');
-          navigate('/setup-username', { replace: true });
+        if (mounted) {
+          setAuthState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
         }
 
+        console.log('useAuth: Auth state updated:', { 
+          authenticated: true, 
+          hasUsername: !!username 
+        });
+
       } catch (error) {
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: error instanceof Error ? error.message : "Authentication failed"
-        });
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Failed to retrieve user data. Please sign in again."
-        });
+        console.error('useAuth: Error during auth check:', error);
+        if (mounted) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: error instanceof Error ? error.message : "Authentication failed"
+          });
+        }
       }
     };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('useAuth: Auth state changed:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session) {
-          // Refresh auth state when user signs in
+          // Don't call checkAuthAndFetchUser here to avoid loops
+          // Just update the basic auth state and let the main effect handle the rest
+          console.log('useAuth: User signed in, will fetch profile...');
           checkAuthAndFetchUser();
         } else if (event === 'SIGNED_OUT') {
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null
-          });
-          // Clear any pending redirects and go to auth
-          navigate('/auth', { replace: true });
+          console.log('useAuth: User signed out');
+          if (mounted) {
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null
+            });
+          }
         }
       }
     );
 
+    // Initial auth check
     checkAuthAndFetchUser();
 
-    return () => subscription.unsubscribe();
-  }, [navigate, toast]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signOut = async () => {
     try {
+      console.log('useAuth: Signing out...');
       await supabase.auth.signOut();
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
         error: null
       });
-      navigate("/auth");
+      
+      navigate("/auth", { replace: true });
+      
       toast({
-        title: "Signed Out",
-        description: "You have been successfully signed out."
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente."
       });
     } catch (error) {
+      console.error('useAuth: Sign out error:', error);
       toast({
         variant: "destructive",
-        title: "Sign Out Error",
-        description: "Failed to sign out. Please try again."
+        title: "Error al cerrar sesión",
+        description: "Ha ocurrido un error. Intenta de nuevo."
       });
     }
   };

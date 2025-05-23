@@ -5,9 +5,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Wrapper que protege rutas restringidas y fuerza a definir username único.
- * SOLO actúa si el usuario está autenticado.
- * Si el usuario no tiene username, redirige automáticamente a /setup-username.
+ * Wrapper que protege rutas que requieren username obligatoriamente.
+ * Redirige a rutas seguras si el usuario no tiene username.
  */
 export function RequireUsername({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -22,16 +21,20 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
 
     // Si no está autenticado, redirigir a auth
     if (!isAuthenticated || !user) {
+      console.log('RequireUsername: Not authenticated, redirecting to auth');
       navigate("/auth", { replace: true });
       return;
     }
 
-    // SOLO si está autenticado pero no tiene username, redirigir a setup
+    // Si está autenticado pero no tiene username, redirigir a una ruta segura
     if (isAuthenticated && user && !user.username) {
-      console.log('RequireUsername: User authenticated but no username, redirecting to setup');
-      navigate("/setup-username", { 
+      console.log('RequireUsername: User authenticated but no username, redirecting to forum');
+      navigate("/forum", { 
         replace: true, 
-        state: { from: location.pathname } 
+        state: { 
+          from: location.pathname,
+          message: 'Debes configurar tu username para acceder a esta sección'
+        } 
       });
       return;
     }
@@ -54,7 +57,7 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
 
   // Bloquear renderizado hasta que tenga username
   if (!user.username) {
-    return null; // Se redirigirá a setup-username
+    return null; // Se redirigirá a forum y se mostrará el modal
   }
 
   // Todo correcto, renderizar los children
