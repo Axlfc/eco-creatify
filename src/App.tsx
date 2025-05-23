@@ -11,7 +11,8 @@ import Proposals from "@/pages/Proposals";
 import ProposalCreate from "@/pages/ProposalCreate";
 import ProposalView from "@/pages/ProposalView";
 import ProposalConsensus from "@/pages/ProposalConsensus";
-import { UsernameSetupDialog } from "@/components/UsernameSetupDialog";
+import SetupUsername from "@/pages/SetupUsername";
+import { RequireUsername } from "@/components/RequireUsername";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -23,15 +24,43 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/forum" element={<Forum />} />
-          <Route path="/proposals" element={<Proposals />} />
-          <Route path="/proposals/:id" element={<ProposalView />} />
-          <Route path="/proposals/consensus" element={<ProposalConsensus />} />
-          <Route path="/users/:username" element={<UserProfile />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/proposals/create" element={<ProposalCreate />} />
+          <Route path="/setup-username" element={<SetupUsername />} />
+          <Route path="/forum" element={
+            <RequireUsername>
+              <Forum />
+            </RequireUsername>
+          } />
+          <Route path="/proposals" element={
+            <RequireUsername>
+              <Proposals />
+            </RequireUsername>
+          } />
+          <Route path="/proposals/:id" element={
+            <RequireUsername>
+              <ProposalView />
+            </RequireUsername>
+          } />
+          <Route path="/proposals/consensus" element={
+            <RequireUsername>
+              <ProposalConsensus />
+            </RequireUsername>
+          } />
+          <Route path="/users/:username" element={
+            <RequireUsername>
+              <UserProfile />
+            </RequireUsername>
+          } />
+          <Route path="/dashboard" element={
+            <RequireUsername>
+              <Dashboard />
+            </RequireUsername>
+          } />
+          <Route path="/proposals/create" element={
+            <RequireUsername>
+              <ProposalCreate />
+            </RequireUsername>
+          } />
         </Routes>
-        <UsernameSetupDialog />
         <Toaster />
       </Router>
     </QueryClientProvider>

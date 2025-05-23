@@ -39,29 +39,42 @@ export const UsernameSetupDialog = () => {
     checkUsername();
   }, []);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const handleSubmit = async () => {
-    if (!username.trim()) return;
-
+    setErrorMsg(null);
+    if (!username.trim()) {
+      setErrorMsg("El nombre de usuario no puede estar vacío.");
+      return;
+    }
     setIsLoading(true);
     try {
+      // Validar unicidad del username
+      const { data: existing, error: checkError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.trim())
+        .maybeSingle();
+      if (checkError) throw checkError;
+      if (existing) {
+        setErrorMsg("Este nombre de usuario ya está en uso. Elige otro.");
+        setIsLoading(false);
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session found");
-
       const { error } = await supabase
         .from("profiles")
-        .update({ username })
+        .update({ username: username.trim() })
         .eq("id", session.user.id);
-
       if (error) throw error;
-
       toast({
-        title: "Username set successfully",
-        description: "You can now start using the platform",
+        title: "Username creado correctamente",
+        description: "Ya puedes usar la plataforma.",
       });
       setOpen(false);
       navigate("/dashboard");
     } catch (error: any) {
-      console.error("Error setting username:", error);
+      setErrorMsg(error.message || "Error desconocido al crear username");
       toast({
         title: "Error",
         description: error.message,
@@ -83,20 +96,29 @@ export const UsernameSetupDialog = () => {
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Nombre de usuario</Label>
             <Input
               id="username"
-              placeholder="Enter your username"
+              placeholder="Elige tu nombre de usuario"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              aria-invalid={!!errorMsg}
+              aria-describedby="username-error"
+              autoFocus
             />
+            {errorMsg && (
+              <div id="username-error" className="text-red-600 text-sm mt-1" role="alert">
+                {errorMsg}
+              </div>
+            )}
           </div>
           <Button
             onClick={handleSubmit}
             disabled={isLoading || !username.trim()}
             className="w-full"
+            aria-busy={isLoading}
           >
-            {isLoading ? "Setting username..." : "Set Username"}
+            {isLoading ? "Guardando..." : "Crear username"}
           </Button>
         </div>
       </DialogContent>

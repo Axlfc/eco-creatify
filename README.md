@@ -1,3 +1,76 @@
+# Flujo de registro y protección de rutas por username
+
+## Descripción general
+
+El sistema requiere que todo usuario registrado defina un **nombre de usuario único** antes de acceder a cualquier área restringida de la plataforma (dashboard, perfil, foro, propuestas, etc.).
+
+### Comportamiento esperado
+
+- Un usuario nuevo, tras autenticarse, debe establecer un username único.
+- Si el usuario no tiene username, será **redirigido automáticamente** a `/setup-username` al intentar acceder a cualquier ruta protegida.
+- La validación de unicidad es inmediata y accesible, mostrando feedback visual y mensajes claros en caso de error.
+- El wrapper `RequireUsername` controla el acceso a rutas protegidas desde `App.tsx`.
+
+## Diagrama de flujo de navegación
+
+```mermaid
+flowchart TD
+    A[Usuario accede o se registra] --> B{¿Tiene username?}
+    B -- Sí --> C[Puede navegar por rutas restringidas]
+    B -- No --> D[Redirigido a /setup-username]
+    D --> E{¿Username único y válido?}
+    E -- Sí --> F[Guarda username y accede]
+    E -- No --> D
+```
+
+## Detalles técnicos
+
+- El wrapper `RequireUsername` (ver `/src/components/RequireUsername.tsx`) verifica el estado de autenticación y la presencia de username en el usuario global.
+- Si el usuario no tiene username, bloquea el renderizado de la ruta y redirige a `/setup-username`.
+- La pantalla `/setup-username` muestra un formulario accesible para elegir username, validando en tiempo real que no esté repetido (consulta a la base de datos).
+- El feedback de error es visual y accesible (`aria-invalid`, mensajes de error, focus automático).
+- Al guardar un username válido, se actualiza el estado global del usuario mediante el hook `useAuth` (`updateUsername`).
+- Tras éxito, el usuario es redirigido a la ruta original o al dashboard.
+
+## Ejemplo de código relevante
+
+**Protección de rutas en App.tsx:**
+
+```tsx
+<Route path="/dashboard" element={
+  <RequireUsername>
+    <Dashboard />
+  </RequireUsername>
+} />
+```
+
+**Validación de unicidad en UsernameSetupDialog:**
+
+```tsx
+const { data: existing } = await supabase
+  .from("profiles")
+  .select("id")
+  .eq("username", username.trim())
+  .maybeSingle();
+if (existing) {
+  setErrorMsg("Este nombre de usuario ya está en uso. Elige otro.");
+  return;
+}
+```
+
+## Estado global y actualización
+
+- El estado global del usuario se gestiona con el hook `useAuth`.
+- Al crear el username, se actualiza el usuario global (`updateUsername`) y se permite el acceso normal.
+
+## Accesibilidad y feedback
+
+- El formulario de username usa roles, mensajes de error claros y focus automático.
+- El botón muestra estado de carga (`aria-busy`) y los errores se anuncian visualmente y por ARIA.
+
+---
+
+¿Dudas o sugerencias? Abre un issue o contacta al equipo.
 # Welcome to your Lovable project
 
 ## Project info

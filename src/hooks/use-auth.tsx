@@ -28,6 +28,14 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Permite actualizar el username en el estado global
+  const updateUsername = (username: string) => {
+    setAuthState((prev) => ({
+      ...prev,
+      user: prev.user ? { ...prev.user, username } : null,
+    }));
+  };
+
   useEffect(() => {
     const checkAuthAndFetchUser = async () => {
       try {
@@ -78,8 +86,6 @@ export const useAuth = () => {
           username: username
         };
 
-        console.log("User authenticated with username:", username);
-
         setAuthState({
           user,
           isAuthenticated: true,
@@ -88,17 +94,12 @@ export const useAuth = () => {
         });
 
       } catch (error) {
-        console.error("Authentication error:", error);
-        
-        // Set error state
         setAuthState({
           user: null,
           isAuthenticated: false,
           isLoading: false,
           error: error instanceof Error ? error.message : "Authentication failed"
         });
-
-        // Show toast notification
         toast({
           variant: "destructive",
           title: "Authentication Error",
@@ -106,7 +107,6 @@ export const useAuth = () => {
         });
       }
     };
-
     checkAuthAndFetchUser();
   }, [navigate, toast]);
 
@@ -125,7 +125,6 @@ export const useAuth = () => {
         description: "You have been successfully signed out."
       });
     } catch (error) {
-      console.error("Sign out error:", error);
       toast({
         variant: "destructive",
         title: "Sign Out Error",
@@ -136,6 +135,7 @@ export const useAuth = () => {
 
   return {
     ...authState,
-    signOut
+    signOut,
+    updateUsername,
   };
 };
