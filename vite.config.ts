@@ -9,12 +9,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [
-    react(),
-    // Temporarily disable componentTagger to fix the ESM issue
-    // mode === 'development' &&
-    // componentTagger(),
-  ].filter(Boolean),
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
