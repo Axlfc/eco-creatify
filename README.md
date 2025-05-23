@@ -641,3 +641,32 @@ stateDiagram-v2
 
 > Puedes ampliar los estados según la lógica de tu contrato (Rejected, ExecutedWithError, Cancelled, etc.).
 > Se recomienda documentar inline con NatSpec en el propio contrato Solidity para máxima transparencia y mantenibilidad.
+
+# 🏁 Milestone alcanzado: Backend Core Features Completed
+
+A fecha 2025-05-23, se ha completado el milestone **Backend Core Features Completed**. Todos los issues críticos de backend han sido implementados, probados y documentados, incluyendo el sistema de Tesorería DAO con integración blockchain, control de acceso, trazabilidad y herramientas de auditoría.
+
+## Cambios principales (Release Notes v1.0.0)
+- Implementación completa del sistema de Tesorería DAO:
+  - Registro y visualización de ingresos, egresos y balances.
+  - Flujos de asignación, aprobación y ejecución de presupuestos (con integración blockchain opcional).
+  - Mecanismos de control y trazabilidad de transacciones (logs de auditoría, hash blockchain, endpoints de consulta detallada).
+  - Herramientas de auditoría y reportes automáticos.
+  - Soporte para integración con wallets y activos digitales (ERC20/ERC721/NATIVE).
+- Pruebas automáticas para todos los flujos críticos (`src/api/__tests__/treasury.e2e.test.ts`).
+- Documentación técnica y de usuario actualizada (`/docs/tesoreria-dao.md`).
+- Swagger/OpenAPI cubre todos los endpoints y flujos (`src/api/swagger.ts`).
+- Integración con Supabase Auth activa en todos los endpoints.
+
+## Checklist de auditoría
+- [x] Todos los endpoints backend críticos implementados y protegidos.
+- [x] Pruebas automáticas superadas.
+- [x] Documentación y ejemplos de uso actualizados.
+- [x] Integración blockchain y wallets documentada.
+- [x] Auditoría y trazabilidad completas.
+
+---
+
+Para más detalles, consulta `/docs/tesoreria-dao.md`, `/src/api/treasury.ts`, `/src/api/__tests__/treasury.e2e.test.ts` y el historial de releases.
+
+¡La base backend está lista para la siguiente fase de desarrollo y revisión comunitaria!
