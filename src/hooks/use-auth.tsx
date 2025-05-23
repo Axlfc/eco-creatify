@@ -29,12 +29,29 @@ export const useAuth = () => {
   const { toast } = useToast();
 
   // Update username in global state
-  const updateUsername = (username: string) => {
+  const updateUsername = async (username: string) => {
     console.log('useAuth: Updating username to:', username);
-    setAuthState((prev) => ({
-      ...prev,
-      user: prev.user ? { ...prev.user, username } : null,
-    }));
+    
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from("profiles")
+        .update({ username })
+        .eq("id", authState.user?.id);
+        
+      if (error) throw error;
+      
+      // Update in local state
+      setAuthState((prev) => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, username } : null,
+      }));
+      
+      return { success: true };
+    } catch (error) {
+      console.error('useAuth: Error updating username:', error);
+      throw error;
+    }
   };
 
   // Force logout when username flow is bypassed
@@ -97,7 +114,7 @@ export const useAuth = () => {
             .from('profiles')
             .select('username')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (!profileError && profile) {
             username = profile.username;
@@ -134,6 +151,12 @@ export const useAuth = () => {
         if (!username) {
           console.log('useAuth: User authenticated but no username, forcing username flow');
           // This will be handled by the UsernameGuard component
+          
+          // Automatically navigate to setup-username page
+          if (window.location.pathname !== '/auth' && 
+              window.location.pathname !== '/setup-username') {
+            navigate('/setup-username', { replace: true });
+          }
         }
 
       } catch (error) {
@@ -178,7 +201,7 @@ export const useAuth = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signOut = async () => {
     try {

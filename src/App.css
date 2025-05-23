@@ -2,10 +2,15 @@
 .username-required {
   pointer-events: none;
   user-select: none;
+  opacity: 0.6;
+  filter: blur(1px);
+  transition: all 0.3s ease;
 }
 
 .username-required .username-modal {
   pointer-events: all;
+  opacity: 1;
+  filter: none;
 }
 
 /* Ensure modal and auth elements are always interactive */
@@ -15,11 +20,13 @@
 .login-form {
   pointer-events: all !important;
   user-select: auto !important;
+  opacity: 1 !important;
+  filter: none !important;
+  z-index: 1000 !important; /* Ensure it's above all other content */
 }
 
-/* Visual indication that interaction is disabled */
+/* Additional visual indication that interaction is disabled */
 .username-required *:not([role="dialog"]):not([role="alertdialog"]):not(.auth-form):not(.login-form) {
-  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -39,4 +46,21 @@
 .security-warning.critical {
   border-left-color: #dc2626;
   background-color: #fecaca;
+}
+
+/* Modal overlay to block all interactions */
+.username-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Ensure the modal is always fully visible and centered */
+.username-modal {
+  z-index: 1000;
 }

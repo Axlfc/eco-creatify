@@ -35,10 +35,24 @@ export const useMandatoryUsername = () => {
     return false;
   }, [isAuthenticated, user, isLoading]);
 
-  // Check on auth state changes and route changes
+  // Check on auth state changes and route changes - ALWAYS ENFORCE
   useEffect(() => {
     checkUsernameRequired();
-  }, [checkUsernameRequired, location.pathname]);
+  }, [checkUsernameRequired, location.pathname, isAuthenticated, user]);
+
+  // Additional check to enforce modal on any render
+  useEffect(() => {
+    const enforceCheck = () => {
+      checkUsernameRequired();
+    };
+    
+    // Run check immediately and on any potential state changes
+    enforceCheck();
+    
+    // Set up interval to periodically check (catches any state restoration edge cases)
+    const interval = setInterval(enforceCheck, 5000);
+    return () => clearInterval(interval);
+  }, [checkUsernameRequired]);
 
   // Anti-spam: show captcha after multiple attempts
   useEffect(() => {
@@ -53,7 +67,7 @@ export const useMandatoryUsername = () => {
     
     try {
       // Update the auth context
-      updateUsername(newUsername);
+      await updateUsername(newUsername);
       
       // Hide modal and reset counters
       setShowModal(false);
@@ -100,18 +114,13 @@ export const useMandatoryUsername = () => {
     }
   }, [attemptCount, toast]);
 
-  // Force recheck (useful for development/debugging)
-  const recheckUsername = useCallback(() => {
-    return checkUsernameRequired();
-  }, [checkUsernameRequired]);
-
   return {
     showModal,
     shouldShowModal: isAuthenticated && user && !user.username,
     handleUsernameSet,
     handleModalCloseAttempt,
     handleUsernameError,
-    recheckUsername,
+    recheckUsername: checkUsernameRequired,
     hasUsername: user?.username ? true : false,
     isAuthenticated,
     isLoading,

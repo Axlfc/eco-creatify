@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +13,12 @@ export const AuthForm = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
-  const { redirectAfterAuth, storeIntendedDestination } = useAuthRedirect();
+  const { storeIntendedDestination } = useAuthRedirect();
 
   // Store the intended destination when the component mounts
   useEffect(() => {
     storeIntendedDestination();
-  }, []);
+  }, [storeIntendedDestination]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,6 @@ export const AuthForm = () => {
             description: "Revisa tu email para confirmar tu cuenta.",
           });
           
-          // After signup, user will need to set username
           console.log('AuthForm: User signed up, will need username setup');
         }
       } else {
@@ -80,13 +80,13 @@ export const AuthForm = () => {
   return (
     <div className="w-full max-w-md mx-auto space-y-8">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">{isSignUp ? "Create Account" : "Welcome Back"}</h1>
+        <h1 className="text-2xl font-bold">{isSignUp ? "Crear cuenta" : "Bienvenido de vuelta"}</h1>
         <p className="text-muted-foreground mt-2">
-          {isSignUp ? "Sign up to get started" : "Sign in to your account"}
+          {isSignUp ? "Regístrate para empezar" : "Inicia sesión en tu cuenta"}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 auth-form">
         <div className="space-y-2">
           <Input
             type="email"
@@ -100,7 +100,7 @@ export const AuthForm = () => {
         <div className="space-y-2">
           <Input
             type="password"
-            placeholder="Password"
+            placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -108,7 +108,7 @@ export const AuthForm = () => {
           />
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+          {isLoading ? "Cargando..." : isSignUp ? "Registrarse" : "Iniciar sesión"}
         </Button>
       </form>
 
@@ -120,8 +120,8 @@ export const AuthForm = () => {
           disabled={isLoading}
         >
           {isSignUp
-            ? "Already have an account? Sign in"
-            : "Don't have an account? Sign up"}
+            ? "¿Ya tienes una cuenta? Inicia sesión"
+            : "¿No tienes una cuenta? Regístrate"}
         </Button>
       </div>
     </div>

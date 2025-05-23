@@ -26,7 +26,7 @@ const PARTIAL_ACCESS_ROUTES = [
 export const UsernameGuard = ({ children }: UsernameGuardProps) => {
   const { 
     showModal, 
-    shouldShowModal, 
+    shouldShowModal,
     handleUsernameSet, 
     handleModalCloseAttempt,
     handleUsernameError,
@@ -42,11 +42,11 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Continuous monitoring: recheck username on every route change and auth state change
+  // Continuous monitoring: recheck username on every render, route change and auth state change
   useEffect(() => {
     if (!isLoading) {
       const needsUsername = recheckUsername();
-      console.log('UsernameGuard: Route change check:', { 
+      console.log('UsernameGuard: Enforced check:', { 
         path: location.pathname, 
         needsUsername, 
         isAuthenticated, 
@@ -93,7 +93,7 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
       if (isInRestrictedArea) {
         console.log('UsernameGuard: User in restricted area without username - enforcing restrictions');
         
-        // Add a class to body to potentially disable interactions via CSS
+        // Add a class to body to disable interactions via CSS
         document.body.classList.add('username-required');
       } else {
         document.body.classList.remove('username-required');
@@ -116,11 +116,12 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
     );
   }
 
+  // CRITICAL: Always force the username modal if needed, regardless of route
   return (
     <>
       {children}
       <MandatoryUsernameModal 
-        open={showModal}
+        open={showModal || shouldShowModal} // Double check to ensure the modal is shown
         onUsernameSet={handleUsernameSet}
         onCloseAttempt={handleModalCloseAttempt}
         onError={handleUsernameError}

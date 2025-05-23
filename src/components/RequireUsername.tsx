@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMandatoryUsername } from "@/hooks/use-mandatory-username";
 
 /**
  * Wrapper que protege rutas que requieren username obligatoriamente.
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function RequireUsername({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { recheckUsername } = useMandatoryUsername();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,10 +28,13 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Si está autenticado pero no tiene username, redirigir a una ruta segura
+    // Si está autenticado pero no tiene username, forzar el modal y bloquear acceso
     if (isAuthenticated && user && !user.username) {
-      console.log('RequireUsername: User authenticated but no username, redirecting to forum');
-      navigate("/forum", { 
+      console.log('RequireUsername: User authenticated but no username, forcing username mode');
+      recheckUsername(); // Ensure modal is shown
+      
+      // Redirect to username setup
+      navigate("/setup-username", { 
         replace: true, 
         state: { 
           from: location.pathname,
@@ -38,7 +43,7 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
       });
       return;
     }
-  }, [isLoading, isAuthenticated, user, navigate, location]);
+  }, [isLoading, isAuthenticated, user, navigate, location, recheckUsername]);
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
@@ -57,7 +62,7 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
 
   // Bloquear renderizado hasta que tenga username
   if (!user.username) {
-    return null; // Se redirigirá a forum y se mostrará el modal
+    return null; // Se redirigirá a setup-username y se mostrará el modal
   }
 
   // Todo correcto, renderizar los children
