@@ -1,17 +1,19 @@
 
-// Simple mock implementation for DID functionality
-// This replaces the complex Veramo setup that was causing installation issues
-
-export interface SimpleDID {
+// Simple mock implementation to replace Veramo DID functionality
+export interface DIDDocument {
   id: string;
-  did: string;
-  keys: {
-    publicKeyHex: string;
-  };
+  verificationMethod: Array<{
+    id: string;
+    type: string;
+    controller: string;
+    publicKeyHex?: string;
+  }>;
+  authentication: string[];
+  assertionMethod: string[];
 }
 
-export interface SimpleCredential {
-  id: string;
+export interface VerifiableCredential {
+  '@context': string[];
   type: string[];
   issuer: string;
   issuanceDate: string;
@@ -19,67 +21,75 @@ export interface SimpleCredential {
   proof?: {
     type: string;
     created: string;
-    proofPurpose: string;
     verificationMethod: string;
+    proofPurpose: string;
     jws: string;
   };
 }
 
 export class SimpleDIDManager {
-  private identities: Map<string, SimpleDID> = new Map();
-  private credentials: Map<string, SimpleCredential> = new Map();
-
-  async createDID(): Promise<SimpleDID> {
-    const id = `did:key:z${Math.random().toString(36).substring(2)}`;
-    const identity: SimpleDID = {
-      id,
-      did: id,
-      keys: {
-        publicKeyHex: Math.random().toString(16).substring(2)
-      }
-    };
+  async createDID(): Promise<{ did: string; document: DIDDocument }> {
+    const keyId = Math.random().toString(36).substring(2, 15);
+    const did = `did:key:z${keyId}`;
     
-    this.identities.set(id, identity);
-    return identity;
-  }
-
-  async createCredential(issuer: string, subject: any, type: string[] = ['VerifiableCredential']): Promise<SimpleCredential> {
-    const credential: SimpleCredential = {
-      id: `vc:${Math.random().toString(36).substring(2)}`,
-      type,
-      issuer,
-      issuanceDate: new Date().toISOString(),
-      credentialSubject: subject,
-      proof: {
-        type: 'JsonWebSignature2020',
-        created: new Date().toISOString(),
-        proofPurpose: 'assertionMethod',
-        verificationMethod: `${issuer}#key-1`,
-        jws: `mock-signature-${Math.random().toString(36).substring(2)}`
-      }
+    const document: DIDDocument = {
+      id: did,
+      verificationMethod: [{
+        id: `${did}#${keyId}`,
+        type: 'EcdsaSecp256k1VerificationKey2019',
+        controller: did,
+        publicKeyHex: Math.random().toString(16).substring(2, 66)
+      }],
+      authentication: [`${did}#${keyId}`],
+      assertionMethod: [`${did}#${keyId}`]
     };
 
-    this.credentials.set(credential.id, credential);
-    return credential;
+    return { did, document };
   }
 
-  async verifyCredential(credential: SimpleCredential): Promise<{ verified: boolean; error?: string }> {
-    // Simple mock verification - in real implementation this would verify the cryptographic proof
-    if (!credential.proof || !credential.issuer) {
-      return { verified: false, error: 'Missing required proof or issuer' };
+  async resolveDID(did: string): Promise<DIDDocument | null> {
+    // Mock resolution - in a real implementation this would query a DID registry
+    if (!did.startsWith('did:key:')) {
+      return null;
     }
+
+    const keyId = did.split(':')[2];
+    return {
+      id: did,
+      verificationMethod: [{
+        id: `${did}#${keyId}`,
+        type: 'EcdsaSecp256k1VerificationKey2019',
+        controller: did,
+        publicKeyHex: Math.random().toString(16).substring(2, 66)
+      }],
+      authentication: [`${did}#${keyId}`],
+      assertionMethod: [`${did}#${keyId}`]
+    };
+  }
+
+  async issueCredential(credential: Partial<VerifiableCredential>): Promise<VerifiableCredential> {
+    const now = new Date().toISOString();
     
+    return {
+      '@context': ['https://www.w3.org/2018/credentials/v1'],
+      type: ['VerifiableCredential'],
+      issuer: credential.issuer || 'did:key:mock-issuer',
+      issuanceDate: now,
+      credentialSubject: credential.credentialSubject || {},
+      proof: {
+        type: 'EcdsaSecp256k1Signature2019',
+        created: now,
+        verificationMethod: `${credential.issuer || 'did:key:mock-issuer'}#key-1`,
+        proofPurpose: 'assertionMethod',
+        jws: 'mock-signature-' + Math.random().toString(36)
+      }
+    };
+  }
+
+  async verifyCredential(credential: VerifiableCredential): Promise<{ verified: boolean; error?: string }> {
+    // Mock verification - always returns true for demo purposes
     return { verified: true };
-  }
-
-  getIdentities(): SimpleDID[] {
-    return Array.from(this.identities.values());
-  }
-
-  getCredentials(): SimpleCredential[] {
-    return Array.from(this.credentials.values());
   }
 }
 
-// Export singleton instance
 export const didManager = new SimpleDIDManager();
