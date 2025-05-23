@@ -1,3 +1,11 @@
+/**
+ * Flujo esperado para username obligatorio:
+ * - Si el usuario autenticado no tiene username, mostrar siempre el modal de selección de username en todas las rutas protegidas.
+ * - Si el modal se cierra sin elegir username válido, forzar logout y redirigir a /login.
+ * - Tras elegir username único y válido, actualizar el perfil global y habilitar rutas protegidas (/dashboard, /user/{username}...).
+ * - Las rutas públicas (foro, landing, etc.) permiten solo lectura sin username, pero bloquean acciones de publicación.
+ * - El flujo es reutilizable y debe mantenerse sincronizado con cambios de sesión o datos de usuario.
+ */
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
