@@ -22,28 +22,46 @@ const swaggerDefinition = {
       Proposal: {
         type: 'object',
         properties: {
-          id: {
-            type: 'string',
-            format: 'uuid',
-            description: 'Identificador único de la propuesta',
-          },
-          title: {
-            type: 'string',
-            description: 'Título de la propuesta',
-          },
-          description: {
-            type: 'string',
-            description: 'Descripción detallada de la propuesta',
-          },
-          createdBy: {
-            type: 'string',
-            description: 'ID del usuario que creó la propuesta',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'date-time',
-            description: 'Fecha de creación de la propuesta',
-          },
+          id: { type: 'string', format: 'uuid', description: 'Identificador único de la propuesta' },
+          title: { type: 'string', description: 'Título de la propuesta' },
+          description: { type: 'string', description: 'Descripción detallada de la propuesta' },
+          createdBy: { type: 'string', description: 'ID del usuario que creó la propuesta' },
+          createdAt: { type: 'string', format: 'date-time', description: 'Fecha de creación de la propuesta' },
+        },
+      },
+      Comment: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', description: 'ID único del comentario' },
+          proposalId: { type: 'string', format: 'uuid', description: 'ID de la propuesta asociada' },
+          parentId: { type: 'string', format: 'uuid', nullable: true, description: 'ID del comentario padre (si es respuesta)' },
+          authorId: { type: 'string', description: 'ID del autor' },
+          content: { type: 'string', description: 'Contenido del comentario' },
+          createdAt: { type: 'string', format: 'date-time', description: 'Fecha de creación' },
+          updatedAt: { type: 'string', format: 'date-time', description: 'Fecha de última edición' },
+          isBlocked: { type: 'boolean', description: 'Indica si el comentario está bloqueado' },
+        },
+      },
+      Report: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', description: 'ID del reporte' },
+          itemId: { type: 'string', description: 'ID del elemento reportado' },
+          itemType: { type: 'string', enum: ['proposal', 'comment'], description: 'Tipo de elemento' },
+          reporterId: { type: 'string', description: 'ID del usuario que reporta' },
+          reason: { type: 'string', description: 'Motivo del reporte' },
+          createdAt: { type: 'string', format: 'date-time', description: 'Fecha de reporte' },
+          status: { type: 'string', enum: ['pending', 'reviewed', 'blocked'], description: 'Estado del reporte' },
+        },
+      },
+      ProposalHistory: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid', description: 'ID del registro de historial' },
+          proposalId: { type: 'string', format: 'uuid', description: 'ID de la propuesta' },
+          editorId: { type: 'string', description: 'ID del usuario que editó' },
+          changes: { type: 'string', description: 'Descripción de los cambios' },
+          createdAt: { type: 'string', format: 'date-time', description: 'Fecha del cambio' },
         },
       },
       Vote: {

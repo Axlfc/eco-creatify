@@ -16,6 +16,22 @@ import { AlertCircle, Check, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+
+/**
+ * ProposalForm.tsx
+ *
+ * Formulario reutilizable para crear y editar propuestas ciudadanas.
+ * - Si recibe una propuesta (prop proposal), actúa en modo edición.
+ * - Si no recibe propuesta, actúa en modo creación.
+ * - Integra validación de campos, feedback visual y notificaciones mínimas.
+ * - Requiere autenticación: obtiene usuario desde useAuth.
+ * - Al enviar, llama a la API correspondiente (POST/PUT) y muestra feedback.
+ *
+ * Uso:
+ * <ProposalForm onSuccess={fn} /> // Crear
+ * <ProposalForm proposal={propuesta} onSuccess={fn} /> // Editar
+ */
+
 const categories = [
   "Environment",
   "Education",
@@ -28,12 +44,33 @@ const categories = [
   "Safety"
 ];
 
-const ProposalForm: React.FC = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+
+import { useAuth } from '@/hooks/use-auth';
+
+export interface Proposal {
+  id?: string;
+  title: string;
+  description: string;
+  category?: string;
+}
+
+interface ProposalFormProps {
+  proposal?: Proposal;
+  onSuccess?: (proposal: Proposal) => void;
+}
+
+const MIN_TITLE = 10;
+const MIN_DESC = 50;
+const MAX_TITLE = 120;
+const MAX_DESC = 2000;
+
+const ProposalForm: React.FC<ProposalFormProps> = ({ proposal, onSuccess }) => {
+  const { isAuthenticated, user } = useAuth();
+  const [title, setTitle] = useState(proposal?.title || "");
+  const [description, setDescription] = useState(proposal?.description || "");
+  const [category, setCategory] = useState(proposal?.category || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [characterCount, setCharacterCount] = useState(0);
+  const [characterCount, setCharacterCount] = useState(description.length);
   const [formErrors, setFormErrors] = useState<{
     title?: string;
     description?: string;
@@ -43,74 +80,72 @@ const ProposalForm: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Character count update
   useEffect(() => {
     setCharacterCount(description.length);
   }, [description]);
 
+
   const validateForm = () => {
-    const errors: {
-      title?: string;
-      description?: string;
-      category?: string;
-    } = {};
+    const errors: { title?: string; description?: string; category?: string } = {};
     let isValid = true;
-
     if (!title.trim()) {
-      errors.title = "Title is required";
+      errors.title = "El título es obligatorio";
       isValid = false;
-    } else if (title.length < 10) {
-      errors.title = "Title must be at least 10 characters";
+    } else if (title.length < MIN_TITLE) {
+      errors.title = `Mínimo ${MIN_TITLE} caracteres`;
+      isValid = false;
+    } else if (title.length > MAX_TITLE) {
+      errors.title = `Máximo ${MAX_TITLE} caracteres`;
       isValid = false;
     }
-
     if (!description.trim()) {
-      errors.description = "Description is required";
+      errors.description = "La descripción es obligatoria";
       isValid = false;
-    } else if (description.length < 500) {
-      errors.description = "Description must be at least 500 characters";
+    } else if (description.length < MIN_DESC) {
+      errors.description = `Mínimo ${MIN_DESC} caracteres`;
       isValid = false;
-    } else if (description.length > 1000) {
-      errors.description = "Description must be no more than 1000 characters";
-      isValid = false;
-    }
-
-    if (!category) {
-      errors.category = "Category is required";
+    } else if (description.length > MAX_DESC) {
+      errors.description = `Máximo ${MAX_DESC} caracteres`;
       isValid = false;
     }
-
+    if (!category.trim()) {
+      errors.category = 'Selecciona una categoría';
+      isValid = false;
+    }
     setFormErrors(errors);
     return isValid;
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    if (!isAuthenticated) {
+      toast({ title: 'Debes iniciar sesión', description: 'Inicia sesión para enviar propuestas', variant: 'destructive' });
       return;
     }
-
+    if (!validateForm()) return;
     setIsSubmitting(true);
-
     try {
-      // Here we would submit to Supabase
-      // For now, we'll just simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Proposal submitted",
-        description: "Your proposal has entered the presentation phase",
+      const method = proposal ? 'PUT' : 'POST';
+      const url = proposal ? `/api/proposals/${proposal.id}` : '/api/proposals';
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token || ''}`,
+        },
+        body: JSON.stringify({ title, description, category }),
       });
-      
-      navigate("/proposals");
-    } catch (error) {
-      console.error("Error submitting proposal:", error);
+      if (!res.ok) throw new Error('Error en el servidor');
+      const data = await res.json();
       toast({
-        title: "Error",
-        description: "Failed to submit your proposal. Please try again.",
-        variant: "destructive",
+        title: proposal ? 'Propuesta actualizada' : 'Propuesta creada',
+        description: proposal ? 'Los cambios han sido guardados.' : 'Tu propuesta ha sido registrada.',
       });
+      onSuccess?.(data);
+      navigate('/proposals');
+    } catch (err) {
+      toast({ title: 'Error', description: 'No se pudo guardar la propuesta', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +160,9 @@ const ProposalForm: React.FC = () => {
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl">Create a New Proposal</CardTitle>
+        <CardTitle className="text-xl">
+          {proposal ? 'Editar propuesta' : 'Crear nueva propuesta'}
+        </CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
@@ -136,7 +173,7 @@ const ProposalForm: React.FC = () => {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter a clear, specific title for your proposal"
+                placeholder="Título claro y específico"
                 className={formErrors.title ? "border-red-500" : ""}
               />
               {formErrors.title && (
@@ -158,7 +195,7 @@ const ProposalForm: React.FC = () => {
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your proposal in detail, including its purpose, benefits, and implementation considerations"
+                placeholder="Describe tu propuesta en detalle, incluyendo propósito, beneficios e implementación"
                 className={`min-h-32 ${formErrors.description ? "border-red-500" : ""}`}
               />
               {formErrors.description ? (
@@ -169,16 +206,16 @@ const ProposalForm: React.FC = () => {
               ) : (
                 <p className="text-muted-foreground text-sm flex items-center mt-1">
                   <Info className="h-4 w-4 mr-1" />
-                  Be concise but provide enough detail for others to understand and evaluate your proposal
+                  Sé conciso pero proporciona suficiente detalle para que otros puedan entender y evaluar tu propuesta
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">Categoría</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger id="category" className={formErrors.category ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder="Selecciona una categoría" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -219,11 +256,11 @@ const ProposalForm: React.FC = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" type="button" onClick={() => navigate("/proposals")}>
-            Cancel
+          <Button variant="outline" type="button" onClick={() => navigate("/proposals")}> 
+            Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Proposal"}
+            {isSubmitting ? (proposal ? 'Guardando...' : 'Enviando...') : (proposal ? 'Guardar cambios' : 'Crear propuesta')}
           </Button>
         </CardFooter>
       </form>

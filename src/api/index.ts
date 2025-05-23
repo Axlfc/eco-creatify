@@ -1,5 +1,8 @@
 import express from 'express';
 import proposalsRouter from './routes/proposals';
+import commentsRouter from './routes/comments';
+import moderationRouter from './routes/moderation';
+import historyRouter from './routes/history';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 import path from 'path';
@@ -20,6 +23,9 @@ app.get(/^\/(?!api\/).*/, (req, res) => {
 
 // Rutas de API (deben ir después del static/catch-all para no ser sobreescritas)
 app.use('/api/proposals', proposalsRouter);
+app.use('/api/comments', commentsRouter);
+app.use('/api/moderation', moderationRouter);
+app.use('/api/history', historyRouter);
 app.use('/api/treasury', treasuryRouter);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

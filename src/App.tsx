@@ -9,7 +9,8 @@ import Dashboard from "@/pages/Dashboard";
 import UserProfile from "@/pages/UserProfile";
 import Forum from "@/pages/Forum";
 import Proposals from "@/pages/Proposals";
-import ProposalCreate from "@/pages/ProposalCreate";
+import NewProposalPage from "@/pages/proposals/NewProposal";
+import EditProposalPage from "@/pages/proposals/EditProposal";
 import ProposalView from "@/pages/ProposalView";
 import ProposalConsensus from "@/pages/ProposalConsensus";
 import SetupUsername from "@/pages/SetupUsername";
@@ -49,9 +50,14 @@ function App() {
                 <Dashboard />
               </RequireUsername>
             } />
-            <Route path="/proposals/create" element={
+            <Route path="/proposals/new" element={
               <RequireUsername>
-                <ProposalCreate />
+                <NewProposalPage />
+              </RequireUsername>
+            } />
+            <Route path="/proposals/:id/edit" element={
+              <RequireUsername>
+                <EditProposalPage />
               </RequireUsername>
             } />
           </Routes>

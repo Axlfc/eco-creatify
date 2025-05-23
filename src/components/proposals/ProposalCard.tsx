@@ -2,9 +2,9 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, MessageSquare, ThumbsUp, Users, Calendar } from "lucide-react";
+import { Clock, MessageSquare, ThumbsUp, Users, Calendar, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export type ProposalPhase = "presentation" | "discussion" | "voting" | "completed";
 
@@ -19,8 +19,13 @@ export interface ProposalCardProps {
   argumentsCount?: number;
   votesCount?: number;
   remainingTime?: string;
+  currentUser?: { id?: string; username?: string } | null;
 }
 
+/**
+ * Tarjeta de propuesta
+ * - Muestra botón de edición solo si el usuario autenticado es el autor
+ */
 const ProposalCard: React.FC<ProposalCardProps> = ({
   id,
   title,
@@ -32,6 +37,7 @@ const ProposalCard: React.FC<ProposalCardProps> = ({
   argumentsCount = 0,
   votesCount = 0,
   remainingTime,
+  currentUser,
 }) => {
   const navigate = useNavigate();
 
@@ -103,7 +109,7 @@ const ProposalCard: React.FC<ProposalCardProps> = ({
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-0 pb-3 flex justify-between">
+      <CardFooter className="pt-0 pb-3 flex justify-between items-center">
         <div className="flex space-x-3 text-xs text-muted-foreground">
           {phase !== "presentation" && (
             <span className="flex items-center">
@@ -118,14 +124,26 @@ const ProposalCard: React.FC<ProposalCardProps> = ({
             </span>
           ) : null}
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-primary/80 hover:text-primary"
-          onClick={() => navigate(`/proposals/${id}`)}
-        >
-          View Proposal
-        </Button>
+        <div className="flex gap-2 items-center">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-primary/80 hover:text-primary"
+            onClick={() => navigate(`/proposals/${id}`)}
+          >
+            View Proposal
+          </Button>
+          {/* Mostrar botón de edición solo si el usuario autenticado es el autor */}
+          {currentUser && (currentUser.username === author || currentUser.id === author) && (
+            <Link
+              to={`/proposals/${id}/edit`}
+              className="inline-flex items-center px-2 py-1 text-xs rounded bg-muted hover:bg-primary/10 text-primary border border-primary/30 transition"
+              title="Editar propuesta"
+            >
+              <Pencil className="h-4 w-4 mr-1" /> Editar
+            </Link>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

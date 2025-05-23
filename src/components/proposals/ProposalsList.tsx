@@ -1,5 +1,7 @@
 
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,61 +14,52 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, PlusCircle, Filter } from "lucide-react";
 import ProposalCard, { ProposalPhase } from "./ProposalCard";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
-// Mock data for now, will be replaced with real data from Supabase
-const mockProposals = [
-  {
-    id: "1",
-    title: "Implement Community Garden in Central District",
-    description: "This proposal suggests creating a community garden in the central district to promote sustainability, community engagement, and local food production. The garden would be maintained collectively by community members.",
-    category: "Environment",
-    author: "GreenInitiative",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    phase: "presentation" as ProposalPhase,
-    argumentsCount: 0,
-    votesCount: 0,
-    remainingTime: "19 hours remaining",
-  },
-  {
-    id: "2",
-    title: "Create Youth Technology Mentorship Program",
-    description: "This proposal aims to establish a mentorship program connecting tech professionals with underserved youth interested in technology careers. The program would include weekly sessions, project-based learning, and career guidance.",
-    category: "Education",
-    author: "TechForAll",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    phase: "discussion" as ProposalPhase,
-    argumentsCount: 12,
-    votesCount: 0,
-    remainingTime: "48 hours remaining",
-  },
-  {
-    id: "3",
-    title: "Restructure Community Forum Moderation Guidelines",
-    description: "This proposal suggests revisions to our community forum moderation guidelines to ensure fair and consistent enforcement while protecting free expression. The changes would clarify rules and appeals processes.",
-    category: "Governance",
-    author: "OpenDialogue",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
-    phase: "voting" as ProposalPhase,
-    argumentsCount: 24,
-    votesCount: 56,
-    remainingTime: "24 hours remaining",
-  },
-  {
-    id: "4",
-    title: "Establish Annual Community Recognition Awards",
-    description: "This proposal suggests creating an annual awards program to recognize outstanding contributions to our community. Categories would include innovation, inclusivity, mentorship, and community service.",
-    category: "Community",
-    author: "RecognitionMatters",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    phase: "completed" as ProposalPhase,
-    argumentsCount: 18,
-    votesCount: 87,
-    remainingTime: "",
+
+// Fetch proposals desde Supabase con paginación y filtros
+// Se puede ampliar para ordenación, scroll infinito, etc.
+const fetchProposals = async ({
+  page,
+  limit,
+  search,
+  category,
+  phase,
+}: {
+  page: number;
+  limit: number;
+  search?: string;
+  category?: string;
+  phase?: string;
+}) => {
+  let query = supabase
+    .from('proposals')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false });
+
+  // Filtros
+  if (search && search.trim()) {
+    query = query.ilike('title', `%${search}%`);
   }
-];
+  if (category && category !== 'All Categories') {
+    query = query.eq('category', category);
+  }
+  if (phase && phase !== 'all') {
+    query = query.eq('phase', phase);
+  }
+
+  // Paginación
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+  return { data: data || [], count: count || 0 };
+};
 
 const categories = [
   "All Categories",
@@ -82,65 +75,77 @@ const categories = [
 ];
 
 const ProposalsList: React.FC = () => {
+
+  // Estados de paginación y filtros
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPhase, setCurrentPhase] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
 
-  const handleCreateProposal = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a proposal",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-    
-    navigate("/proposals/create");
-  };
-
-  const filteredProposals = mockProposals.filter(proposal => {
-    const matchesSearch = 
-      proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      proposal.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = 
-      categoryFilter === "All Categories" || proposal.category === categoryFilter;
-    
-    const matchesPhase = 
-      currentPhase === "all" || proposal.phase === currentPhase;
-    
-    return matchesSearch && matchesCategory && matchesPhase;
+  // React Query para obtener propuestas con paginación y filtros
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["proposals", { page, limit, searchQuery, categoryFilter, currentPhase }],
+    queryFn: () => fetchProposals({
+      page,
+      limit,
+      search: searchQuery,
+      category: categoryFilter,
+      phase: currentPhase,
+    }),
+    keepPreviousData: true,
   });
+
+  const proposals = data?.data || [];
+  const totalCount = data?.count || 0;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // Refrescar tras crear/editar/eliminar: llamar refetch() desde onSuccess de ProposalForm
+
+  // Manejo de loading y error
+  if (isLoading) {
+    return <div className="py-10 text-center">Cargando propuestas...</div>;
+  }
+  if (isError) {
+    return <div className="py-10 text-center text-red-500">Error al cargar propuestas</div>;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Filtros y búsqueda */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search proposals..." 
+          <Input
+            placeholder="Buscar propuestas..."
             className="pl-10"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
           />
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            className="flex-1 sm:flex-initial"
-            onClick={handleCreateProposal}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Proposal
-          </Button>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <div className="flex gap-2 w-full sm:w-auto items-center">
+          {/* Botón para crear nueva propuesta, visible solo si autenticado */}
+          {isAuthenticated && (
+            <Button
+              className="flex-1 sm:flex-initial"
+              onClick={() => navigate("/proposals/new")}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Nueva propuesta
+            </Button>
+          )}
+          <Select value={categoryFilter} onValueChange={v => { setCategoryFilter(v); setPage(1); }}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
               {categories.map(category => (
@@ -153,27 +158,62 @@ const ProposalsList: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="all" value={currentPhase} onValueChange={setCurrentPhase}>
+      {/* Tabs de fase */}
+      <Tabs defaultValue="all" value={currentPhase} onValueChange={v => { setCurrentPhase(v); setPage(1); }}>
         <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="presentation">Presentation</TabsTrigger>
-          <TabsTrigger value="discussion">Discussion</TabsTrigger>
-          <TabsTrigger value="voting">Voting</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="all">Todas</TabsTrigger>
+          <TabsTrigger value="presentation">Presentación</TabsTrigger>
+          <TabsTrigger value="discussion">Discusión</TabsTrigger>
+          <TabsTrigger value="voting">Votación</TabsTrigger>
+          <TabsTrigger value="completed">Completadas</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {filteredProposals.length > 0 ? (
+      {/* Lista de propuestas */}
+      {proposals.length > 0 ? (
         <div className="space-y-4">
-          {filteredProposals.map((proposal) => (
-            <ProposalCard key={proposal.id} {...proposal} />
+          {proposals.map((proposal: any) => (
+            // Pasar el usuario autenticado para control de edición
+            <ProposalCard key={proposal.id} {...proposal} currentUser={user} />
           ))}
         </div>
       ) : (
         <div className="text-center py-10 bg-muted/30 rounded-md">
-          <p className="text-muted-foreground">No proposals found matching your criteria</p>
+          <p className="text-muted-foreground">No se encontraron propuestas que coincidan con tu búsqueda</p>
         </div>
       )}
+
+      {/* Controles de paginación */}
+      <div className="flex justify-center items-center gap-4 mt-6">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page === 1}
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+        >
+          Anterior
+        </Button>
+        <span className="text-sm">Página {page} de {totalPages || 1}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page === totalPages || totalPages === 0}
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+        >
+          Siguiente
+        </Button>
+        <select
+          className="ml-4 border rounded px-2 py-1 text-sm"
+          value={limit}
+          onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
+        >
+          {[5, 10, 20, 50].map(opt => (
+            <option key={opt} value={opt}>{opt} por página</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Comentario: Para scroll infinito, reemplazar paginación por observer y concatenar resultados. */}
     </div>
   );
 };
