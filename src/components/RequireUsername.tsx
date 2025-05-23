@@ -6,8 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Wrapper que protege rutas restringidas y fuerza a definir username único.
+ * SOLO actúa si el usuario está autenticado.
  * Si el usuario no tiene username, redirige automáticamente a /setup-username.
- * Accesibilidad: feedback visual de carga, roles y foco.
  */
 export function RequireUsername({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -15,22 +15,25 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    // Solo verificar si no está cargando y está autenticado
-    if (!isLoading && isAuthenticated) {
-      if (!user) {
-        // Usuario no encontrado, redirigir a auth
-        navigate("/auth", { replace: true });
-        return;
-      }
+    // Si aún está cargando, no hacer nada
+    if (isLoading) {
+      return;
+    }
 
-      if (!user.username) {
-        // Usuario sin username, redirigir a setup
-        navigate("/setup-username", { 
-          replace: true, 
-          state: { from: location.pathname } 
-        });
-        return;
-      }
+    // Si no está autenticado, redirigir a auth
+    if (!isAuthenticated || !user) {
+      navigate("/auth", { replace: true });
+      return;
+    }
+
+    // SOLO si está autenticado pero no tiene username, redirigir a setup
+    if (isAuthenticated && user && !user.username) {
+      console.log('RequireUsername: User authenticated but no username, redirecting to setup');
+      navigate("/setup-username", { 
+        replace: true, 
+        state: { from: location.pathname } 
+      });
+      return;
     }
   }, [isLoading, isAuthenticated, user, navigate, location]);
 
@@ -46,12 +49,12 @@ export function RequireUsername({ children }: { children: React.ReactNode }) {
 
   // Bloquear acceso si no está autenticado
   if (!isAuthenticated || !user) {
-    return null;
+    return null; // Se redirigirá a auth
   }
 
   // Bloquear renderizado hasta que tenga username
   if (!user.username) {
-    return null;
+    return null; // Se redirigirá a setup-username
   }
 
   // Todo correcto, renderizar los children

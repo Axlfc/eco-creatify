@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,19 +63,13 @@ export const AuthForm = () => {
             throw error;
           }
         } else if (data.user) {
-          // Check if user has username in profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', data.user.id)
-            .single();
-
-          // If no username, the auth hook will handle redirection to setup-username
-          // Otherwise use the normal redirect logic
-          if (profile?.username) {
-            redirectAfterAuth();
-          }
-          // If no username, the useAuth hook will automatically redirect to /setup-username
+          console.log('Login successful, user:', data.user.id);
+          // La redirección será manejada por el hook useAuth
+          // No hacemos redirección manual aquí para evitar conflictos
+          toast({
+            title: "Welcome back!",
+            description: "You have been successfully logged in.",
+          });
         }
       }
     } catch (error: any) {

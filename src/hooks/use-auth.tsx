@@ -36,32 +36,6 @@ export const useAuth = () => {
     }));
   };
 
-  const checkUsernameAndRedirect = async (userId: string, currentPath: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching profile:", error);
-        return false;
-      }
-
-      // Si no tiene username y no está ya en la página de setup
-      if ((!profile || !profile.username) && currentPath !== '/setup-username') {
-        navigate('/setup-username', { replace: true });
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error checking username:", error);
-      return false;
-    }
-  };
-
   useEffect(() => {
     const checkAuthAndFetchUser = async () => {
       try {
@@ -74,35 +48,29 @@ export const useAuth = () => {
 
         if (!session) {
           // No active session
-          setAuthState(prev => ({
-            ...prev,
+          setAuthState({
+            user: null,
             isAuthenticated: false,
             isLoading: false,
             error: null
-          }));
+          });
           return;
         }
 
-        // Try to get username from metadata
-        let username = session.user.user_metadata?.username as string | undefined;
+        // Try to get username from profiles table
+        let username: string | undefined;
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', session.user.id)
+            .single();
 
-        // If not in metadata, try to get from profiles table
-        if (!username) {
-          try {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('username')
-              .eq('id', session.user.id)
-              .single();
-
-            if (!profileError && profile) {
-              username = profile.username;
-            } else {
-              console.warn("Could not retrieve username from profiles:", profileError);
-            }
-          } catch (error) {
-            console.error("Error fetching profile:", error);
+          if (!profileError && profile) {
+            username = profile.username;
           }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
         }
 
         // Extract user information
@@ -119,9 +87,15 @@ export const useAuth = () => {
           error: null
         });
 
-        // Check if user needs to set up username
+        // IMPORTANTE: Solo redirigir a setup-username si:
+        // 1. El usuario está autenticado
+        // 2. No tiene username
+        // 3. No está ya en las rutas permitidas sin username
         const currentPath = window.location.pathname;
-        if (!username && currentPath !== '/setup-username' && currentPath !== '/auth') {
+        const allowedPathsWithoutUsername = ['/auth', '/setup-username', '/'];
+        
+        if (!username && !allowedPathsWithoutUsername.includes(currentPath)) {
+          console.log('User authenticated but no username, redirecting to setup');
           navigate('/setup-username', { replace: true });
         }
 
@@ -143,15 +117,11 @@ export const useAuth = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
         if (event === 'SIGNED_IN' && session) {
-          // Check username requirement on sign in
-          const currentPath = window.location.pathname;
-          const hasUsername = await checkUsernameAndRedirect(session.user.id, currentPath);
-          
-          if (hasUsername) {
-            // Refresh auth state
-            checkAuthAndFetchUser();
-          }
+          // Refresh auth state when user signs in
+          checkAuthAndFetchUser();
         } else if (event === 'SIGNED_OUT') {
           setAuthState({
             user: null,
@@ -159,6 +129,8 @@ export const useAuth = () => {
             isLoading: false,
             error: null
           });
+          // Clear any pending redirects and go to auth
+          navigate('/auth', { replace: true });
         }
       }
     );

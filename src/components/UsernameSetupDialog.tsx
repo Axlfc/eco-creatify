@@ -21,15 +21,19 @@ export const UsernameSetupDialog = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, updateUsername } = useAuth();
+  const { user, updateUsername, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Verificar si necesita configurar username
-    const needsSetup = user && !user.username;
-    setOpen(needsSetup || false);
-  }, [user]);
+    // Solo mostrar el diálogo si:
+    // 1. El usuario está autenticado
+    // 2. El usuario no tiene username
+    const shouldShow = isAuthenticated && user && !user.username;
+    setOpen(shouldShow || false);
+    
+    console.log('UsernameSetupDialog: shouldShow=', shouldShow, 'user=', user);
+  }, [user, isAuthenticated]);
 
   const validateUsername = (username: string): string | null => {
     if (!username.trim()) {
@@ -91,7 +95,7 @@ export const UsernameSetupDialog = () => {
         throw updateError;
       }
 
-      // Actualizar el estado local
+      // Actualizar el estado local PRIMERO
       updateUsername(username.trim());
 
       toast({
@@ -103,6 +107,7 @@ export const UsernameSetupDialog = () => {
 
       // Redirigir a la ruta original o al dashboard
       const from = location.state?.from || "/dashboard";
+      console.log('Username setup complete, redirecting to:', from);
       navigate(from, { replace: true });
 
     } catch (error: any) {
@@ -124,8 +129,16 @@ export const UsernameSetupDialog = () => {
     }
   };
 
+  // No permitir cerrar el diálogo manualmente
+  const handleOpenChange = (newOpen: boolean) => {
+    // Solo permitir cerrar si se ha completado el username
+    if (!newOpen && user?.username) {
+      setOpen(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>¡Bienvenido! Elige tu nombre de usuario</DialogTitle>
