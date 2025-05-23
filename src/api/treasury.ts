@@ -127,7 +127,7 @@ router.post('/budgets/:id/approve', async (req, res, next) => {
     res.json(budget);
   } catch (error) {
     console.error('Error al aprobar presupuesto:', error);
-    res.status 500).json({ message: 'Error interno del servidor', error: error.message });
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 
