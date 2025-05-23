@@ -9,7 +9,7 @@ interface UsernameGuardProps {
   children: ReactNode;
 }
 
-// Routes that require username to be set
+// Routes that require username to be set (completely blocked)
 const RESTRICTED_ROUTES = [
   '/dashboard',
   '/proposals/create',
@@ -28,24 +28,34 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
     showModal, 
     shouldShowModal, 
     handleUsernameSet, 
+    handleModalCloseAttempt,
+    handleUsernameError,
     recheckUsername,
     hasUsername,
     isAuthenticated,
-    isLoading
+    isLoading,
+    attemptCount,
+    requiresCaptcha
   } = useMandatoryUsername();
   
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Recheck username on route changes
+  // Continuous monitoring: recheck username on every route change and auth state change
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      recheckUsername();
+    if (!isLoading) {
+      const needsUsername = recheckUsername();
+      console.log('UsernameGuard: Route change check:', { 
+        path: location.pathname, 
+        needsUsername, 
+        isAuthenticated, 
+        hasUsername 
+      });
     }
-  }, [location.pathname, isAuthenticated, isLoading]);
+  }, [location.pathname, isAuthenticated, isLoading, recheckUsername, hasUsername]);
 
-  // Handle restricted route access
+  // Handle restricted route access - COMPLETE BLOCK
   useEffect(() => {
     if (isLoading || !isAuthenticated) {
       return;
@@ -56,20 +66,46 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
       currentPath.startsWith(route)
     );
 
-    // If trying to access restricted route without username
+    // If trying to access restricted route without username - IMMEDIATE BLOCK
     if (isRestrictedRoute && !hasUsername) {
-      console.log('UsernameGuard: Blocked access to restricted route:', currentPath);
+      console.log('UsernameGuard: BLOCKED access to restricted route:', currentPath);
       
       toast({
-        title: "Acceso restringido",
+        title: "Acceso completamente restringido",
         description: "Debes configurar tu username para acceder a esta funcionalidad",
         variant: "destructive",
       });
 
-      // Redirect to a safe route
+      // Redirect to a safe route and force username modal
       navigate('/forum', { replace: true });
     }
   }, [location.pathname, hasUsername, isAuthenticated, isLoading, navigate, toast]);
+
+  // Additional security: prevent any interaction in restricted areas
+  useEffect(() => {
+    if (isAuthenticated && !hasUsername && !isLoading) {
+      // Disable all forms, buttons, and interactive elements in restricted areas
+      const currentPath = location.pathname;
+      const isInRestrictedArea = RESTRICTED_ROUTES.some(route => 
+        currentPath.startsWith(route)
+      );
+
+      if (isInRestrictedArea) {
+        console.log('UsernameGuard: User in restricted area without username - enforcing restrictions');
+        
+        // Add a class to body to potentially disable interactions via CSS
+        document.body.classList.add('username-required');
+      } else {
+        document.body.classList.remove('username-required');
+      }
+    } else {
+      document.body.classList.remove('username-required');
+    }
+
+    return () => {
+      document.body.classList.remove('username-required');
+    };
+  }, [isAuthenticated, hasUsername, isLoading, location.pathname]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -86,6 +122,10 @@ export const UsernameGuard = ({ children }: UsernameGuardProps) => {
       <MandatoryUsernameModal 
         open={showModal}
         onUsernameSet={handleUsernameSet}
+        onCloseAttempt={handleModalCloseAttempt}
+        onError={handleUsernameError}
+        requiresCaptcha={requiresCaptcha}
+        attemptCount={attemptCount}
       />
     </>
   );

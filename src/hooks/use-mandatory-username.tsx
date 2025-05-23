@@ -1,72 +1,122 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'react-router-dom';
 
 export const useMandatoryUsername = () => {
-  const { user, isAuthenticated, isLoading, updateUsername } = useAuth();
+  const { user, isAuthenticated, isLoading, updateUsername, forceLogout } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [showModal, setShowModal] = useState(false);
-  const [hasCheckedUsername, setHasCheckedUsername] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
-  // Check if user needs to set username
-  useEffect(() => {
+  // Check if user needs username on every auth state change and route change
+  const checkUsernameRequired = useCallback(() => {
     // Don't check until auth is loaded
     if (isLoading) {
       return;
     }
 
-    // Reset check state when user changes
-    if (!hasCheckedUsername && isAuthenticated && user) {
-      setHasCheckedUsername(true);
-      
-      // If user is authenticated but has no username, show modal
-      if (!user.username) {
-        console.log('MandatoryUsername: User authenticated but no username, showing modal');
-        setShowModal(true);
-      } else {
-        setShowModal(false);
-      }
+    // If user is authenticated but has no username, ALWAYS show modal
+    if (isAuthenticated && user && !user.username) {
+      console.log('MandatoryUsername: User authenticated but no username, FORCING modal');
+      setShowModal(true);
+      return true;
     }
 
-    // Reset when user logs out
-    if (!isAuthenticated) {
+    // If user has username or is not authenticated, hide modal
+    if (!isAuthenticated || (user && user.username)) {
       setShowModal(false);
-      setHasCheckedUsername(false);
+      return false;
     }
-  }, [isAuthenticated, user, isLoading, hasCheckedUsername]);
+
+    return false;
+  }, [isAuthenticated, user, isLoading]);
+
+  // Check on auth state changes and route changes
+  useEffect(() => {
+    checkUsernameRequired();
+  }, [checkUsernameRequired, location.pathname]);
+
+  // Anti-spam: show captcha after multiple attempts
+  useEffect(() => {
+    if (attemptCount >= 3) {
+      setShowCaptcha(true);
+    }
+  }, [attemptCount]);
 
   // Handle username being set
-  const handleUsernameSet = (newUsername: string) => {
+  const handleUsernameSet = async (newUsername: string) => {
     console.log('MandatoryUsername: Username set successfully:', newUsername);
     
-    // Update the auth context
-    updateUsername(newUsername);
-    
-    // Hide modal
-    setShowModal(false);
-    
-    toast({
-      title: "¡Bienvenido!",
-      description: `Tu username ${newUsername} ha sido configurado correctamente.`,
-    });
-  };
-
-  // Force recheck (useful after navigation or page refresh)
-  const recheckUsername = () => {
-    if (isAuthenticated && user && !user.username && !showModal) {
-      console.log('MandatoryUsername: Forcing recheck - showing modal');
-      setShowModal(true);
+    try {
+      // Update the auth context
+      updateUsername(newUsername);
+      
+      // Hide modal and reset counters
+      setShowModal(false);
+      setAttemptCount(0);
+      setShowCaptcha(false);
+      
+      toast({
+        title: "¡Bienvenido!",
+        description: `Tu username ${newUsername} ha sido configurado correctamente.`,
+      });
+    } catch (error) {
+      console.error('MandatoryUsername: Error setting username:', error);
+      toast({
+        title: "Error",
+        description: "Error al configurar el username. Intenta de nuevo.",
+        variant: "destructive",
+      });
     }
   };
+
+  // Handle modal close attempts - FORCE LOGOUT
+  const handleModalCloseAttempt = useCallback(() => {
+    console.log('MandatoryUsername: User attempted to close modal - forcing logout');
+    
+    toast({
+      title: "Sesión cerrada por seguridad",
+      description: "Debes elegir un username para continuar usando la plataforma",
+      variant: "destructive",
+    });
+
+    forceLogout("Flujo de username cancelado");
+  }, [forceLogout, toast]);
+
+  // Handle failed username attempts
+  const handleUsernameError = useCallback(() => {
+    setAttemptCount(prev => prev + 1);
+    
+    if (attemptCount >= 2) {
+      toast({
+        title: "Múltiples intentos fallidos",
+        description: "Por seguridad, completa la verificación anti-spam",
+        variant: "destructive",
+      });
+    }
+  }, [attemptCount, toast]);
+
+  // Force recheck (useful for development/debugging)
+  const recheckUsername = useCallback(() => {
+    return checkUsernameRequired();
+  }, [checkUsernameRequired]);
 
   return {
     showModal,
     shouldShowModal: isAuthenticated && user && !user.username,
     handleUsernameSet,
+    handleModalCloseAttempt,
+    handleUsernameError,
     recheckUsername,
     hasUsername: user?.username ? true : false,
     isAuthenticated,
-    isLoading
+    isLoading,
+    attemptCount,
+    showCaptcha,
+    requiresCaptcha: attemptCount >= 3
   };
 };

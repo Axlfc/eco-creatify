@@ -14,23 +14,35 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, AlertCircle, CheckCircle2 } from "lucide-react";
+import { LogOut, AlertCircle, CheckCircle2, Shield } from "lucide-react";
 
 interface MandatoryUsernameModalProps {
   open: boolean;
   onUsernameSet: (username: string) => void;
+  onCloseAttempt: () => void;
+  onError: () => void;
+  requiresCaptcha?: boolean;
+  attemptCount?: number;
 }
 
-export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernameModalProps) => {
+export const MandatoryUsernameModal = ({ 
+  open, 
+  onUsernameSet, 
+  onCloseAttempt,
+  onError,
+  requiresCaptcha = false,
+  attemptCount = 0
+}: MandatoryUsernameModalProps) => {
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user, forceLogout } = useAuth();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalStartTime = useRef<number>(Date.now());
@@ -42,7 +54,7 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
     }
   }, [open]);
 
-  // Auto-logout después de 2 minutos de inactividad
+  // Auto-logout después de 3 minutos de inactividad
   useEffect(() => {
     if (open) {
       modalStartTime.current = Date.now();
@@ -53,11 +65,18 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
           variant: "destructive",
         });
         handleForceLogout();
-      }, 120000); // 2 minutos
+      }, 180000); // 3 minutos
 
       return () => clearTimeout(autoLogoutTimer);
     }
   }, [open]);
+
+  // Reset captcha verification when requirements change
+  useEffect(() => {
+    if (!requiresCaptcha) {
+      setCaptchaVerified(false);
+    }
+  }, [requiresCaptcha]);
 
   const validateUsername = (username: string): string | null => {
     if (!username.trim()) {
@@ -108,6 +127,7 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
       if (existing) {
         setErrorMsg("Este nombre de usuario ya está en uso.");
         setIsAvailable(false);
+        onError();
       } else {
         setErrorMsg(null);
         setIsAvailable(true);
@@ -116,6 +136,7 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
       console.error("Error checking username availability:", error);
       setErrorMsg("Error de conexión. Intenta de nuevo.");
       setIsAvailable(false);
+      onError();
     } finally {
       setIsValidating(false);
     }
@@ -139,8 +160,26 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
     setTimeoutId(newTimeoutId);
   };
 
+  const handleCaptchaComplete = () => {
+    setCaptchaVerified(true);
+    toast({
+      title: "Verificación completada",
+      description: "Ahora puedes continuar con la selección de username",
+    });
+  };
+
   const handleSubmit = async () => {
     if (!user?.id || !username.trim() || !isAvailable) {
+      return;
+    }
+
+    // Check captcha requirement
+    if (requiresCaptcha && !captchaVerified) {
+      toast({
+        title: "Verificación requerida",
+        description: "Completa la verificación anti-spam para continuar",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -161,6 +200,7 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
       if (existing) {
         setErrorMsg("Este nombre de usuario ya está en uso. Elige otro.");
         setIsAvailable(false);
+        onError();
         return;
       }
 
@@ -190,6 +230,7 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
         description: error.message || "Error al crear el username",
         variant: "destructive",
       });
+      onError();
     } finally {
       setIsLoading(false);
     }
@@ -197,17 +238,16 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
 
   const handleForceLogout = async () => {
     toast({
-      title: "Sesión cerrada",
+      title: "Sesión cerrada por seguridad",
       description: "Debes elegir un username para usar la plataforma",
       variant: "destructive",
     });
     
-    await signOut();
-    navigate("/auth", { replace: true });
+    await forceLogout("Username no completado");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading && username.trim() && isAvailable) {
+    if (e.key === 'Enter' && !isLoading && username.trim() && isAvailable && (!requiresCaptcha || captchaVerified)) {
       handleSubmit();
     }
     
@@ -215,14 +255,14 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
+      onCloseAttempt();
     }
   };
 
-  // Prevent modal from being closed
+  // Prevent modal from being closed - FORCE LOGOUT
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      // User tried to close modal - force logout
-      handleForceLogout();
+      onCloseAttempt();
     }
   };
 
@@ -239,12 +279,65 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
     return null;
   };
 
+  // Simple captcha simulation (in production, use real captcha service)
+  const SimpleCaptcha = () => {
+    const [captchaAnswer, setCaptchaAnswer] = useState("");
+    const [captchaQuestion] = useState(() => {
+      const num1 = Math.floor(Math.random() * 10) + 1;
+      const num2 = Math.floor(Math.random() * 10) + 1;
+      const operation = Math.random() > 0.5 ? '+' : '-';
+      const answer = operation === '+' ? num1 + num2 : Math.max(num1, num2) - Math.min(num1, num2);
+      return { question: `${Math.max(num1, num2)} ${operation} ${Math.min(num1, num2)}`, answer: answer.toString() };
+    });
+
+    const handleCaptchaSubmit = () => {
+      if (captchaAnswer === captchaQuestion.answer) {
+        handleCaptchaComplete();
+      } else {
+        toast({
+          title: "Respuesta incorrecta",
+          description: "Intenta resolver la operación de nuevo",
+          variant: "destructive",
+        });
+        setCaptchaAnswer("");
+      }
+    };
+
+    return (
+      <div className="border rounded p-3 bg-muted/50">
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-4 h-4 text-amber-600" />
+          <span className="text-sm font-medium">Verificación anti-spam</span>
+        </div>
+        <p className="text-sm mb-2">Resuelve: {captchaQuestion.question} = ?</p>
+        <div className="flex gap-2">
+          <Input
+            value={captchaAnswer}
+            onChange={(e) => setCaptchaAnswer(e.target.value)}
+            placeholder="Respuesta"
+            className="w-20"
+          />
+          <Button size="sm" onClick={handleCaptchaSubmit}>
+            Verificar
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
         className="sm:max-w-[425px]" 
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          onCloseAttempt();
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onCloseAttempt();
+        }}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="mandatory-username-title"
@@ -259,8 +352,13 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
               Para completar tu cuenta y participar en la plataforma necesitas elegir un nombre de usuario único.
             </span>
             <span className="block text-sm text-amber-600 font-medium">
-              ⚠️ Si no completas este paso, tu sesión se cerrará automáticamente.
+              ⚠️ Si no completas este paso o intentas cerrar esta ventana, tu sesión se cerrará automáticamente por seguridad.
             </span>
+            {attemptCount > 0 && (
+              <span className="block text-xs text-red-600">
+                Intentos fallidos: {attemptCount}/3
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -303,11 +401,28 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
               </div>
             )}
           </div>
+
+          {requiresCaptcha && !captchaVerified && (
+            <SimpleCaptcha />
+          )}
+
+          {requiresCaptcha && captchaVerified && (
+            <div className="text-green-600 text-sm flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Verificación anti-spam completada
+            </div>
+          )}
           
           <div className="flex gap-2 pt-2">
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !username.trim() || !isAvailable || isValidating}
+              disabled={
+                isLoading || 
+                !username.trim() || 
+                !isAvailable || 
+                isValidating ||
+                (requiresCaptcha && !captchaVerified)
+              }
               className="flex-1"
               aria-busy={isLoading}
             >
@@ -329,6 +444,8 @@ export const MandatoryUsernameModal = ({ open, onUsernameSet }: MandatoryUsernam
             Este modal no se puede cerrar sin completar el username.
             <br />
             Si prefieres salir, usa el botón de cerrar sesión.
+            <br />
+            <strong>Cualquier intento de bypass resultará en cierre automático de sesión.</strong>
           </div>
         </div>
       </DialogContent>

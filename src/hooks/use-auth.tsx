@@ -37,6 +37,30 @@ export const useAuth = () => {
     }));
   };
 
+  // Force logout when username flow is bypassed
+  const forceLogout = async (reason?: string) => {
+    console.log('useAuth: Force logout triggered:', reason);
+    try {
+      await supabase.auth.signOut();
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      });
+      
+      toast({
+        title: "Sesión cerrada",
+        description: reason || "Debes completar tu perfil para continuar",
+        variant: "destructive",
+      });
+      
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      console.error('useAuth: Force logout error:', error);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -106,6 +130,12 @@ export const useAuth = () => {
           hasUsername: !!username 
         });
 
+        // CRITICAL: Force username selection if authenticated but no username
+        if (!username) {
+          console.log('useAuth: User authenticated but no username, forcing username flow');
+          // This will be handled by the UsernameGuard component
+        }
+
       } catch (error) {
         console.error('useAuth: Error during auth check:', error);
         if (mounted) {
@@ -125,8 +155,6 @@ export const useAuth = () => {
         console.log('useAuth: Auth state changed:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session) {
-          // Don't call checkAuthAndFetchUser here to avoid loops
-          // Just update the basic auth state and let the main effect handle the rest
           console.log('useAuth: User signed in, will fetch profile...');
           checkAuthAndFetchUser();
         } else if (event === 'SIGNED_OUT') {
@@ -184,5 +212,6 @@ export const useAuth = () => {
     ...authState,
     signOut,
     updateUsername,
+    forceLogout,
   };
 };

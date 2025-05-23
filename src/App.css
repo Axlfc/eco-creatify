@@ -1,42 +1,42 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+.username-required {
+  pointer-events: none;
+  user-select: none;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.username-required .username-modal {
+  pointer-events: all;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Ensure modal and auth elements are always interactive */
+[role="dialog"],
+[role="alertdialog"],
+.auth-form,
+.login-form {
+  pointer-events: all !important;
+  user-select: auto !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Visual indication that interaction is disabled */
+.username-required *:not([role="dialog"]):not([role="alertdialog"]):not(.auth-form):not(.login-form) {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.card {
-  padding: 2em;
+/* Loading states */
+.auth-loading {
+  cursor: wait;
 }
 
-.read-the-docs {
-  color: #888;
+/* Security indicators */
+.security-warning {
+  border-left: 4px solid #f59e0b;
+  background-color: #fef3c7;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.security-warning.critical {
+  border-left-color: #dc2626;
+  background-color: #fecaca;
 }

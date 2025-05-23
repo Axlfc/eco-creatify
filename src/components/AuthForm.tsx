@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ export const AuthForm = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState(null);
   const { toast } = useToast();
   const { redirectAfterAuth, storeIntendedDestination } = useAuthRedirect();
 
@@ -22,61 +22,55 @@ export const AuthForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setError(null);
+
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        // Handle signup
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
+
         if (error) throw error;
-        toast({
-          title: "Success!",
-          description: "Please check your email to verify your account.",
-        });
+
+        if (data.user) {
+          toast({
+            title: "¡Cuenta creada!",
+            description: "Revisa tu email para confirmar tu cuenta.",
+          });
+          
+          // After signup, user will need to set username
+          console.log('AuthForm: User signed up, will need username setup');
+        }
       } else {
-        const { error, data } = await supabase.auth.signInWithPassword({
+        // Handle login
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
-        if (error) {
-          // Check if the error is due to unconfirmed email
-          if (error.message.includes("Email not confirmed")) {
-            toast({
-              title: "Email Not Verified",
-              description: "Please check your email and verify your account before signing in.",
-              variant: "destructive",
-            });
-            // Optionally, we can offer to resend the confirmation email
-            const { error: resendError } = await supabase.auth.resend({
-              type: 'signup',
-              email,
-            });
-            if (!resendError) {
-              toast({
-                title: "Verification Email Sent",
-                description: "We've resent the verification email. Please check your inbox.",
-              });
-            }
-          } else {
-            throw error;
-          }
-        } else if (data.user) {
-          console.log('Login successful, user:', data.user.id);
-          // La redirección será manejada por el hook useAuth
-          // No hacemos redirección manual aquí para evitar conflictos
+
+        if (error) throw error;
+
+        if (data.user) {
           toast({
-            title: "Welcome back!",
-            description: "You have been successfully logged in.",
+            title: "¡Bienvenido de vuelta!",
+            description: "Has iniciado sesión correctamente.",
           });
+
+          console.log('AuthForm: User logged in, checking username status...');
+          // The useAuth hook and UsernameGuard will handle username checking
+          // No manual redirection here to avoid conflicts
         }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
+      setError(error.message || "Ha ocurrido un error durante la autenticación");
+      
       toast({
-        title: "Error",
-        description: error.message,
         variant: "destructive",
+        title: "Error de autenticación",
+        description: error.message || "Verifica tus credenciales e intenta de nuevo",
       });
     } finally {
       setIsLoading(false);
