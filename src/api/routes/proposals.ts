@@ -3,6 +3,42 @@ import { authenticateJWT } from '../middleware/auth';
 import { proposals, votes, getProposalResults, Proposal, Vote } from '../data/proposals';
 import { v4 as uuidv4 } from 'uuid';
 import { createSnapshot, saveSnapshot, getSnapshots, VoteSnapshot } from '../../lib/snapshots';
+import { ProposalHistory } from '../../types/proposal';
+
+// --- HISTORIAL DE CAMBIOS DE PROPUESTAS ---
+
+/**
+ * Almacén en memoria para historial de cambios de propuestas
+ * Cada entrada representa una edición relevante
+ */
+export const proposalHistory: ProposalHistory[] = [];
+
+/**
+ * Registra un cambio en una propuesta
+ * @param proposalId string
+ * @param editedBy string (userId)
+ * @param changeSummary string
+ * @param diff string (opcional)
+ */
+export function addProposalHistory(proposalId: string, editedBy: string, changeSummary: string, diff?: string) {
+  proposalHistory.push({
+    id: uuidv4(),
+    proposalId,
+    editedAt: new Date().toISOString(),
+    editedBy,
+    changeSummary,
+    diff,
+  });
+}
+
+/**
+ * Devuelve el historial de una propuesta
+ * @param proposalId string
+ * @returns ProposalHistory[]
+ */
+export function getProposalHistory(proposalId: string): ProposalHistory[] {
+  return proposalHistory.filter(h => h.proposalId === proposalId);
+}
 
 const router = express.Router();
 
@@ -138,5 +174,19 @@ router.get('/:id/snapshots', authenticateJWT, function (req, res) {
   res.json({ snapshots: chain });
   // TODO: Exportar a IPFS/blockchain si se requiere persistencia extra
 });
+
+// --- ENDPOINT: GET /api/proposals/:id/history ---
+router.get('/:id/history', authenticateJWT, (req, res) => {
+  const { id } = req.params;
+  if (!proposals.find(p => p.id === id)) {
+    res.status(404).json({ message: 'Propuesta no encontrada' });
+    return;
+  }
+  res.json(getProposalHistory(id));
+});
+
+// --- Marcar aquí donde debe llamarse addProposalHistory tras cada edición ---
+// TODO: Llamar a addProposalHistory en el endpoint PUT /api/proposals/:id tras editar
+// Ejemplo: addProposalHistory(id, userId, 'Título actualizado', diff)
 
 export default router;

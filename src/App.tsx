@@ -32,6 +32,7 @@ import JobsPage from "@/pages/JobsPage";
 import NetworkPage from "@/pages/NetworkPage";
 import { SidebarContext } from "@/context/SidebarContext";
 import { NotificationContext } from "@/context/NotificationContext";
+import { ReputationProvider } from "@/context/ReputationContext";
 // TODO: Importar y envolver con AuthContext cuando esté disponible
 import "./App.css";
 
@@ -42,71 +43,73 @@ function App() {
     <SidebarContext.Provider value={null}> {/* TODO: Implementar provider real y lógica de sidebar */}
       <NotificationContext.Provider value={null}> {/* TODO: Implementar provider real y lógica de notificaciones */}
         {/* TODO: Envolver con AuthContext.Provider cuando esté disponible */}
-        <QueryClientProvider client={queryClient}>
-          <Router>
-            <UsernameGuard>
-              <Routes>
-                {/* LEGACY: Rutas antiguas, mantener hasta migración completa */}
-                <Route path="/forum" element={<Forum />} /> {/* TODO: Deprecated, migrar a ForumPage */}
-                <Route path="/proposals" element={<Proposals />} /> {/* TODO: Deprecated, migrar a ProposalsPage */}
-                <Route path="/proposals/consensus" element={<ProposalConsensus />} /> {/* TODO: Deprecated, migrar a ConsensusPage */}
-                <Route path="/dashboard" element={<Dashboard />} /> {/* TODO: Deprecated, migrar a DashboardPage */}
-                <Route path="/users/:username" element={<UserProfile />} /> {/* TODO: Deprecated, migrar a UserProfilePage */}
-                {/* NUEVAS RUTAS: Scaffolded, integración progresiva */}
-                <Route path="/forum/new" element={<ForumPage />} />
-                <Route path="/proposals/new" element={<ProposalsPage />} />
-                <Route path="/proposals/consensus/new" element={<ConsensusPage />} />
-                <Route path="/dashboard/new" element={<DashboardPage />} />
-                <Route path="/users/:username/new" element={<UserProfilePage />} />
-                <Route path="/jobs" element={<JobsPage />} /> {/* TODO: Integrar Web3/Ethers.js aquí */}
-                <Route path="/network" element={<NetworkPage />} /> {/* TODO: Integrar Web3/Ethers.js aquí */}
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/setup-username" element={<SetupUsername />} />
-                <Route path="/forum" element={<Forum />} />
-                <Route path="/proposals" element={<Proposals />} />
-                <Route path="/proposals/:id" element={
-                  <RequireUsername>
-                    <ProposalView />
-                  </RequireUsername>
-                } />
-                <Route path="/proposals/consensus" element={
-                  <RequireUsername>
-                    <ProposalConsensus />
-                  </RequireUsername>
-                } />
-                <Route path="/users/:username" element={
-                  <RequireUsername>
-                    <UserProfile />
-                  </RequireUsername>
-                } />
-                <Route path="/dashboard" element={
-                  <RequireUsername>
-                    <Dashboard />
-                  </RequireUsername>
-                } />
-                <Route path="/proposals/new" element={
-                  <RequireUsername>
-                    <NewProposalPage />
-                  </RequireUsername>
-                } />
-                <Route path="/proposals/:id/edit" element={
-                  <RequireUsername>
-                    <EditProposalPage />
-                  </RequireUsername>
-                } />
-                <Route path="/forum-page" element={<ForumPage />} />
-                <Route path="/proposals-page" element={<ProposalsPage />} />
-                <Route path="/consensus-page" element={<ConsensusPage />} />
-                <Route path="/dashboard-page" element={<DashboardPage />} />
-                <Route path="/user-profile-page" element={<UserProfilePage />} />
-                <Route path="/jobs-page" element={<JobsPage />} />
-                <Route path="/network-page" element={<NetworkPage />} />
-              </Routes>
-            </UsernameGuard>
-            <Toaster />
-          </Router>
-        </QueryClientProvider>
+        <ReputationProvider>
+          <QueryClientProvider client={queryClient}>
+            <Router>
+              <UsernameGuard>
+                <Routes>
+                  {/* LEGACY: Rutas antiguas, mantener hasta migración completa */}
+                  <Route path="/forum" element={<Forum />} /> {/* TODO: Deprecated, migrar a ForumPage */}
+                  <Route path="/proposals" element={<Proposals />} /> {/* TODO: Deprecated, migrar a ProposalsPage */}
+                  <Route path="/proposals/consensus" element={<ProposalConsensus />} /> {/* TODO: Deprecated, migrar a ConsensusPage */}
+                  <Route path="/dashboard" element={<Dashboard />} /> {/* TODO: Deprecated, migrar a DashboardPage */}
+                  <Route path="/users/:username" element={<UserProfile />} /> {/* TODO: Deprecated, migrar a UserProfilePage */}
+                  {/* NUEVAS RUTAS: Scaffolded, integración progresiva */}
+                  <Route path="/forum/new" element={<ForumPage />} />
+                  <Route path="/proposals/new" element={<ProposalsPage />} />
+                  <Route path="/proposals/consensus/new" element={<ConsensusPage />} />
+                  <Route path="/dashboard/new" element={<DashboardPage />} />
+                  <Route path="/users/:username/new" element={<UserProfilePage />} />
+                  <Route path="/jobs" element={<JobsPage />} /> {/* TODO: Integrar Web3/Ethers.js aquí */}
+                  <Route path="/network" element={<NetworkPage />} /> {/* TODO: Integrar Web3/Ethers.js aquí */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/setup-username" element={<SetupUsername />} />
+                  <Route path="/forum" element={<Forum />} />
+                  <Route path="/proposals" element={<Proposals />} />
+                  <Route path="/proposals/:id" element={
+                    <RequireUsername>
+                      <ProposalView />
+                    </RequireUsername>
+                  } />
+                  <Route path="/proposals/consensus" element={
+                    <RequireUsername>
+                      <ProposalConsensus />
+                    </RequireUsername>
+                  } />
+                  <Route path="/users/:username" element={
+                    <RequireUsername>
+                      <UserProfile />
+                    </RequireUsername>
+                  } />
+                  <Route path="/dashboard" element={
+                    <RequireUsername>
+                      <Dashboard />
+                    </RequireUsername>
+                  } />
+                  <Route path="/proposals/new" element={
+                    <RequireUsername>
+                      <NewProposalPage />
+                    </RequireUsername>
+                  } />
+                  <Route path="/proposals/:id/edit" element={
+                    <RequireUsername>
+                      <EditProposalPage />
+                    </RequireUsername>
+                  } />
+                  <Route path="/forum-page" element={<ForumPage />} />
+                  <Route path="/proposals-page" element={<ProposalsPage />} />
+                  <Route path="/consensus-page" element={<ConsensusPage />} />
+                  <Route path="/dashboard-page" element={<DashboardPage />} />
+                  <Route path="/user-profile-page" element={<UserProfilePage />} />
+                  <Route path="/jobs-page" element={<JobsPage />} />
+                  <Route path="/network-page" element={<NetworkPage />} />
+                </Routes>
+              </UsernameGuard>
+              <Toaster />
+            </Router>
+          </QueryClientProvider>
+        </ReputationProvider>
       </NotificationContext.Provider>
     </SidebarContext.Provider>
   );

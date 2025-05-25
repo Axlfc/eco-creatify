@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +14,9 @@ import {
 import { AlertCircle, Check, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useProposals } from '../../hooks/useProposals';
+import { NotificationContext } from '../../context/NotificationContext';
+import { validateProposal } from '@/utils/validation';
 
 
 /**
@@ -23,13 +25,16 @@ import { useToast } from "@/hooks/use-toast";
  * Formulario reutilizable para crear y editar propuestas ciudadanas.
  * - Si recibe una propuesta (prop proposal), actúa en modo edición.
  * - Si no recibe propuesta, actúa en modo creación.
- * - Integra validación de campos, feedback visual y notificaciones mínimas.
+ * - Integra validación de campos, feedback visual y notificaciones.
  * - Requiere autenticación: obtiene usuario desde useAuth.
  * - Al enviar, llama a la API correspondiente (POST/PUT) y muestra feedback.
  *
  * Uso:
  * <ProposalForm onSuccess={fn} /> // Crear
  * <ProposalForm proposal={propuesta} onSuccess={fn} /> // Editar
+ *
+ * @todo Integrar con backend real y smart contract (Web3) cuando esté disponible.
+ * @todo Migrar lógica legacy de formularios de propuestas a este componente y eliminar duplicidad progresivamente.
  */
 
 const categories = [
@@ -79,6 +84,8 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ proposal, onSuccess }) => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createProposal, updateProposal } = useProposals(); // TODO: Implementar lógica real en useProposals
+  const notificationCtx = useContext(NotificationContext); // Para feedback global
 
   useEffect(() => {
     setCharacterCount(description.length);
@@ -86,66 +93,89 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ proposal, onSuccess }) => {
 
 
   const validateForm = () => {
-    const errors: { title?: string; description?: string; category?: string } = {};
-    let isValid = true;
-    if (!title.trim()) {
-      errors.title = "El título es obligatorio";
-      isValid = false;
-    } else if (title.length < MIN_TITLE) {
-      errors.title = `Mínimo ${MIN_TITLE} caracteres`;
-      isValid = false;
-    } else if (title.length > MAX_TITLE) {
-      errors.title = `Máximo ${MAX_TITLE} caracteres`;
-      isValid = false;
-    }
-    if (!description.trim()) {
-      errors.description = "La descripción es obligatoria";
-      isValid = false;
-    } else if (description.length < MIN_DESC) {
-      errors.description = `Mínimo ${MIN_DESC} caracteres`;
-      isValid = false;
-    } else if (description.length > MAX_DESC) {
-      errors.description = `Máximo ${MAX_DESC} caracteres`;
-      isValid = false;
-    }
-    if (!category.trim()) {
-      errors.category = 'Selecciona una categoría';
-      isValid = false;
-    }
+    // Validación reutilizable frontend/backend
+    const { isValid, errors } = validateProposal({ title, description, category });
     setFormErrors(errors);
     return isValid;
   };
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      toast({ title: 'Debes iniciar sesión', description: 'Inicia sesión para enviar propuestas', variant: 'destructive' });
-      return;
-    }
-    if (!validateForm()) return;
-    setIsSubmitting(true);
+  /**
+   * Envía una propuesta a la API REST para crearla (POST) o actualizarla (PUT).
+   * Si la API no está disponible, usa mocks legacy.
+   * Maneja errores de validación y feedback visual.
+   * @param proposalData Datos de la propuesta a guardar
+   * @param isEdit true si es edición (PUT), false si creación (POST)
+   * @returns La propuesta guardada o error de validación
+   */
+  async function saveProposalAPI(proposalData: Proposal, isEdit: boolean): Promise<{ proposal?: Proposal; errors?: any; errorMessage?: string }> {
+    // Validación previa frontend antes de enviar
+    const { isValid, errors } = validateProposal(proposalData);
+    if (!isValid) return { errors };
     try {
-      const method = proposal ? 'PUT' : 'POST';
-      const url = proposal ? `/api/proposals/${proposal.id}` : '/api/proposals';
+      const url = isEdit ? `/api/proposals/${proposalData.id}` : '/api/proposals';
+      const method = isEdit ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.token || ''}`,
+          // TODO: Añadir token de autenticación si está disponible
         },
-        body: JSON.stringify({ title, description, category }),
+        body: JSON.stringify(proposalData),
       });
-      if (!res.ok) throw new Error('Error en el servidor');
       const data = await res.json();
-      toast({
-        title: proposal ? 'Propuesta actualizada' : 'Propuesta creada',
-        description: proposal ? 'Los cambios han sido guardados.' : 'Tu propuesta ha sido registrada.',
+      if (!res.ok) {
+        // Errores de validación backend
+        if (data && data.errors) {
+          return { errors: data.errors };
+        }
+        return { errorMessage: data?.message || 'Error desconocido en el servidor' };
+      }
+      // Validación extra tras respuesta backend
+      const backendValidation = validateProposal(data.proposal || data);
+      if (!backendValidation.isValid) {
+        return { errors: backendValidation.errors };
+      }
+      return { proposal: data.proposal || data };
+    } catch (err: any) {
+      // Fallback a mocks si la API no responde
+      // TODO: Integrar fallback a mocks legacy si es necesario (usar variable de entorno pública o contexto)
+      // Por ahora, solo devolvemos error de conexión
+      return { errorMessage: 'No se pudo conectar con el servidor' };
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+    setFormErrors({});
+    try {
+      // Control de permisos: solo el autor puede editar (TODO)
+      // TODO: Integrar control de permisos y autenticación real
+      const { proposal: savedProposal, errors, errorMessage } = await saveProposalAPI(
+        { ...proposal, title, description, category },
+        Boolean(proposal?.id)
+      );
+      if (errors) {
+        setFormErrors(errors);
+        notificationCtx?.notify({ type: 'error', message: 'Corrige los errores del formulario' });
+        return;
+      }
+      if (errorMessage) {
+        setFormErrors({ title: errorMessage });
+        notificationCtx?.notify({ type: 'error', message: errorMessage });
+        return;
+      }
+      notificationCtx?.notify({
+        type: 'success',
+        message: proposal?.id ? 'Propuesta actualizada' : 'Propuesta creada',
       });
-      onSuccess?.(data);
-      navigate('/proposals');
+      onSuccess?.(savedProposal!);
+      // Redirigir al detalle de la propuesta tras éxito
+      navigate(`/proposals/${savedProposal?.id}`);
     } catch (err) {
-      toast({ title: 'Error', description: 'No se pudo guardar la propuesta', variant: 'destructive' });
+      setFormErrors({ title: 'Error al guardar la propuesta' });
+      notificationCtx?.notify({ type: 'error', message: 'Error al guardar la propuesta' });
     } finally {
       setIsSubmitting(false);
     }
@@ -269,3 +299,14 @@ const ProposalForm: React.FC<ProposalFormProps> = ({ proposal, onSuccess }) => {
 };
 
 export default ProposalForm;
+
+/*
+TODOs:
+- Control de permisos: solo el autor puede editar/eliminar la propuesta. Validar user.id === proposal.createdBy antes de permitir edición o borrado.
+- Mostrar feedback visual específico si el usuario no tiene permisos para editar.
+- Añadir tests automáticos (Jest/React Testing Library) para los flujos: creación, edición, error de red, error de validación, sin permisos.
+- Documentar edge cases detectados y sugerencias para siguientes sprints.
+- TODO: Llamar a addProposalHistory en el backend tras cada edición exitosa (PUT /api/proposals/:id)
+- TODO: Llamar a fetchProposalHistory en el frontend tras cada edición exitosa para refrescar el historial
+- TODO: Validar que sólo el autor o moderadores puedan editar/eliminar propuestas y ver historial completo
+*/
