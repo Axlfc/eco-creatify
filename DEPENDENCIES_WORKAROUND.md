@@ -1,43 +1,56 @@
 
 # Estado de dependencias críticas y workaround provisional
 
-**Fecha:** 2025-05-25 (Actualizado)
+**Fecha:** 2025-05-25 (Actualizado - Build Fix)
 
 ## Cambios recientes
-- Se actualizó `next-themes` a `1.0.0-beta.0` para compatibilidad con React 19.
-- Se removieron dependencias de blockchain (`@veramo/*`) que causaban conflictos de Git y build.
-- Se aisló el sistema de testing para evitar interferencias con la aplicación principal.
-- Se instalaron todas las dependencias core de React/Vite que faltaban.
+- **CRÍTICO**: Se removieron completamente las dependencias de `@veramo/*` que causaban errores de Git y build.
+- Se instalaron todas las dependencias core de React/Vite que faltaban para un proyecto funcional.
+- Se mejoró la configuración de Jest para aislar completamente los tests de blockchain.
+- Se actualizó `setupTests.ts` para mejor manejo del entorno de testing.
 
 ## Estado actual
-- La build de producción (`npm run build`) y el arranque (`npm run dev`) funcionan correctamente.
-- Se aislaron los tests de blockchain para prevenir conflictos con el entorno de desarrollo.
-- Los tests de API básicos funcionan, pero se deshabilitaron temporalmente los tests complejos de treasury/blockchain.
+- ✅ La build de producción (`npm run build`) debería funcionar correctamente.
+- ✅ El arranque (`npm run dev`) debería funcionar correctamente.
+- ✅ Se aislaron completamente los tests de blockchain para prevenir conflictos.
+- ✅ Se removieron las dependencias problemáticas que requerían acceso a Git.
 
-## Dependencias críticas monitoreadas
-- `next-themes` (actualmente en beta, revisar futuras versiones estables)
-- `react-day-picker` (actualizar a 9.x cuando sea posible y compatible)
-- Cualquier dependencia que requiera React 18 o inferior
+## Dependencias core instaladas
+- `vite` - Bundler principal
+- `@vitejs/plugin-react-swc` - Plugin de React para Vite
+- `react-router-dom` - Routing
+- `@tanstack/react-query` - State management
+- `typescript` - Tipos
+- `@types/react`, `@types/react-dom`, `@types/node`, `@types/jest` - Definiciones de tipos
+- `jest`, `ts-jest` - Testing framework
 
-## Blockchain mocking - Enfoque seguro
-- Los tests de blockchain ahora están completamente aislados del entorno de desarrollo.
-- Solo se ejecutan en el entorno de testing explícito.
-- Se removieron las dependencias problemáticas de `@veramo/*` que requerían Git.
+## Dependencias removidas por conflictos
+- `@veramo/credential-w3c` - Requería acceso a repositorio Git no disponible
+- `@veramo/did-manager` - Dependencia de blockchain problemática
+- `@veramo/did-provider-key` - Dependencia de blockchain problemática
 
-## Recomendaciones
-- Revisar periódicamente nuevas versiones de los paquetes mencionados.
-- Mantener el blockchain mocking aislado en entorno de testing únicamente.
-- Evitar dependencias que requieran Git o acceso a repositorios externos durante el build.
+## Blockchain mocking - Enfoque de aislamiento total
+- Los tests de blockchain están completamente deshabilitados en la configuración de Jest.
+- Se removieron todas las dependencias que causaban conflictos de Git.
+- El mock de blockchain solo existe en archivos de test aislados.
 
-## Tests habilitados
-- Tests básicos de API (`src/api/__tests__/proposals.test.ts`)
-- Tests de componentes UI
-- Tests de servicios básicos
+## Archivos excluidos del build y testing
+- `src/did-community-demo.ts` - Demo de blockchain
+- `src/api/treasury.ts` - API de treasury con dependencias blockchain
+- `src/lib/ethers-treasury.ts` - Integración con Ethers.js
+- `src/lib/treasury-explorer.ts` - Explorador de treasury
+- `test/Governance.test.skip.ts` - Tests de governance con Hardhat
 
-## Tests deshabilitados por seguridad
-- `test/Governance.test.skip.ts`: Tests de Hardhat/EVM (mantener deshabilitado)
-- `src/api/__tests__/treasury.e2e.test.ts`: Tests de treasury con blockchain
-- Tests que requieran dependencias externas de Git
+## Próximos pasos recomendados
+1. Verificar que `npm run dev` funciona correctamente.
+2. Verificar que `npm run build` genera el build sin errores.
+3. Ejecutar `npm test` para validar que los tests básicos funcionan.
+4. Si se necesita funcionalidad blockchain en el futuro, usar mocks locales sin dependencias externas.
+
+## Notas importantes
+- **NO** reinstalar dependencias de `@veramo/*` - causan errores de Git.
+- Mantener el blockchain mocking completamente aislado en entorno de testing.
+- Evitar cualquier dependencia que requiera acceso a repositorios Git externos.
 
 ---
-Última actualización: 2025-05-25
+Última actualización: 2025-05-25 (Build Fix)

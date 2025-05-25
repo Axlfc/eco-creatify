@@ -44,11 +44,14 @@ if (isTestEnvironment) {
   });
 }
 
-// Ensure Jest globals are available - these are already defined by Jest
+// Ensure Jest globals are available
 declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R;
-    }
-  }
+  var jest: any;
+  var describe: any;
+  var it: any;
+  var expect: any;
+  var beforeEach: any;
+  var afterEach: any;
+  var beforeAll: any;
+  var afterAll: any;
 }
