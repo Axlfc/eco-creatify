@@ -1,3 +1,9 @@
+/**
+ * LEGACY - Página de dashboard (rutas).
+ *
+ * TODO: Marcar como deprecated cuando se migre a DashboardPage scaffolded.
+ */
+
 import { useAuth } from "@/hooks/use-auth";
 import { Navigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";

@@ -1,3 +1,9 @@
+/**
+ * LEGACY - Página de foro (rutas).
+ *
+ * TODO: Marcar como deprecated cuando se migre a ForumPage scaffolded.
+ */
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 

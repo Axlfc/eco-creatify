@@ -1,7 +1,13 @@
-
 import React from "react";
 import Navigation from "@/components/Navigation";
 import ProposalsList from "@/components/proposals/ProposalsList";
+
+/**
+ * LEGACY - Página de propuestas (rutas).
+ *
+ * TODO: Preparar integración con lógica Web3 (Ethers.js, wallet, fallback mock).
+ * TODO: Marcar como deprecated cuando se migre a ProposalsPage scaffolded.
+ */
 
 const Proposals: React.FC = () => {
   return (

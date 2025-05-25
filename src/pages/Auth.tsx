@@ -1,3 +1,9 @@
+/**
+ * LEGACY - Página de inicio de sesión/autenticación (rutas).
+ *
+ * TODO: Preparar integración con AuthContext global y migrar lógica a nuevo sistema modular si es necesario.
+ */
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/AuthForm";

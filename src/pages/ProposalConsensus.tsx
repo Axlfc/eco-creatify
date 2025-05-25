@@ -1,7 +1,13 @@
-
 import React from "react";
 import Navigation from "@/components/Navigation";
 import ConsensusVisualization from "@/components/proposals/ConsensusVisualization";
+
+/**
+ * LEGACY - Página de consenso de propuestas (rutas).
+ *
+ * TODO: Preparar integración con lógica Web3 (Ethers.js, wallet, fallback mock).
+ * TODO: Marcar como deprecated cuando se migre a ConsensusPage scaffolded.
+ */
 
 const ProposalConsensus: React.FC = () => {
   return (

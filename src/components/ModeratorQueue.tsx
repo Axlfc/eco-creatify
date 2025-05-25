@@ -1,3 +1,10 @@
+/**
+ * LEGACY - Cola de moderación y gestión de reportes.
+ *
+ * TODO: Revisar duplicidades con nuevos módulos de moderación y AutoMod.
+ * TODO: Refactorizar para separar lógica de UI y backend.
+ * TODO: Preparar integración con hooks y API de moderación modular.
+ */
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

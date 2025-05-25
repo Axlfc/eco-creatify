@@ -1,3 +1,10 @@
+/**
+ * LEGACY - Diálogo de reporte de contenido para moderación.
+ *
+ * TODO: Revisar duplicidades con nuevos módulos de moderación y AutoMod.
+ * TODO: Refactorizar para separar lógica de UI y backend.
+ * TODO: Preparar integración con hooks y API de moderación modular.
+ */
 
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";

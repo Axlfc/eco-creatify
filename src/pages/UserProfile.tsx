@@ -1,3 +1,10 @@
+/**
+ * LEGACY - Página de perfil de usuario (rutas).
+ *
+ * TODO: Revisar duplicidades con nuevos módulos de perfil/red profesional.
+ * TODO: Refactorizar para centralizar lógica y tipos de usuario/perfil.
+ * TODO: Preparar integración con sistema de reputación y networking.
+ */
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";

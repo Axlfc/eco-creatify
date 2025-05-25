@@ -1,3 +1,9 @@
+/**
+ * LEGACY - Guard de nombre de usuario obligatorio para rutas protegidas.
+ *
+ * TODO: Revisar integración con nuevos contextos globales de autenticación y usuario.
+ * TODO: Refactorizar si se centraliza la lógica de usuario/perfil.
+ */
 
 import { ReactNode, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
