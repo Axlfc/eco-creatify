@@ -1,119 +1,91 @@
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, Shield } from "lucide-react";
+import { Shield, Users, MessageCircle, Eye, AlertTriangle, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from "@/components/ui/accordion";
-import { supabase } from "@/integrations/supabase/client";
 
-type CommunityGuideline = {
-  id: string;
-  category: string;
-  title: string;
-  description: string;
-  severity_level: string;
-  examples: string[];
-};
-
-export const CommunityGuidelines = () => {
-  // Fetch community guidelines
-  const { data: guidelines, isLoading } = useQuery({
-    queryKey: ['community-guidelines'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('community_guidelines')
-        .select('*')
-        .order('severity_level', { ascending: false });
-      
-      if (error) throw error;
-      return data as CommunityGuideline[];
-    },
+const CommunityGuidelines = () => {
+  const { data: guidelines } = useQuery({
+    queryKey: ["guidelines"],
+    queryFn: () => [
+      { id: 1, title: "Respeto mutuo", description: "Mantén un tono constructivo y respetuoso", icon: Users },
+      { id: 2, title: "Contenido relevante", description: "Publica contenido relacionado con la comunidad", icon: MessageCircle },
+      { id: 3, title: "No spam", description: "Evita contenido repetitivo o promocional excesivo", icon: Shield },
+      { id: 4, title: "Privacidad", description: "Respeta la privacidad de otros miembros", icon: Eye },
+    ]
   });
 
-  const getSeverityBadge = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return (
-          <Badge variant="destructive" className="ml-2">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Critical
-          </Badge>
-        );
-      case 'high':
-        return (
-          <Badge variant="destructive" className="ml-2 bg-orange-500">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            High
-          </Badge>
-        );
-      case 'medium':
-        return (
-          <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-300">
-            Medium
-          </Badge>
-        );
-      case 'low':
-        return (
-          <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-300">
-            Low
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline" className="ml-2">{level}</Badge>;
-    }
-  };
-
-  if (isLoading) {
-    return <div className="text-center py-4">Loading community guidelines...</div>;
-  }
-
   return (
-    <Card className="mb-6">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <Shield className="h-5 w-5 mr-2" />
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
           Community Guidelines
         </CardTitle>
         <CardDescription>
-          Our forum is dedicated to truthful, respectful discourse. These guidelines help maintain a space where evidence-based discussion can flourish.
+          Rules and best practices for a healthy community environment
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Accordion type="multiple" className="w-full">
-          {guidelines?.map((guideline) => (
-            <AccordionItem key={guideline.id} value={guideline.id}>
-              <AccordionTrigger className="text-base">
-                <span>{guideline.title}</span>
-                {getSeverityBadge(guideline.severity_level)}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-3 pt-2">
-                  <p>{guideline.description}</p>
-                  
-                  {guideline.examples.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Examples:</h4>
-                      <ul className="space-y-2">
-                        {guideline.examples.map((example, index) => (
-                          <li key={index} className="flex items-start">
-                            <Check className="h-4 w-4 mr-2 mt-0.5 text-red-500" />
-                            <span className="text-sm text-muted-foreground">{example}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+      <CardContent className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2">
+          {guidelines?.map((guideline) => {
+            const IconComponent = guideline.icon;
+            return (
+              <div key={guideline.id} className="flex items-start space-x-3 p-4 border rounded-lg">
+                <IconComponent className="h-5 w-5 mt-0.5 text-primary" />
+                <div>
+                  <h3 className="font-medium">{guideline.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{guideline.description}</p>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Enforcement Levels
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                Warning
+              </Badge>
+              <span className="text-sm">First violation - friendly reminder</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                Temporary restriction
+              </Badge>
+              <span className="text-sm">Repeated violations - limited access</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                Suspension
+              </Badge>
+              <span className="text-sm">Serious violations - account suspended</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                Permanent ban
+              </Badge>
+              <span className="text-sm">Severe or repeated serious violations</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-4">
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              Good standing
+            </Badge>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span className="text-sm">Following guidelines - full community access</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 };
+
+export default CommunityGuidelines;
