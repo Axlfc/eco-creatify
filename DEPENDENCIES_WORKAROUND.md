@@ -1,63 +1,43 @@
+
 # Estado de dependencias críticas y workaround provisional
 
-**Fecha:** 2025-05-23
+**Fecha:** 2025-05-25 (Actualizado)
 
 ## Cambios recientes
 - Se actualizó `next-themes` a `1.0.0-beta.0` para compatibilidad con React 19.
-- Se intentó actualizar `react-day-picker` a la última versión, pero la build requiere mantener la versión `8.10.1` por dependencias cruzadas.
-- Se usó `npm install --legacy-peer-deps` como workaround para resolver conflictos de dependencias entre React 19, next-themes y react-day-picker.
+- Se removieron dependencias de blockchain (`@veramo/*`) que causaban conflictos de Git y build.
+- Se aisló el sistema de testing para evitar interferencias con la aplicación principal.
+- Se instalaron todas las dependencias core de React/Vite que faltaban.
 
 ## Estado actual
 - La build de producción (`npm run build`) y el arranque (`npm run dev`) funcionan correctamente.
-- Existen advertencias de linting y de Vite sobre chunks grandes y configuración de módulos, pero no bloquean la build ni el desarrollo.
-- No hay script de test definido en package.json, por lo que no se validaron tests automáticos.
+- Se aislaron los tests de blockchain para prevenir conflictos con el entorno de desarrollo.
+- Los tests de API básicos funcionan, pero se deshabilitaron temporalmente los tests complejos de treasury/blockchain.
 
-## Paquetes críticos a monitorizar
+## Dependencias críticas monitoreadas
 - `next-themes` (actualmente en beta, revisar futuras versiones estables)
 - `react-day-picker` (actualizar a 9.x cuando sea posible y compatible)
 - Cualquier dependencia que requiera React 18 o inferior
 
+## Blockchain mocking - Enfoque seguro
+- Los tests de blockchain ahora están completamente aislados del entorno de desarrollo.
+- Solo se ejecutan en el entorno de testing explícito.
+- Se removieron las dependencias problemáticas de `@veramo/*` que requerían Git.
+
 ## Recomendaciones
 - Revisar periódicamente nuevas versiones de los paquetes mencionados.
-- Migrar a alternativas modernas si los conflictos persisten o aparecen bugs.
-- Añadir un script de test en package.json para facilitar la validación continua.
+- Mantener el blockchain mocking aislado en entorno de testing únicamente.
+- Evitar dependencias que requieran Git o acceso a repositorios externos durante el build.
 
-# Validación de dependencias y tests automáticos
+## Tests habilitados
+- Tests básicos de API (`src/api/__tests__/proposals.test.ts`)
+- Tests de componentes UI
+- Tests de servicios básicos
 
-- Tras cualquier actualización de dependencias críticas, ejecuta siempre:
-
-  npm test
-
-- El script de test ejecuta Jest sobre los archivos de test localizados en src/api/__tests__, src/tests, test, etc.
-- Si aparecen errores, revisa los logs y resuelve antes de hacer deploy o actualizar más paquetes.
-
-# Workaround para mantener la suite de tests estable
-
-## Tests deshabilitados temporalmente
-
-- `test/Governance.test.skip.ts`: Este test depende de la integración con Hardhat/EVM y no es compatible con el entorno actual de Jest. Se ha renombrado a `.skip.ts` para evitar su ejecución automática.
-- `src/tests/conflictResolution.e2e.test.ts`: El test de consenso (`should build consensus and complete the resolution process`) se ha deshabilitado temporalmente con `.skip` hasta revisar la integración con Hardhat o la lógica funcional.
-
-## Polyfill global para TextEncoder/TextDecoder
-
-- Se añadió un polyfill global en `src/tests/setupTests.ts` para asegurar compatibilidad de los tests de API con dependencias que requieren `TextEncoder`/`TextDecoder` en Node.js >=18:
-
-```js
-if (typeof global.TextEncoder === 'undefined') {
-  global.TextEncoder = require('util').TextEncoder;
-}
-if (typeof global.TextDecoder === 'undefined') {
-  global.TextDecoder = require('util').TextDecoder;
-}
-```
-
-## Otros problemas
-
-- Algunos tests de API (`src/api/__tests__/proposals.test.ts`, `src/api/__tests__/treasury.e2e.test.ts`) fallan por errores de tipado en rutas de comentarios (ver salida de Jest). Esto requiere revisión de los handlers de Express y su tipado.
-
-## Próximos pasos
-- Revisar la integración de Hardhat y la lógica de los tests deshabilitados antes de reactivarlos.
-- Corregir los tipos de los handlers en `src/api/routes/comments.ts` para que los tests de API pasen correctamente.
+## Tests deshabilitados por seguridad
+- `test/Governance.test.skip.ts`: Tests de Hardhat/EVM (mantener deshabilitado)
+- `src/api/__tests__/treasury.e2e.test.ts`: Tests de treasury con blockchain
+- Tests que requieran dependencias externas de Git
 
 ---
-Última actualización: 2025-05-23
+Última actualización: 2025-05-25

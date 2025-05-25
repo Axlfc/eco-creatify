@@ -2,8 +2,11 @@
 // Jest setup file
 import '@testing-library/jest-dom';
 
+// Only run blockchain mocking in test environment
+const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+
 // Polyfill global para TextEncoder/TextDecoder en entorno Node.js
-if (typeof global !== 'undefined') {
+if (typeof global !== 'undefined' && isTestEnvironment) {
   if (typeof global.TextEncoder === 'undefined') {
     const { TextEncoder, TextDecoder } = require('util');
     global.TextEncoder = TextEncoder;
@@ -11,20 +14,20 @@ if (typeof global !== 'undefined') {
   }
 }
 
-// Mock the server environment variables
-if (typeof process !== 'undefined') {
+// Mock the server environment variables ONLY in test environment
+if (typeof process !== 'undefined' && isTestEnvironment) {
   process.env.SUPABASE_URL = 'https://example.com';
   process.env.SUPABASE_ANON_KEY = 'test-anon-key';
 }
 
-// Mock fetch API
-if (typeof global !== 'undefined') {
+// Mock fetch API ONLY in test environment
+if (typeof global !== 'undefined' && isTestEnvironment) {
   global.fetch = jest.fn();
 }
 
-// Mock console methods to avoid noise in tests
-const originalConsole = console;
-if (typeof global !== 'undefined') {
+// Mock console methods to avoid noise in tests ONLY in test environment
+if (typeof global !== 'undefined' && isTestEnvironment) {
+  const originalConsole = console;
   global.console = {
     ...originalConsole,
     error: jest.fn(),
@@ -35,9 +38,11 @@ if (typeof global !== 'undefined') {
 }
 
 // Clean up after each test
-afterEach(() => {
-  jest.clearAllMocks();
-});
+if (isTestEnvironment) {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+}
 
 // Ensure Jest globals are available - these are already defined by Jest
 declare global {

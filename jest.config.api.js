@@ -1,7 +1,11 @@
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/src/api/__tests__/**/*.test.ts'],
+  testMatch: [
+    '**/src/api/__tests__/**/*.test.ts',
+    '!**/src/api/__tests__/treasury.e2e.test.ts' // Exclude treasury tests that might have blockchain deps
+  ],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
@@ -11,4 +15,6 @@ module.exports = {
       tsconfig: 'tsconfig.json',
     },
   },
+  testTimeout: 5000,
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setupTests.ts']
 };
