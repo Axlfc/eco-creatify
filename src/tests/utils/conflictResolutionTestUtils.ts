@@ -5,7 +5,9 @@ import {
   ConflictResolutionFormData, 
   ConflictStage,
   ConflictPosition,
-  Stage
+  Stage,
+  ConflictResolutionCategory,
+  ConflictResolutionPriority
 } from "@/types/conflictResolution";
 
 const TEST_PREFIX = "TEST_E2E_";
@@ -52,11 +54,31 @@ export const createTestConflictResolution = async (
   // Mock the database insert operation
   const mockResolution: ConflictResolution = {
     id: "test-conflict-" + Date.now().toString(),
+    title: formData.title,
+    description: formData.description || "",
+    category: ConflictResolutionCategory.GOVERNANCE,
+    priority: ConflictResolutionPriority.HIGH,
+    partyA: formData.partyA,
+    partyB: formData.partyB,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    consensusReached: false,
-    isPublic: true,
     userId: userId,
+    reporter_id: userId,
+    status: 'open',
+    affected_proposal_id: 'test-proposal-123',
+    evidence: 'Mock evidence for testing purposes',
+    desired_outcome: 'Resolution of the conflict through structured dialogue',
+    timeline: '2 weeks',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    positionA: {
+      content: formData.positionA,
+      createdBy: userId
+    },
+    positionB: {
+      content: formData.positionB,
+      createdBy: userId
+    },
     progress: {
       current_stage: Stage.Articulation,
       completed_stages: [],
@@ -69,18 +91,8 @@ export const createTestConflictResolution = async (
         [Stage.Consensus]: 0
       }
     },
-    partyA: formData.partyA,
-    partyB: formData.partyB,
-    positionA: {
-      content: formData.positionA,
-      createdBy: userId
-    },
-    positionB: {
-      content: formData.positionB,
-      createdBy: userId
-    },
-    title: formData.title,
-    description: formData.description || ""
+    consensusReached: false,
+    isPublic: true
   };
 
   (supabase.from as jest.Mock).mockReturnValue({
