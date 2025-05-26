@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForumThreads, useModeration, useUserProfile, useUpdateReputation } from "@/hooks/useForumThreads";
 import { Button } from "@/components/ui/button";
@@ -103,7 +102,7 @@ const ForumThreadDetail: React.FC<{ thread: import("@/types/forum").ForumThread 
             value={reply}
             onChange={e => setReply(e.target.value)}
           />
-          <Button size="sm" onClick={handleReply} disabled={addComment.isLoading}>Enviar</Button>
+          <Button size="sm" onClick={handleReply} disabled={addComment.isPending}>Enviar</Button>
         </div>
         <AutoModStatus lastResult={lastModeration} />
       </div>

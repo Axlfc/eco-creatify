@@ -1,158 +1,139 @@
 
 import { didManager, SimpleDID, SimpleCredential } from './did-simple-mock';
+import { CommunityValidator, CommunityValidation } from '../types/did-demo';
 
-export interface DemoParticipant {
-  id: string;
-  name: string;
-  role: 'user' | 'moderator' | 'auditor';
-  did: SimpleDID;
-  credentials: SimpleCredential[];
-}
+// Mock validators
+const mockValidators: CommunityValidator[] = [
+  { id: 'val1', name: 'Validator Alice' },
+  { id: 'val2', name: 'Validator Bob' },
+  { id: 'val3', name: 'Validator Charlie' },
+  { id: 'val4', name: 'Validator Diana' },
+];
 
-export interface DemoScenario {
-  name: string;
-  description: string;
-  participants: DemoParticipant[];
-  steps: DemoStep[];
-}
-
-export interface DemoStep {
-  stepNumber: number;
-  actor: string;
-  action: string;
-  description: string;
-  expectedResult: string;
-  evidence?: SimpleCredential;
-}
-
-export class DIDDemoUtils {
-  private participants: Map<string, DemoParticipant> = new Map();
-
-  async createParticipant(name: string, role: 'user' | 'moderator' | 'auditor'): Promise<DemoParticipant> {
-    console.log(`Creating participant: ${name} with role: ${role}`);
-    
-    const did = await didManager.createDID();
-    
-    const participant: DemoParticipant = {
-      id: did.id,
-      name,
-      role,
-      did,
-      credentials: []
+export async function createDIDWithValidation(
+  minValidations: number = 3
+): Promise<{ identity: SimpleDID; credential?: SimpleCredential; validations: CommunityValidation[] }> {
+  
+  console.log('Creating new DID identity...');
+  const identity = await didManager.createIdentity();
+  console.log('DID created:', identity.did);
+  
+  // Simulate community validations
+  console.log('Requesting community validations...');
+  const validations: CommunityValidation[] = [];
+  
+  for (let i = 0; i < Math.min(minValidations, mockValidators.length); i++) {
+    const validator = mockValidators[i];
+    const validation: CommunityValidation = {
+      validatorId: validator.id,
+      timestamp: Date.now() - (i * 1000), // Stagger timestamps
     };
-
-    // Create initial identity credential
-    const identityCredential = await didManager.createCredential(
-      did.did,
-      {
-        id: did.id,
-        name,
-        role
-      },
-      ['VerifiableCredential', 'IdentityCredential']
-    );
-
-    participant.credentials.push(identityCredential);
-    this.participants.set(participant.id, participant);
-    
-    console.log(`✅ Created participant ${name} with DID: ${did.did}`);
-    return participant;
+    validations.push(validation);
+    console.log(`Validation received from ${validator.name}`);
   }
-
-  async issueParticipationCredential(issuer: DemoParticipant, recipient: DemoParticipant, activity: string): Promise<SimpleCredential> {
-    console.log(`${issuer.name} issuing participation credential to ${recipient.name} for: ${activity}`);
-    
-    const credential = await didManager.createCredential(
-      issuer.did.did,
-      {
-        id: recipient.did.id,
-        participantName: recipient.name,
-        activity,
-        timestamp: new Date().toISOString(),
-        issuer: issuer.name
-      },
-      ['VerifiableCredential', 'ParticipationCredential']
+  
+  let credential: SimpleCredential | undefined;
+  
+  if (validations.length >= minValidations) {
+    console.log('Minimum validations reached. Issuing credential...');
+    credential = await didManager.createCredential(
+      identity.did,
+      identity.did,
+      ['VerifiableCredential', 'ProofOfHumanity']
     );
-
-    recipient.credentials.push(credential);
-    
-    console.log(`✅ Issued participation credential for ${activity}`);
-    return credential;
+    console.log('Credential issued:', credential.id);
+  } else {
+    console.log('Insufficient validations. No credential issued.');
   }
+  
+  return { identity, credential, validations };
+}
 
-  async auditParticipant(auditor: DemoParticipant, participant: DemoParticipant): Promise<{ verified: boolean; report: string }> {
-    console.log(`${auditor.name} auditing ${participant.name}'s credentials...`);
-    
-    const auditResults = [];
-    let allVerified = true;
-
-    for (const credential of participant.credentials) {
-      const verification = await didManager.verifyCredential(credential);
-      auditResults.push({
-        credentialId: credential.id,
-        type: credential.type,
-        verified: verification.verified,
-        error: verification.error
-      });
-      
-      if (!verification.verified) {
-        allVerified = false;
-      }
+export async function validateIdentityWithCommunity(
+  subjectDID: string,
+  validatorIds: string[]
+): Promise<{ credential?: SimpleCredential; validations: CommunityValidation[] }> {
+  
+  console.log(`Validating identity: ${subjectDID}`);
+  const validations: CommunityValidation[] = [];
+  
+  for (const validatorId of validatorIds) {
+    const validator = mockValidators.find(v => v.id === validatorId);
+    if (validator) {
+      const validation: CommunityValidation = {
+        validatorId: validator.id,
+        timestamp: Date.now(),
+      };
+      validations.push(validation);
+      console.log(`Identity validated by ${validator.name}`);
     }
-
-    const auditCredential = await didManager.createCredential(
-      auditor.did.did,
-      {
-        auditedParticipant: participant.name,
-        auditedDID: participant.did.did,
-        auditTimestamp: new Date().toISOString(),
-        credentialsVerified: auditResults.length,
-        allCredentialsValid: allVerified,
-        auditResults
-      },
-      ['VerifiableCredential', 'AuditCredential']
+  }
+  
+  let credential: SimpleCredential | undefined;
+  
+  if (validations.length >= 3) {
+    credential = await didManager.createCredential(
+      subjectDID,
+      subjectDID,
+      ['VerifiableCredential', 'CommunityValidated']
     );
-
-    auditor.credentials.push(auditCredential);
-
-    const report = `Audit Report for ${participant.name}:\n` +
-                  `- Credentials verified: ${auditResults.length}\n` +
-                  `- All valid: ${allVerified ? 'Yes' : 'No'}\n` +
-                  `- Audit performed by: ${auditor.name}\n` +
-                  `- Audit DID: ${auditor.did.did}`;
-
-    console.log(`✅ Audit completed. All credentials valid: ${allVerified}`);
-    return { verified: allVerified, report };
+    console.log('Community validation credential issued');
   }
-
-  getParticipant(id: string): DemoParticipant | undefined {
-    return this.participants.get(id);
-  }
-
-  getAllParticipants(): DemoParticipant[] {
-    return Array.from(this.participants.values());
-  }
-
-  exportAuditTrail(): any {
-    return {
-      timestamp: new Date().toISOString(),
-      participants: this.getAllParticipants().map(p => ({
-        name: p.name,
-        role: p.role,
-        did: p.did.did,
-        credentialCount: p.credentials.length,
-        credentials: p.credentials.map(c => ({
-          id: c.id,
-          type: c.type,
-          issuer: c.issuer,
-          issuanceDate: c.issuanceDate,
-          verified: true // Since we're using mocks, assume all are verified
-        }))
-      })),
-      totalCredentials: didManager.getCredentials().length,
-      totalIdentities: didManager.getIdentities().length
-    };
-  }
+  
+  return { credential, validations };
 }
 
-export const demoUtils = new DIDDemoUtils();
+export async function createProofOfHumanityCredential(
+  subjectDID: string,
+  validations: CommunityValidation[]
+): Promise<SimpleCredential> {
+  
+  console.log('Creating Proof of Humanity credential...');
+  
+  if (validations.length < 3) {
+    throw new Error('Insufficient validations for Proof of Humanity');
+  }
+  
+  const credential = await didManager.createCredential(
+    subjectDID,
+    subjectDID,
+    ['VerifiableCredential', 'ProofOfHumanity', 'CommunityValidated']
+  );
+  
+  console.log('Proof of Humanity credential created:', credential.id);
+  return credential;
+}
+
+export function getMockValidators(): CommunityValidator[] {
+  return mockValidators;
+}
+
+export async function simulateFullDIDFlow(): Promise<void> {
+  console.log('=== Starting DID Community Validation Demo ===');
+  
+  try {
+    // Create identity and get validations
+    const result = await createDIDWithValidation(3);
+    
+    console.log('\n=== Results ===');
+    console.log('Identity DID:', result.identity.did);
+    console.log('Validations received:', result.validations.length);
+    console.log('Credential issued:', result.credential ? 'Yes' : 'No');
+    
+    if (result.credential) {
+      console.log('Credential ID:', result.credential.id);
+      console.log('Credential types:', result.credential.type.join(', '));
+    }
+    
+    // Show current state
+    const allCredentials = await didManager.getCredentials();
+    const allIdentities = await didManager.getIdentities();
+    
+    console.log('\n=== System State ===');
+    console.log('Total identities:', allIdentities.length);
+    console.log('Total credentials:', allCredentials.length);
+    
+  } catch (error) {
+    console.error('Demo failed:', error);
+  }
+}

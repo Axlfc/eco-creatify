@@ -75,7 +75,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ proposalId }) => {
         // Trigger reputation feedback
         reputationCtx?.triggerFeedback({
           type: 'reply',
-          text: 'Comentario publicado con éxito',
+          message: 'Comentario publicado con éxito',
           points: 5,
         });
       }
@@ -110,7 +110,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ proposalId }) => {
         // Trigger reputation feedback
         reputationCtx?.triggerFeedback({
           type: 'reply',
-          text: 'Respuesta publicada con éxito',
+          message: 'Respuesta publicada con éxito',
           points: 3,
         });
       }

@@ -63,7 +63,7 @@ const ForumThreadList: React.FC = () => {
             <option value="help-request">Pedir ayuda</option>
             <option value="help-offer">Ofrecer ayuda</option>
           </select>
-          <Button onClick={handleCreate} disabled={createThread.isLoading}>Crear</Button>
+          <Button onClick={handleCreate} disabled={createThread.isPending}>Crear</Button>
         </div>
       )}
       <div className="space-y-4">

@@ -1,3 +1,4 @@
+
 import { provider, treasuryContract } from '../lib/ethers-treasury';
 
 const ETHERSCAN_URL = process.env.ETHERSCAN_URL || 'https://sepolia.etherscan.io/tx/';
@@ -11,9 +12,10 @@ export function getExplorerTxUrl(hash: string): string {
 export async function getOnChainTransaction(txHash: string) {
   if (!txHash) return null;
   const receipt = await provider.getTransactionReceipt(txHash);
+  const confirmations = receipt ? await receipt.confirmations() : 0;
   return {
     hash: txHash,
-    confirmed: receipt && receipt.confirmations > 0,
+    confirmed: receipt && confirmations > 0,
     explorer_url: getExplorerTxUrl(txHash),
     ...receipt
   };
@@ -21,14 +23,19 @@ export async function getOnChainTransaction(txHash: string) {
 
 export async function getOnChainBudget(budgetId: string) {
   if (!treasuryContract) return null;
-  const budget = await treasuryContract.budgets(BigInt(budgetId));
-  // Se asume que el contrato expone los campos relevantes
-  return {
-    id: budget.id?.toString(),
-    approved: budget.approved,
-    executed: budget.executed,
-    createdBy: budget.createdBy,
-    explorer_url: getExplorerTxUrl(budget.txHash || ''),
-    ...budget
-  };
+  try {
+    const budget = await treasuryContract.budgets(BigInt(budgetId));
+    // Se asume que el contrato expone los campos relevantes
+    return {
+      id: budget.id?.toString(),
+      approved: budget.approved,
+      executed: budget.executed,
+      createdBy: budget.createdBy,
+      explorer_url: getExplorerTxUrl(''),
+      ...budget
+    };
+  } catch (error) {
+    console.error('Error fetching budget:', error);
+    return null;
+  }
 }

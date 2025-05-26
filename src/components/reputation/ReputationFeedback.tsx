@@ -5,11 +5,11 @@ import { CheckCircle, Star, Award, Trophy } from 'lucide-react';
 
 export interface ReputationFeedbackProps {
   type: 'tip' | 'reply' | 'moderation' | 'other';
-  text: string;
+  message: string;
   points: number;
 }
 
-const ReputationFeedback: React.FC<ReputationFeedbackProps> = ({ type, text, points }) => {
+const ReputationFeedback: React.FC<ReputationFeedbackProps> = ({ type, message, points }) => {
   const getIcon = () => {
     switch (type) {
       case 'tip':
@@ -26,7 +26,7 @@ const ReputationFeedback: React.FC<ReputationFeedbackProps> = ({ type, text, poi
   return (
     <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
       {getIcon()}
-      <span className="text-sm text-green-800">{text}</span>
+      <span className="text-sm text-green-800">{message}</span>
       <Badge variant="secondary" className="ml-auto">
         +{points} puntos
       </Badge>

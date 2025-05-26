@@ -261,7 +261,7 @@ export const MandatoryUsernameModal: React.FC<MandatoryUsernameModalProps> = ({
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isLoading && username.trim() && isAvailable && (!requiresCaptcha || captchaVerified)) {
-      handleSubmit();
+      handleSubmit(e as any);
     }
     
     // Prevent closing modal with Escape
@@ -277,7 +277,6 @@ export const MandatoryUsernameModal: React.FC<MandatoryUsernameModalProps> = ({
     if (!newOpen) {
       // Prevent closing - instead trigger the force logout
       onCloseAttempt();
-      e.preventDefault();
     }
   };
 

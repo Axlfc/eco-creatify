@@ -1,139 +1,136 @@
-import { supabase } from "@/integrations/supabase/client";
-import { ConflictResolutionData } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
+import { ConflictResolution, ConflictResolutionCategory, ConflictResolutionPriority } from "@/types/conflictResolution";
 
-/**
- * Función para crear una nueva resolución de conflicto
- */
-export const createConflictResolution = async (data: {
-  title: string;
-  description: string;
-  partyA: string;
-  partyB: string;
-  positionA: Json;
-  positionB: Json;
-  progress: Json;
-}): Promise<ConflictResolutionData> => {
-  // Mapea los nombres de propiedades en camelCase a snake_case para Supabase
-  const { data: newResolution, error } = await supabase
-    .from("conflict_resolutions")
-    .insert({
-      title: data.title,
-      description: data.description,
-      party_a: data.partyA,
-      party_b: data.partyB,
-      position_a: data.positionA,
-      position_b: data.positionB,
-      progress: data.progress,
-    })
-    .select()
-    .single();
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
 
-  if (error) {
-    console.error("Error creando resolución de conflicto:", error);
-    throw new Error(`Error al crear la resolución de conflicto: ${error.message}`);
+export class ConflictResolutionService {
+  async createConflictResolution(data: ConflictResolution): Promise<ConflictResolution> {
+    // Mock implementation - replace with actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const newConflictResolution: ConflictResolution = {
+          ...data,
+          id: Math.random().toString(36).substring(2, 15),
+          status: 'open',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        resolve(newConflictResolution);
+      }, 500);
+    });
   }
 
-  return newResolution;
-};
-
-/**
- * Función para obtener una resolución de conflicto por su ID
- */
-export const getConflictResolutionById = async (
-  id: string
-): Promise<ConflictResolutionData | null> => {
-  const { data, error } = await supabase
-    .from("conflict_resolutions")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    console.error("Error obteniendo resolución de conflicto:", error);
-    throw new Error(
-      `Error al obtener la resolución de conflicto: ${error.message}`
-    );
+  async getConflictResolutionById(id: string): Promise<ConflictResolution | null> {
+    // Mock implementation - replace with actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockConflictResolution: ConflictResolution = {
+          id: id,
+          title: 'Mock Conflict Resolution',
+          description: 'This is a mock conflict resolution for testing purposes.',
+          category: 'governance' as ConflictResolutionCategory,
+          priority: 'high' as ConflictResolutionPriority,
+          reporter_id: 'user123',
+          status: 'open',
+          affected_proposal_id: 'proposal456',
+          evidence: 'Mock evidence URL',
+          desired_outcome: 'Resolution of the conflict',
+          timeline: '1 week',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        resolve(mockConflictResolution);
+      }, 300);
+    });
   }
 
-  return data;
-};
+  async updateConflictResolution(id: string, updates: Partial<ConflictResolution>): Promise<ConflictResolution | null> {
+    // Mock implementation - replace with actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockConflictResolution: ConflictResolution = {
+          id: id,
+          title: 'Mock Conflict Resolution',
+          description: 'This is a mock conflict resolution for testing purposes.',
+          category: 'governance' as ConflictResolutionCategory,
+          priority: 'high' as ConflictResolutionPriority,
+          reporter_id: 'user123',
+          status: 'open',
+          affected_proposal_id: 'proposal456',
+          evidence: 'Mock evidence URL',
+          desired_outcome: 'Resolution of the conflict',
+          timeline: '1 week',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...updates,
+        };
+        resolve(mockConflictResolution);
+      }, 400);
+    });
+  }
 
-/**
- * Función para actualizar una resolución de conflicto existente
- */
-export const updateConflictResolution = async (
-  id: string,
-  updates: Partial<ConflictResolutionData>
-): Promise<ConflictResolutionData | null> => {
-  // Mapea las propiedades de camelCase a snake_case para la actualización
-  const updatesForSupabase: Partial<
-    Record<string, any>
-  > = {};
-  for (const key in updates) {
-    if (Object.hasOwn(updates, key)) {
-      const snakeCaseKey = key.replace(
-        /[A-Z]/g,
-        (letter) => `_${letter.toLowerCase()}`
-      );
-      updatesForSupabase[snakeCaseKey] = updates[key];
+  validateResolutionData(data: any): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Basic validation
+    if (!data || typeof data !== 'object') {
+      errors.push('Invalid data format');
+      return { isValid: false, errors };
     }
+
+    // Required fields validation
+    const requiredFields = [
+      'title', 'description', 'category', 'priority', 'reporter_id',
+      'affected_proposal_id', 'evidence', 'desired_outcome', 'timeline'
+    ];
+
+    // Use Object.prototype.hasOwnProperty.call instead of Object.hasOwn for compatibility
+    for (const field of requiredFields) {
+      if (!Object.prototype.hasOwnProperty.call(data, field) || !data[field]) {
+        errors.push(`Missing required field: ${field}`);
+      }
+    }
+
+    // Specific field validations
+    if (data.category && !['governance', 'technical', 'community', 'financial'].includes(data.category)) {
+      errors.push('Invalid category');
+    }
+    if (data.priority && !['high', 'medium', 'low'].includes(data.priority)) {
+      errors.push('Invalid priority');
+    }
+    
+    if (typeof data.evidence !== 'string' || data.evidence.length < 10) {
+      errors.push('Evidence must be a valid string URL or description');
+    }
+
+    return { isValid: errors.length === 0, errors };
   }
 
-  const { data, error } = await supabase
-    .from("conflict_resolutions")
-    .update(updatesForSupabase)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error actualizando resolución de conflicto:", error);
-    throw new Error(
-      `Error al actualizar la resolución de conflicto: ${error.message}`
-    );
+  async escalateConflict(id: string): Promise<ConflictResolution | null> {
+    // Mock implementation - replace with actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockConflictResolution: ConflictResolution = {
+          id: id,
+          title: 'Mock Conflict Resolution',
+          description: 'This is a mock conflict resolution for testing purposes.',
+          category: 'governance' as ConflictResolutionCategory,
+          priority: 'high' as ConflictResolutionPriority,
+          reporter_id: 'user123',
+          status: 'escalated',
+          affected_proposal_id: 'proposal456',
+          evidence: 'Mock evidence URL',
+          desired_outcome: 'Resolution of the conflict',
+          timeline: '1 week',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        resolve(mockConflictResolution);
+      }, 600);
+    });
   }
+}
 
-  return data;
-};
-
-/**
- * Función para eliminar una resolución de conflicto por su ID
- */
-export const deleteConflictResolution = async (
-  id: string
-): Promise<boolean> => {
-  const { error } = await supabase
-    .from("conflict_resolutions")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error("Error eliminando resolución de conflicto:", error);
-    throw new Error(
-      `Error al eliminar la resolución de conflicto: ${error.message}`
-    );
-  }
-
-  return true;
-};
-
-/**
- * Función para listar todas las resoluciones de conflicto
- */
-export const listConflictResolutions = async (): Promise<
-  ConflictResolutionData[]
-> => {
-  const { data, error } = await supabase
-    .from("conflict_resolutions")
-    .select("*");
-
-  if (error) {
-    console.error("Error listando resoluciones de conflicto:", error);
-    throw new Error(
-      `Error al listar las resoluciones de conflicto: ${error.message}`
-    );
-  }
-
-  return data || [];
-};
+export const conflictResolutionService = new ConflictResolutionService();

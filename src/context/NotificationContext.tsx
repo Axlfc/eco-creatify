@@ -1,38 +1,44 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode } from 'react';
 
-interface Notification {
-  type: 'success' | 'error' | 'warning' | 'info';
-  message: string;
-}
-
-interface NotificationContextType {
-  notify: (notification: Notification) => void;
+export interface NotificationContextType {
+  notifications: any[];
+  addNotification: (notification: any) => void;
+  markAsRead: (id: string) => void;
+  clearAll: () => void;
 }
 
 export const NotificationContext = createContext<NotificationContextType | null>(null);
 
-interface NotificationProviderProps {
-  children: ReactNode;
-}
+export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [notifications, setNotifications] = useState<any[]>([]);
 
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const notify = (notification: Notification) => {
-    // Mock implementation - in real app this would show toast/notification
-    console.log(`[${notification.type.toUpperCase()}] ${notification.message}`);
+  const addNotification = (notification: any) => {
+    setNotifications(prev => [...prev, notification]);
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const clearAll = () => {
+    setNotifications([]);
   };
 
   return (
-    <NotificationContext.Provider value={{ notify }}>
+    <NotificationContext.Provider 
+      value={{ 
+        notifications, 
+        addNotification, 
+        markAsRead, 
+        clearAll 
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
-};
-
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  return context;
 };
