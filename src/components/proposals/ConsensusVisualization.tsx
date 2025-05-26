@@ -39,7 +39,9 @@ import {
   ThumbsUp,
   TrendingUp,
   Vote,
+  ExternalLink,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data - in a real implementation, this would be fetched from Supabase
 const mockProposalsData = [
@@ -49,6 +51,7 @@ const mockProposalsData = [
     phase: "discussion",
     totalArguments: 3,
     agreementScore: 68,
+    category: "Education",
     keyPoints: [
       { point: "Need for diversity in tech", agreementLevel: 85 },
       { point: "Professional volunteer interest", agreementLevel: 78 },
@@ -76,6 +79,7 @@ const mockProposalsData = [
     phase: "voting",
     totalArguments: 4,
     agreementScore: 52,
+    category: "Governance",
     keyPoints: [
       { point: "Clear violation tiers", agreementLevel: 80 },
       { point: "Rotating moderators", agreementLevel: 35 },
@@ -103,6 +107,7 @@ const mockProposalsData = [
     phase: "presentation",
     totalArguments: 0,
     agreementScore: 95,
+    category: "Environment",
     keyPoints: [
       { point: "Environmental impact", agreementLevel: 95 },
       { point: "Community building", agreementLevel: 90 },
@@ -121,11 +126,28 @@ const consensusColors = {
   veryLow: "#EA384C", // Red for very low consensus/conflict
 };
 
+// Category colors for better visual separation
+const categoryColors = {
+  Education: "#8B5CF6",
+  Governance: "#F59E0B", 
+  Environment: "#10B981",
+  Technology: "#3B82F6",
+  Community: "#EF4444",
+  Infrastructure: "#6B7280",
+  Culture: "#EC4899",
+  Health: "#14B8A6",
+  Safety: "#F97316"
+};
+
 const getConsensusColor = (level: number) => {
   if (level >= 80) return consensusColors.high;
   if (level >= 60) return consensusColors.medium;
   if (level >= 40) return consensusColors.low;
   return consensusColors.veryLow;
+};
+
+const getCategoryColor = (category: string) => {
+  return categoryColors[category as keyof typeof categoryColors] || "#6B7280";
 };
 
 interface CompromiseItemProps {
@@ -184,10 +206,21 @@ const CompromiseItem: React.FC<CompromiseItemProps> = ({
 
 const ConsensusVisualization: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedProposal, setSelectedProposal] = useState(mockProposalsData[0]);
   
   const handleSelectProposal = (proposal: typeof mockProposalsData[0]) => {
     setSelectedProposal(proposal);
+  };
+
+  const handleViewProposal = (proposalId: string) => {
+    // TODO: Implementar ruta de detalle de propuesta
+    // navigate(`/proposals/${proposalId}`);
+    toast({
+      title: "Navegando a propuesta",
+      description: `Vista detallada de propuesta ${proposalId} estará disponible próximamente`,
+      variant: "default"
+    });
   };
 
   const aggregateData = mockProposalsData.map(proposal => ({
@@ -195,13 +228,21 @@ const ConsensusVisualization: React.FC = () => {
     id: proposal.id,
     score: proposal.agreementScore,
     argumentCount: proposal.totalArguments,
+    category: proposal.category,
+    fullTitle: proposal.title,
   }));
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Active Proposals Consensus Overview</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Active Proposals Consensus Overview
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Visualización del consenso por categoría. Cada propuesta está etiquetada según su categoría para mejor análisis.
+          </p>
         </CardHeader>
         <CardContent>
           <div className="h-72 md:h-80">
@@ -245,33 +286,53 @@ const ConsensusVisualization: React.FC = () => {
                     }}
                   >
                     {aggregateData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getConsensusColor(entry.score)} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={getCategoryColor(entry.category)}
+                        stroke={getConsensusColor(entry.score)}
+                        strokeWidth={2}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
           </div>
+          
+          {/* Category Legend */}
+          <div className="flex flex-wrap items-center justify-center mt-4 gap-4">
+            <div className="text-sm font-medium mb-2 w-full text-center">Categorías:</div>
+            {Object.entries(categoryColors).map(([category, color]) => (
+              <div key={category} className="flex items-center">
+                <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: color }}></div>
+                <span className="text-xs">{category}</span>
+              </div>
+            ))}
+          </div>
+          
+          {/* Consensus Legend */}
           <div className="flex items-center justify-center mt-4 gap-4">
+            <div className="text-sm font-medium mb-2 w-full text-center">Niveles de consenso:</div>
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: consensusColors.high }}></div>
-              <span className="text-xs">High Consensus (80%+)</span>
+              <span className="text-xs">Alto (80%+)</span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: consensusColors.medium }}></div>
-              <span className="text-xs">Medium Consensus (60-79%)</span>
+              <span className="text-xs">Medio (60-79%)</span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: consensusColors.low }}></div>
-              <span className="text-xs">Low Consensus (40-59%)</span>
+              <span className="text-xs">Bajo (40-59%)</span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: consensusColors.veryLow }}></div>
-              <span className="text-xs">Very Low Consensus (&lt;40%)</span>
+              <span className="text-xs">Muy bajo (&lt;40%)</span>
             </div>
           </div>
+          
           <div className="mt-4 text-sm text-muted-foreground text-center">
-            Click on any bar to see detailed analysis
+            Haz clic en cualquier barra para ver análisis detallado
           </div>
         </CardContent>
       </Card>
@@ -283,6 +344,9 @@ const ConsensusVisualization: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
+                    <Badge style={{ backgroundColor: getCategoryColor(selectedProposal.category), color: 'white' }}>
+                      {selectedProposal.category}
+                    </Badge>
                     <Badge>
                       {selectedProposal.phase.charAt(0).toUpperCase() + selectedProposal.phase.slice(1)} Phase
                     </Badge>
@@ -303,10 +367,10 @@ const ConsensusVisualization: React.FC = () => {
                   variant="outline" 
                   size="sm" 
                   className="flex items-center gap-1"
-                  onClick={() => navigate(`/proposals/${selectedProposal.id}`)}
+                  onClick={() => handleViewProposal(selectedProposal.id)}
                 >
                   <span>View Proposal</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
             </CardHeader>
@@ -335,8 +399,8 @@ const ConsensusVisualization: React.FC = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
                         <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-blue-500" />
-                          Key Discussion Points
+                          <Sparkles className="h-5 w-5" style={{ color: getCategoryColor(selectedProposal.category) }} />
+                          Key Discussion Points - {selectedProposal.category}
                         </h3>
                         <div className="space-y-4">
                           {selectedProposal.keyPoints.map((point, index) => (
@@ -369,12 +433,12 @@ const ConsensusVisualization: React.FC = () => {
                       </div>
                       <div className="h-80">
                         <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                          <Vote className="h-5 w-5 text-blue-500" />
-                          Consensus Radar
+                          <Vote className="h-5 w-5" style={{ color: getCategoryColor(selectedProposal.category) }} />
+                          Consensus Radar - {selectedProposal.category}
                         </h3>
                         <ChartContainer
                           config={{
-                            agreement: { color: consensusColors.high },
+                            agreement: { color: getCategoryColor(selectedProposal.category) },
                           }}
                         >
                           <ResponsiveContainer width="100%" height="100%">
@@ -392,8 +456,8 @@ const ConsensusVisualization: React.FC = () => {
                               <Radar 
                                 name="Consensus Level" 
                                 dataKey="A" 
-                                stroke={consensusColors.high} 
-                                fill={consensusColors.high} 
+                                stroke={getCategoryColor(selectedProposal.category)} 
+                                fill={getCategoryColor(selectedProposal.category)} 
                                 fillOpacity={0.5} 
                               />
                               <ChartTooltip />
@@ -407,8 +471,8 @@ const ConsensusVisualization: React.FC = () => {
                       <Info className="h-12 w-12 text-blue-500 mb-3 opacity-70" />
                       <h3 className="text-lg font-medium">No Discussion Data Available</h3>
                       <p className="text-muted-foreground max-w-md mt-2">
-                        This proposal is in the presentation phase and hasn't entered discussion yet.
-                        Check back after the community begins deliberation.
+                        Esta propuesta de categoría <strong>{selectedProposal.category}</strong> está en fase de presentación 
+                        y aún no ha entrado en discusión. Vuelve cuando la comunidad comience la deliberación.
                       </p>
                     </div>
                   )}
@@ -419,12 +483,12 @@ const ConsensusVisualization: React.FC = () => {
                     <div>
                       <div className="mb-6">
                         <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
-                          <Handshake className="h-5 w-5 text-blue-500" />
-                          Potential Compromise Solutions
+                          <Handshake className="h-5 w-5" style={{ color: getCategoryColor(selectedProposal.category) }} />
+                          Potential Compromise Solutions - {selectedProposal.category}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Based on the community discussion, these potential compromise solutions 
-                          might bridge differing perspectives.
+                          Basado en la discusión de la comunidad sobre esta propuesta de {selectedProposal.category}, 
+                          estas soluciones de compromiso podrían unir perspectivas diferentes.
                         </p>
                       </div>
                       
@@ -445,8 +509,8 @@ const ConsensusVisualization: React.FC = () => {
                       <AlertTriangle className="h-12 w-12 text-amber-500 mb-3 opacity-70" />
                       <h3 className="text-lg font-medium">No Opposing Views Identified</h3>
                       <p className="text-muted-foreground max-w-md mt-2">
-                        There are currently no significant opposing viewpoints to generate compromise solutions.
-                        This may indicate high consensus or that the proposal is still in early phases.
+                        Actualmente no hay puntos de vista opuestos significativos en esta propuesta de {selectedProposal.category} 
+                        para generar soluciones de compromiso. Esto puede indicar alto consenso o que la propuesta está en fases tempranas.
                       </p>
                     </div>
                   )}
@@ -457,17 +521,18 @@ const ConsensusVisualization: React.FC = () => {
                     <div className="space-y-6">
                       <div>
                         <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-blue-500" />
-                          Consensus Development Over Time
+                          <TrendingUp className="h-5 w-5" style={{ color: getCategoryColor(selectedProposal.category) }} />
+                          Consensus Development Over Time - {selectedProposal.category}
                         </h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                          This chart shows how consensus has evolved as the community discusses this proposal.
+                          Esta gráfica muestra cómo ha evolucionado el consenso sobre esta propuesta de {selectedProposal.category} 
+                          a medida que la comunidad la discute.
                         </p>
                         
                         <div className="h-72">
                           <ChartContainer
                             config={{
-                              consensus: { color: consensusColors.high },
+                              consensus: { color: getCategoryColor(selectedProposal.category) },
                               participation: { color: "#94A3B8" },
                             }}
                           >
@@ -493,7 +558,7 @@ const ConsensusVisualization: React.FC = () => {
                                   type="monotone"
                                   dataKey="consensus"
                                   name="Consensus Score"
-                                  stroke={consensusColors.high}
+                                  stroke={getCategoryColor(selectedProposal.category)}
                                   strokeWidth={2}
                                   dot={{ r: 4 }}
                                   activeDot={{ r: 6 }}
@@ -518,8 +583,9 @@ const ConsensusVisualization: React.FC = () => {
                       <CheckCircle className="h-12 w-12 text-green-500 mb-3 opacity-70" />
                       <h3 className="text-lg font-medium">High Initial Agreement</h3>
                       <p className="text-muted-foreground max-w-md mt-2">
-                        This proposal shows strong initial consensus. Trend data will become 
-                        available once the discussion phase begins and community members start sharing perspectives.
+                        Esta propuesta de {selectedProposal.category} muestra un fuerte consenso inicial. 
+                        Los datos de tendencia estarán disponibles una vez que comience la fase de discusión 
+                        y los miembros de la comunidad empiecen a compartir perspectivas.
                       </p>
                     </div>
                   )}

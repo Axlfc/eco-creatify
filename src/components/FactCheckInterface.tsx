@@ -1,236 +1,370 @@
 
 import React, { useState } from "react";
-import { Search, Filter, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import FactCheckCard, { FactCheck, Source } from "./FactCheckCard";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router-dom";
+import {
+  Search,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  ExternalLink,
+  Plus,
+  Shield,
+  Users,
+  TrendingUp
+} from "lucide-react";
 
-// Sample fact checks data
-const sampleFactChecks: FactCheck[] = [
+// Mock data for fact checks
+const mockFactChecks = [
   {
     id: "1",
-    claim: "Study finds that coffee consumption increases lifespan by up to 5 years",
-    status: "disputed",
-    explanation: "The original study found a correlation between moderate coffee consumption and longer lifespan, but did not establish causation. Multiple follow-up studies have shown mixed results, suggesting the relationship is more complex than initially reported.",
-    sources: [
-      {
-        id: "s1",
-        title: "Association of Coffee Drinking with Mortality",
-        url: "https://example.com/coffee-study",
-        type: "academic",
-        author: "Johnson et al.",
-        date: "2023-02-15",
-        publishedBy: "Journal of Nutrition"
-      },
-      {
-        id: "s2",
-        title: "Meta-analysis: Coffee consumption and mortality risk",
-        url: "https://example.com/coffee-meta",
-        type: "academic",
-        author: "Smith et al.",
-        date: "2023-05-10",
-        publishedBy: "European Journal of Epidemiology"
-      }
-    ],
-    consensusLevel: 45,
-    dateChecked: "2023-06-01",
-    category: "health"
+    claim: "Climate change policies reduce economic growth by 15% annually",
+    status: "false" as const,
+    confidence: 85,
+    submittedBy: "ClimateResearcher",
+    submittedAt: "2024-01-15",
+    category: "Environment",
+    sources: 12,
+    votes: { support: 45, oppose: 8 }
   },
   {
-    id: "2",
-    claim: "Federal voting law requires photo ID in all 50 states",
-    status: "refuted",
-    explanation: "There is no federal law requiring photo ID for voting in all 50 states. States have different voter identification requirements, and many accept non-photo forms of ID or other verification methods.",
-    sources: [
-      {
-        id: "s3",
-        title: "Voter Identification Requirements by State",
-        url: "https://example.com/voter-id-requirements",
-        type: "government",
-        date: "2023-01-20",
-        publishedBy: "National Conference of State Legislatures"
-      },
-      {
-        id: "s4",
-        title: "Federal Voting Laws Overview",
-        url: "https://example.com/federal-voting-laws",
-        type: "primary",
-        date: "2022-11-05",
-        publishedBy: "U.S. Election Assistance Commission"
-      }
-    ],
-    consensusLevel: 95,
-    dateChecked: "2023-02-15",
-    category: "politics"
+    id: "2", 
+    claim: "Renewable energy creates more jobs than fossil fuel industries",
+    status: "mostly-true" as const,
+    confidence: 78,
+    submittedBy: "EnergyAnalyst",
+    submittedAt: "2024-01-14",
+    category: "Economics",
+    sources: 8,
+    votes: { support: 32, oppose: 12 }
   },
   {
     id: "3",
-    claim: "Renewable energy is now cheaper than fossil fuels in most major markets",
-    status: "verified",
-    explanation: "Multiple independent analyses from financial and energy research organizations confirm that new renewable energy installations are now less expensive than new fossil fuel plants in a majority of markets worldwide.",
-    sources: [
-      {
-        id: "s5",
-        title: "Renewable Power Generation Costs in 2022",
-        url: "https://example.com/renewable-costs-2022",
-        type: "organization",
-        date: "2023-03-10",
-        publishedBy: "International Renewable Energy Agency"
-      },
-      {
-        id: "s6",
-        title: "Levelized Cost of Energy Analysis, Version 15.0",
-        url: "https://example.com/lcoe-15",
-        type: "organization",
-        date: "2023-01-18",
-        publishedBy: "Lazard"
-      },
-      {
-        id: "s7",
-        title: "Energy Market Analysis: Renewables vs Fossil Fuels",
-        url: "https://example.com/energy-market-analysis",
-        type: "academic",
-        author: "Zhang et al.",
-        date: "2022-12-05",
-        publishedBy: "Energy Economics Journal"
-      }
-    ],
-    consensusLevel: 87,
-    dateChecked: "2023-03-25",
-    category: "environment"
-  },
-  {
-    id: "4",
-    claim: "Historical data shows vaccination rates declined by 50% during the pandemic",
-    status: "inconclusive",
-    explanation: "Available data shows varied impacts on vaccination rates during the pandemic. Some regions did experience declines, but the global or nationwide average does not support a 50% reduction claim. More comprehensive data collection is needed.",
-    sources: [
-      {
-        id: "s8",
-        title: "Impact of COVID-19 on Routine Immunization",
-        url: "https://example.com/covid-immunization-impact",
-        type: "organization",
-        date: "2023-01-30",
-        publishedBy: "World Health Organization"
-      },
-      {
-        id: "s9",
-        title: "Vaccination Coverage Among Children, 2019-2022",
-        url: "https://example.com/vaccination-coverage-children",
-        type: "government",
-        date: "2022-09-15",
-        publishedBy: "Centers for Disease Control and Prevention"
-      }
-    ],
-    consensusLevel: 35,
-    dateChecked: "2023-02-28",
-    category: "health"
+    claim: "Local organic farming reduces transportation emissions by 40%",
+    status: "pending" as const,
+    confidence: 0,
+    submittedBy: "FarmAdvocate",
+    submittedAt: "2024-01-16",
+    category: "Agriculture",
+    sources: 3,
+    votes: { support: 15, oppose: 3 }
   }
 ];
 
+const statusConfig = {
+  "true": { 
+    icon: CheckCircle, 
+    color: "text-green-600", 
+    bg: "bg-green-50", 
+    label: "Verified True",
+    border: "border-green-200"
+  },
+  "false": { 
+    icon: XCircle, 
+    color: "text-red-600", 
+    bg: "bg-red-50", 
+    label: "Verified False",
+    border: "border-red-200"
+  },
+  "mostly-true": { 
+    icon: CheckCircle, 
+    color: "text-blue-600", 
+    bg: "bg-blue-50", 
+    label: "Mostly True",
+    border: "border-blue-200"
+  },
+  "pending": { 
+    icon: Clock, 
+    color: "text-amber-600", 
+    bg: "bg-amber-50", 
+    label: "Under Review",
+    border: "border-amber-200"
+  }
+};
+
 const FactCheckInterface: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [newClaim, setNewClaim] = useState("");
+  const [newSources, setNewSources] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSourceClick = (source: Source) => {
-    // In a real app, you might open the source in a new tab or display it in a modal
-    window.open(source.url, "_blank");
-    
+  const filteredFactChecks = mockFactChecks.filter(factCheck =>
+    factCheck.claim.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    factCheck.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSubmitClaim = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para enviar claims para verificación",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!newClaim.trim()) {
+      toast({
+        title: "Claim requerido",
+        description: "Por favor ingresa un claim para verificar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // TODO: Implementar envío real de claim
     toast({
-      title: "Source opened",
-      description: `Opening ${source.title}`,
-      duration: 3000,
+      title: "Claim enviado",
+      description: "Tu claim ha sido enviado para verificación y será revisado por la comunidad",
+      variant: "default"
+    });
+
+    setNewClaim("");
+    setNewSources("");
+    setSelectedCategory("");
+    setShowSubmissionForm(false);
+  };
+
+  const handleViewDetail = (factCheckId: string) => {
+    // TODO: Implementar vista de detalle de fact check
+    toast({
+      title: "Vista de detalle",
+      description: `Detalle completo del fact check ${factCheckId} estará disponible próximamente`,
+      variant: "default"
     });
   };
 
-  const filteredFactChecks = sampleFactChecks.filter(factCheck => {
-    const matchesSearch = 
-      factCheck.claim.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      factCheck.explanation.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || factCheck.status === statusFilter;
-    const matchesCategory = categoryFilter === "all" || factCheck.category === categoryFilter;
-    
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  const handleVote = (factCheckId: string, voteType: 'support' | 'oppose') => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para votar en fact checks",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+
+    // TODO: Implementar sistema de votación real
+    toast({
+      title: "Voto registrado",
+      description: `Tu voto de ${voteType === 'support' ? 'apoyo' : 'oposición'} ha sido registrado`,
+      variant: "default"
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-medium">Fact Checks</h2>
-        <Button variant="outline" className="flex items-center gap-1">
-          <PlusCircle className="h-4 w-4" />
-          <span>Submit Claim</span>
-        </Button>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search claims..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="verified">Verified</SelectItem>
-            <SelectItem value="disputed">Disputed</SelectItem>
-            <SelectItem value="refuted">Refuted</SelectItem>
-            <SelectItem value="inconclusive">Inconclusive</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="politics">Politics</SelectItem>
-            <SelectItem value="health">Health</SelectItem>
-            <SelectItem value="environment">Environment</SelectItem>
-            <SelectItem value="science">Science</SelectItem>
-            <SelectItem value="technology">Technology</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <Separator />
-      
-      {filteredFactChecks.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredFactChecks.map(factCheck => (
-            <FactCheckCard 
-              key={factCheck.id} 
-              factCheck={factCheck} 
-              onSourceClick={handleSourceClick}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No fact checks found matching your criteria</p>
-        </div>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Community Fact Checking
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sistema colaborativo de verificación de información. La comunidad evalúa claims y proporciona evidencia.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar fact checks o categorías..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  toast({
+                    title: "Autenticación requerida",
+                    description: "Debes iniciar sesión para enviar claims",
+                    variant: "destructive"
+                  });
+                  navigate("/auth");
+                  return;
+                }
+                setShowSubmissionForm(!showSubmissionForm);
+              }}
+              className="flex items-center gap-2"
+              variant={showSubmissionForm ? "outline" : "default"}
+            >
+              <Plus className="h-4 w-4" />
+              {showSubmissionForm ? "Cancelar" : "Submit Claim"}
+            </Button>
+          </div>
+
+          {showSubmissionForm && (
+            <Card className="mb-6 border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg">Submit New Claim for Verification</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Envía un claim para que la comunidad lo verifique con evidencia y fuentes.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Claim to verify</label>
+                  <Textarea
+                    placeholder="Ingresa el claim que quieres que la comunidad verifique..."
+                    value={newClaim}
+                    onChange={(e) => setNewClaim(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Category</label>
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="">Select category</option>
+                    <option value="Environment">Environment</option>
+                    <option value="Economics">Economics</option>
+                    <option value="Health">Health</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Politics">Politics</option>
+                    <option value="Science">Science</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Initial sources (optional)</label>
+                  <Textarea
+                    placeholder="Proporciona enlaces o referencias iniciales que apoyen o cuestionen este claim..."
+                    value={newSources}
+                    onChange={(e) => setNewSources(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={handleSubmitClaim} disabled={!newClaim.trim()}>
+                    Submit Claim
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowSubmissionForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid gap-4">
+            {filteredFactChecks.length > 0 ? (
+              filteredFactChecks.map((factCheck) => {
+                const config = statusConfig[factCheck.status];
+                const StatusIcon = config.icon;
+                
+                return (
+                  <Card key={factCheck.id} className={`${config.border} hover:shadow-md transition-shadow`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">{factCheck.category}</Badge>
+                            <Badge className={`${config.bg} ${config.color} border-0`}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {config.label}
+                            </Badge>
+                            {factCheck.status !== 'pending' && (
+                              <Badge variant="outline">
+                                {factCheck.confidence}% confidence
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-medium text-lg mb-2">{factCheck.claim}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>Por: {factCheck.submittedBy}</span>
+                            <span>{new Date(factCheck.submittedAt).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1">
+                              <ExternalLink className="h-3 w-3" />
+                              {factCheck.sources} sources
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {factCheck.votes.support + factCheck.votes.oppose} votes
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetail(factCheck.id)}
+                          className="ml-4"
+                        >
+                          <TrendingUp className="h-4 w-4 mr-1" />
+                          View Detail
+                        </Button>
+                      </div>
+                      
+                      {factCheck.status === 'pending' && (
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          <span className="text-sm text-muted-foreground">Community evaluation:</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-green-600 hover:bg-green-50"
+                            onClick={() => handleVote(factCheck.id, 'support')}
+                            disabled={!isAuthenticated}
+                            title={!isAuthenticated ? "Inicia sesión para votar" : "Apoyar este fact check"}
+                          >
+                            Support ({factCheck.votes.support})
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => handleVote(factCheck.id, 'oppose')}
+                            disabled={!isAuthenticated}
+                            title={!isAuthenticated ? "Inicia sesión para votar" : "Oponerse a este fact check"}
+                          >
+                            Oppose ({factCheck.votes.oppose})
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 bg-muted/30 rounded-md">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="font-medium mb-2">No fact checks found</h3>
+                <p className="text-sm text-muted-foreground">
+                  {searchQuery 
+                    ? "No se encontraron fact checks que coincidan con tu búsqueda"
+                    : "No hay fact checks disponibles. ¡Sé el primero en contribuir!"
+                  }
+                </p>
+                {!searchQuery && isAuthenticated && (
+                  <Button 
+                    onClick={() => setShowSubmissionForm(true)} 
+                    className="mt-4"
+                    variant="outline"
+                  >
+                    Submit First Claim
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,236 +1,322 @@
 
-import React, { useState, useEffect } from "react";
-import { 
-  PlusCircle, 
-  BookOpen, 
-  Filter, 
-  Search, 
-  RefreshCw,
-  UsersRound
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import DeliberationRoom from "./DeliberationRoom";
-
-// Sample data - in a real app, this would come from your database
-const deliberationRooms = [
-  {
-    id: "room1",
-    title: "Should Social Media Platforms Regulate Misinformation?",
-    description: "Explore different perspectives on platform responsibility vs. free speech concerns.",
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    category: "digital-ethics",
-    participantCount: 12,
-    perspectives: [
-      {
-        id: "p1",
-        title: "Platforms Have a Responsibility",
-        content: "Social media companies have reached unprecedented scale and influence, making them de facto public forums. With this position comes responsibility. Unchecked misinformation can lead to real-world harm including health risks, violence, and democratic erosion. Platforms have the technical ability and ethical obligation to limit the spread of clearly false information, especially when it poses public risks.",
-        author: "MediaEthicist",
-        viewpoint: "Regulation Needed"
-      },
-      {
-        id: "p2",
-        title: "Free Speech Must Be Protected",
-        content: "Empowering private companies to determine 'truth' is dangerous. Who decides what constitutes misinformation? Even well-intentioned censorship invariably expands beyond its original scope. History shows that speech restrictions are tools that can be weaponized against marginalized voices. The solution to misinformation is better education and more speech, not less.",
-        author: "FreeSpeechAdvocate",
-        viewpoint: "Minimal Intervention"
-      },
-      {
-        id: "p3",
-        title: "A Balanced Approach",
-        content: "Both total platform control and complete laissez-faire approaches have significant downsides. The solution lies in transparent processes with democratic oversight. This could include labeling content rather than removing it, focusing enforcement on demonstrably harmful misinformation, and creating appeals processes. Most importantly, platform algorithms should not amplify misinformation for engagement.",
-        author: "PolicyAnalyst",
-        viewpoint: "Middle Ground"
-      }
-    ]
-  },
-  {
-    id: "room2",
-    title: "Climate Change: Market Solutions vs. Government Regulation",
-    description: "Examining different approaches to addressing environmental challenges.",
-    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    category: "environmental-policy",
-    participantCount: 8,
-    perspectives: [
-      {
-        id: "p1",
-        title: "Market-Based Solutions",
-        content: "Free markets drive innovation, and environmental challenges are no exception. When properly incentivized through mechanisms like carbon pricing, private enterprise can develop and scale solutions faster than government programs. Market solutions also avoid the inefficiencies of bureaucracy and can adapt quickly to changing conditions and technologies.",
-        author: "EcoCapitalist",
-        viewpoint: "Market-Focused"
-      },
-      {
-        id: "p2",
-        title: "Government Regulation Essential",
-        content: "Climate change represents a massive market failure - the costs of pollution are externalized while profits remain private. Only government has the authority and scope to implement the system-wide changes needed. Regulation creates certainty for businesses while ensuring environmental protection isn't sacrificed for short-term profit. The urgency of the climate crisis requires coordinated action.",
-        author: "PolicyExpert",
-        viewpoint: "Regulation-Focused"
-      },
-      {
-        id: "p3",
-        title: "Public-Private Partnership",
-        content: "The most effective approach combines government frameworks with private sector innovation. Government can set long-term goals and boundaries through regulation, while businesses compete to find the most efficient solutions. Public research funding can support early-stage technologies, with private capital scaling proven solutions. This hybrid approach leverages the strengths of both sectors.",
-        author: "SustainabilityConsultant",
-        viewpoint: "Hybrid Approach"
-      }
-    ]
-  }
-];
+import { useNavigate } from "react-router-dom";
+import {
+  Users,
+  Plus,
+  Clock,
+  MessageSquare,
+  Vote,
+  CheckCircle,
+  AlertTriangle,
+  Calendar,
+  UserPlus,
+  Eye
+} from "lucide-react";
 
 interface DeliberationRoomsListProps {
   isAuthenticated: boolean;
-  userId?: string;
-  username?: string;
+  userId: string | null;
+  username: string | null;
 }
 
-const DeliberationRoomsList: React.FC<DeliberationRoomsListProps> = ({
-  isAuthenticated,
-  userId,
-  username,
-}) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
-  const { toast } = useToast();
+// Mock data for deliberation rooms
+const mockRooms = [
+  {
+    id: "1",
+    title: "Climate Action Budget Allocation",
+    description: "Discussing how to allocate the climate action budget across different initiatives",
+    status: "active" as const,
+    participants: 12,
+    maxParticipants: 20,
+    createdBy: "ClimateAdvocate",
+    createdAt: "2024-01-15",
+    deadline: "2024-01-25",
+    category: "Environment",
+    phase: "discussion",
+    consensusLevel: 65
+  },
+  {
+    id: "2",
+    title: "Community Garden Location Selection",
+    description: "Choosing the best location for the new community garden project",
+    status: "open" as const,
+    participants: 8,
+    maxParticipants: 15,
+    createdBy: "GreenThumb",
+    createdAt: "2024-01-16",
+    deadline: "2024-01-30",
+    category: "Community",
+    phase: "presentation",
+    consensusLevel: 85
+  },
+  {
+    id: "3",
+    title: "Digital Privacy Guidelines",
+    description: "Establishing community guidelines for digital privacy and data protection",
+    status: "completed" as const,
+    participants: 15,
+    maxParticipants: 15,
+    createdBy: "PrivacyAdvocate",
+    createdAt: "2024-01-10",
+    deadline: "2024-01-20",
+    category: "Technology",
+    phase: "completed",
+    consensusLevel: 78
+  }
+];
 
-  const handleCreateRoomClick = () => {
+const statusConfig = {
+  "open": { 
+    color: "text-blue-600", 
+    bg: "bg-blue-50", 
+    label: "Open for Participation",
+    border: "border-blue-200"
+  },
+  "active": { 
+    color: "text-green-600", 
+    bg: "bg-green-50", 
+    label: "Active Discussion",
+    border: "border-green-200"
+  },
+  "completed": { 
+    color: "text-gray-600", 
+    bg: "bg-gray-50", 
+    label: "Completed",
+    border: "border-gray-200"
+  }
+};
+
+const DeliberationRoomsList: React.FC<DeliberationRoomsListProps> = ({ 
+  isAuthenticated, 
+  userId, 
+  username 
+}) => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleCreateRoom = () => {
     if (!isAuthenticated) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to create a deliberation room",
-        variant: "destructive",
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para crear una sala de deliberación",
+        variant: "destructive"
       });
+      navigate("/auth");
       return;
     }
-    
-    // In a real app, you would navigate to a creation form or open a modal
+
+    // TODO: Implementar formulario de creación de sala
     toast({
-      title: "Coming soon",
-      description: "Room creation functionality is under development",
+      title: "Feature en desarrollo",
+      description: "La creación de salas de deliberación estará disponible próximamente",
+      variant: "default"
     });
   };
 
-  const filteredRooms = deliberationRooms.filter(room => {
-    const matchesSearch = room.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         room.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || room.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleJoinRoom = (roomId: string, roomTitle: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para unirte a salas de deliberación",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
 
-  const toggleRoom = (roomId: string) => {
-    setExpandedRoomId(expandedRoomId === roomId ? null : roomId);
+    // TODO: Implementar lógica de unirse a sala
+    toast({
+      title: "Uniéndose a sala",
+      description: `Te estás uniendo a "${roomTitle}". Esta funcionalidad estará disponible próximamente`,
+      variant: "default"
+    });
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
+  const handleViewRoom = (roomId: string, roomTitle: string) => {
+    // TODO: Implementar vista de detalle de sala
+    // navigate(`/deliberation/room/${roomId}`);
+    toast({
+      title: "Vista de sala",
+      description: `Vista detallada de "${roomTitle}" estará disponible próximamente`,
+      variant: "default"
+    });
+  };
+
+  const getConsensusColor = (level: number) => {
+    if (level >= 80) return "text-green-600 bg-green-50";
+    if (level >= 60) return "text-blue-600 bg-blue-50";
+    if (level >= 40) return "text-amber-600 bg-amber-50";
+    return "text-red-600 bg-red-50";
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search deliberation rooms..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Select 
-            value={selectedCategory} 
-            onValueChange={setSelectedCategory}
-          >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              <SelectItem value="digital-ethics">Digital Ethics</SelectItem>
-              <SelectItem value="environmental-policy">Environmental Policy</SelectItem>
-              <SelectItem value="political-systems">Political Systems</SelectItem>
-              <SelectItem value="economics">Economics</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button onClick={handleCreateRoomClick} className="gap-1">
-            <PlusCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">New Room</span>
-          </Button>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Deliberation Rooms
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Espacios estructurados para deliberación comunitaria y toma de decisiones colaborativa
+              </p>
+            </div>
+            <Button 
+              onClick={handleCreateRoom}
+              className="flex items-center gap-2"
+              disabled={!isAuthenticated}
+              title={!isAuthenticated ? "Inicia sesión para crear salas" : "Crear nueva sala"}
+            >
+              <Plus className="h-4 w-4" />
+              New Room
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!isAuthenticated && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center gap-2 mb-2">
+                <UserPlus className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-800">Autenticación requerida</span>
+              </div>
+              <p className="text-sm text-blue-700 mb-3">
+                Para participar en salas de deliberación, crear nuevas salas, o votar, necesitas iniciar sesión.
+              </p>
+              <Button 
+                size="sm" 
+                onClick={() => navigate("/auth")}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Iniciar sesión
+              </Button>
+            </div>
+          )}
 
-      {filteredRooms.length > 0 ? (
-        <div className="space-y-4">
-          {filteredRooms.map(room => (
-            <Card key={room.id} className="bg-white border-border/30 hover:border-border/70 transition-colors">
-              <CardHeader className="cursor-pointer" onClick={() => toggleRoom(room.id)}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{room.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">{room.description}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <UsersRound size={14} />
-                      <span>{room.participantCount} participants</span>
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      Created {formatDate(room.createdAt)}
-                    </span>
-                  </div>
-                </div>
+          <div className="grid gap-4">
+            {mockRooms.length > 0 ? (
+              mockRooms.map((room) => {
+                const config = statusConfig[room.status];
+                const canJoin = room.status !== 'completed' && room.participants < room.maxParticipants;
+                const isFullyBooked = room.participants >= room.maxParticipants && room.status !== 'completed';
                 
-                <div className="flex items-center mt-2 text-sm">
-                  <Badge variant="secondary" className="mr-2">
-                    {room.category.replace('-', ' ')}
-                  </Badge>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <BookOpen size={14} />
-                    <span>{room.perspectives.length} perspectives</span>
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              {expandedRoomId === room.id && (
-                <CardContent>
-                  <DeliberationRoom
-                    roomId={room.id}
-                    title={room.title}
-                    description={room.description}
-                    perspectives={room.perspectives}
-                    isAuthenticated={isAuthenticated}
-                    userId={userId}
-                    username={username}
-                  />
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 bg-muted/30 rounded-md">
-          <p className="text-muted-foreground">No deliberation rooms found matching your criteria</p>
-        </div>
-      )}
+                return (
+                  <Card key={room.id} className={`${config.border} hover:shadow-md transition-shadow`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">{room.category}</Badge>
+                            <Badge className={`${config.bg} ${config.color} border-0`}>
+                              {config.label}
+                            </Badge>
+                            <Badge variant="outline">
+                              Phase: {room.phase}
+                            </Badge>
+                            {room.status !== 'completed' && (
+                              <Badge className={getConsensusColor(room.consensusLevel)}>
+                                {room.consensusLevel}% consensus
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-medium text-lg mb-2">{room.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-3">{room.description}</p>
+                          
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {room.participants}/{room.maxParticipants} participants
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Deadline: {new Date(room.deadline).toLocaleDateString()}
+                            </span>
+                            <span>Por: {room.createdBy}</span>
+                          </div>
+                          
+                          {isFullyBooked && (
+                            <div className="mt-2 flex items-center gap-1 text-amber-600">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="text-sm">Sala llena - Lista de espera disponible</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewRoom(room.id, room.title)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          
+                          {canJoin && !isFullyBooked && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleJoinRoom(room.id, room.title)}
+                              disabled={!isAuthenticated}
+                              title={!isAuthenticated ? "Inicia sesión para unirte" : "Unirse a la sala"}
+                            >
+                              <UserPlus className="h-4 w-4 mr-1" />
+                              Join
+                            </Button>
+                          )}
+                          
+                          {isFullyBooked && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleJoinRoom(room.id, room.title)}
+                              disabled={!isAuthenticated}
+                              title={!isAuthenticated ? "Inicia sesión para la lista de espera" : "Unirse a lista de espera"}
+                            >
+                              <Clock className="h-4 w-4 mr-1" />
+                              Waitlist
+                            </Button>
+                          )}
+                          
+                          {room.status === 'completed' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewRoom(room.id, room.title)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Results
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 bg-muted/30 rounded-md">
+                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="font-medium mb-2">No deliberation rooms available</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No hay salas de deliberación activas. ¡Sé el primero en crear una!
+                </p>
+                {isAuthenticated && (
+                  <Button onClick={handleCreateRoom} variant="outline">
+                    Create First Room
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
