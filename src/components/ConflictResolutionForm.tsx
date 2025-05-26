@@ -80,49 +80,49 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
     title: "",
     description: "",
     partyA: "",
-    partyB: string;
+    partyB: "",
     positionA: {
-      description: string;
-      keyPoints: string[];
-      evidence: string[];
-    };
+      description: "",
+      keyPoints: [],
+      evidence: []
+    },
     positionB: {
-      description: string;
-      keyPoints: string[];
-      evidence: string[];
-    };
-    common_ground?: {
-      sharedValues: string[];
-      agreedFacts: string[];
-      mutualGoals: string[];
-    };
-    disagreementPoints?: {
-      coreIssues: string[];
-      differentPerspectives: string[];
-      conflictingEvidence: string[];
-    };
-    evidenceList?: {
-      sources: string[];
-      documentation: string[];
-      expertOpinions: string[];
-    };
-    proposedSolutions?: {
-      compromises: string[];
-      alternativeApproaches: string[];
-      implementationSteps: string[];
-    };
-    mediationRequest?: {
-      requested: boolean;
-      preferredMediators: string[];
-      mediationGoals: string[];
-    };
+      description: "",
+      keyPoints: [],
+      evidence: []
+    },
+    common_ground: {
+      sharedValues: [],
+      agreedFacts: [],
+      mutualGoals: []
+    },
+    disagreementPoints: {
+      coreIssues: [],
+      differentPerspectives: [],
+      conflictingEvidence: []
+    },
+    evidenceList: {
+      sources: [],
+      documentation: [],
+      expertOpinions: []
+    },
+    proposedSolutions: {
+      compromises: [],
+      alternativeApproaches: [],
+      implementationSteps: []
+    },
+    mediationRequest: {
+      requested: false,
+      preferredMediators: [],
+      mediationGoals: []
+    },
     progress: {
-      currentStage: string;
-      completedSteps: string[];
-      nextActions: string[];
-      timeframe: string;
-    };
-  }
+      currentStage: "articulation",
+      completedSteps: [],
+      nextActions: [],
+      timeframe: ""
+    }
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -294,7 +294,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                     <Textarea
                       id="positionADescription"
                       value={formData.positionA.description}
-                      onChange={(e) => updateFormData('positionA.description', e.target.value)}
+                      onChange={(e) => updateFormData('positionA', { ...formData.positionA, description: e.target.value })}
                       placeholder="Describe the position of Party A"
                       rows={3}
                     />
@@ -322,7 +322,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('positionA.keyPoints', input.value);
                           input.value = '';
@@ -353,7 +353,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('positionA.evidence', input.value);
                           input.value = '';
@@ -374,7 +374,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                     <Textarea
                       id="positionBDescription"
                       value={formData.positionB.description}
-                      onChange={(e) => updateFormData('positionB.description', e.target.value)}
+                      onChange={(e) => updateFormData('positionB', { ...formData.positionB, description: e.target.value })}
                       placeholder="Describe the position of Party B"
                       rows={3}
                     />
@@ -402,7 +402,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('positionB.keyPoints', input.value);
                           input.value = '';
@@ -433,7 +433,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('positionB.evidence', input.value);
                           input.value = '';
@@ -484,7 +484,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('common_ground.sharedValues', input.value);
                           input.value = '';
@@ -515,7 +515,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('common_ground.agreedFacts', input.value);
                           input.value = '';
@@ -546,7 +546,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('common_ground.mutualGoals', input.value);
                           input.value = '';
@@ -597,7 +597,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('disagreementPoints.coreIssues', input.value);
                           input.value = '';
@@ -628,7 +628,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('disagreementPoints.differentPerspectives', input.value);
                           input.value = '';
@@ -659,7 +659,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('disagreementPoints.conflictingEvidence', input.value);
                           input.value = '';
@@ -710,7 +710,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('proposedSolutions.compromises', input.value);
                           input.value = '';
@@ -741,7 +741,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('proposedSolutions.alternativeApproaches', input.value);
                           input.value = '';
@@ -772,7 +772,7 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
                         }}
                       />
                       <Button type="button" onClick={(e) => {
-                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                         if (input) {
                           addArrayItem('proposedSolutions.implementationSteps', input.value);
                           input.value = '';
@@ -849,9 +849,9 @@ const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCance
               ) : (
                 <Button
                   type="submit"
-                  disabled={createConflictResolution.isLoading}
+                  disabled={createConflictResolution.isPending}
                 >
-                  {createConflictResolution.isLoading ? 'Creating...' : 'Create Conflict Resolution'}
+                  {createConflictResolution.isPending ? 'Creating...' : 'Create Conflict Resolution'}
                 </Button>
               )}
             </div>
