@@ -1,62 +1,42 @@
-/**
- * ReputationContext.tsx
- *
- * Contexto global para gestionar el feedback reputacional en la app.
- * Permite a cualquier componente disparar feedback reputacional visual y mensajes.
- *
- * @example
- * const { triggerFeedback } = useReputationContext();
- * triggerFeedback({ type: 'positive', message: '¡Has ganado reputación!', points: 10 });
- */
-import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type ReputationFeedbackType = 'positive' | 'neutral' | 'negative';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
 
-export interface ReputationFeedbackState {
-  showFeedback: boolean;
-  type: ReputationFeedbackType;
+interface ReputationFeedback {
+  type: 'tip' | 'reply' | 'moderation' | 'other';
   message: string;
-  points?: number;
+  points: number;
 }
 
-export interface ReputationContextType {
-  feedback: Omit<ReputationFeedbackState, 'showFeedback'> | null;
+interface ReputationContextType {
   showFeedback: boolean;
-  triggerFeedback: (args: { type: ReputationFeedbackType; message: string; points?: number }) => void;
+  feedback: ReputationFeedback | null;
+  triggerFeedback: (feedback: ReputationFeedback) => void;
 }
 
-const ReputationContext = createContext<ReputationContextType | undefined>(undefined);
+const ReputationContext = createContext<ReputationContextType | null>(null);
 
-export const ReputationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<ReputationFeedbackState>({
-    showFeedback: false,
-    type: 'positive',
-    message: '',
-    points: undefined,
-  });
+interface ReputationProviderProps {
+  children: ReactNode;
+}
 
-  const triggerFeedback = useCallback(({ type, message, points }: { type: ReputationFeedbackType; message: string; points?: number }) => {
-    setState({ showFeedback: true, type, message, points });
-    setTimeout(() => {
-      setState((prev) => ({ ...prev, showFeedback: false }));
-    }, 3500);
-  }, []);
+export const ReputationProvider: React.FC<ReputationProviderProps> = ({ children }) => {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState<ReputationFeedback | null>(null);
+
+  const triggerFeedback = (newFeedback: ReputationFeedback) => {
+    setFeedback(newFeedback);
+    setShowFeedback(true);
+    setTimeout(() => setShowFeedback(false), 3000);
+  };
 
   return (
-    <ReputationContext.Provider
-      value={{
-        feedback: state.showFeedback ? { type: state.type, message: state.message, points: state.points } : null,
-        showFeedback: state.showFeedback,
-        triggerFeedback,
-      }}
-    >
+    <ReputationContext.Provider value={{ showFeedback, feedback, triggerFeedback }}>
       {children}
     </ReputationContext.Provider>
   );
 };
 
-export function useReputationContext(): ReputationContextType {
-  const ctx = useContext(ReputationContext);
-  if (!ctx) throw new Error('useReputationContext debe usarse dentro de ReputationProvider');
-  return ctx;
-}
+export const useReputationContext = () => {
+  const context = useContext(ReputationContext);
+  return context; // Allow null context for optional usage
+};

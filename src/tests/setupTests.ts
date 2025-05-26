@@ -1,57 +1,48 @@
 
-// Jest setup file
 import '@testing-library/jest-dom';
 
-// Only run blockchain mocking in test environment
-const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+// Mock global objects for testing environment
+global.fetch = jest.fn();
+global.console = {
+  ...console,
+  error: jest.fn(),
+  warn: jest.fn(),
+};
 
-// Polyfill global para TextEncoder/TextDecoder en entorno Node.js
-if (typeof global !== 'undefined' && isTestEnvironment) {
-  if (typeof global.TextEncoder === 'undefined') {
-    const { TextEncoder, TextDecoder } = require('util');
-    global.TextEncoder = TextEncoder;
-    global.TextDecoder = TextDecoder;
-  }
-}
+// Mock React Router
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => jest.fn(),
+  useParams: () => ({ id: 'mock-id' }),
+}));
 
-// Mock the server environment variables ONLY in test environment
-if (typeof process !== 'undefined' && isTestEnvironment) {
-  process.env.SUPABASE_URL = 'https://example.com';
-  process.env.SUPABASE_ANON_KEY = 'test-anon-key';
-}
+// Mock Supabase client
+jest.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    auth: {
+      getUser: jest.fn(),
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      insert: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      update: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      delete: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    })),
+  },
+}));
 
-// Mock fetch API ONLY in test environment
-if (typeof global !== 'undefined' && isTestEnvironment) {
-  global.fetch = jest.fn();
-}
+// Mock hooks
+jest.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { id: 'test-user', email: 'test@example.com' },
+    isLoading: false,
+  }),
+}));
 
-// Mock console methods to avoid noise in tests ONLY in test environment
-if (typeof global !== 'undefined' && isTestEnvironment) {
-  const originalConsole = console;
-  global.console = {
-    ...originalConsole,
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
-    log: jest.fn(),
-  };
-}
-
-// Clean up after each test
-if (isTestEnvironment) {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-}
-
-// Ensure Jest globals are available
-declare global {
-  var jest: any;
-  var describe: any;
-  var it: any;
-  var expect: any;
-  var beforeEach: any;
-  var afterEach: any;
-  var beforeAll: any;
-  var afterAll: any;
-}
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
+}));
