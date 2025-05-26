@@ -22,7 +22,8 @@ const router = express.Router();
 router.post('/report', authenticateJWT, (req, res) => {
   const { itemId, itemType, reason } = req.body;
   if (!itemId || !itemType || !reason) {
-    return res.status(400).json({ message: 'Faltan campos requeridos' });
+    res.status(400).json({ message: 'Faltan campos requeridos' });
+    return;
   }
   const reporterId = (req as any).user?.sub || 'unknown';
   const report: Report = {
@@ -47,7 +48,10 @@ router.get('/reports', authenticateJWT, (req, res) => {
 router.post('/block', authenticateJWT, (req, res) => {
   const { reportId } = req.body;
   const report = reports.find(r => r.id === reportId);
-  if (!report) return res.status(404).json({ message: 'Reporte no encontrado' });
+  if (!report) {
+    res.status(404).json({ message: 'Reporte no encontrado' });
+    return;
+  }
   report.status = 'blocked';
   res.json(report);
 });

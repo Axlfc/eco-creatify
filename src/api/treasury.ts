@@ -29,7 +29,8 @@ router.post('/transactions', async (req, res) => {
   try {
     const { type, amount, asset, assetAddress, tokenId, from_address, to_address, description, budget_id } = req.body;
     if (!type || !amount || !asset || !from_address || !to_address) {
-      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+      res.status(400).json({ message: 'Faltan campos obligatorios' });
+      return;
     }
     const created_by = 'mock-user-id';
     const tx = await mockTransactionService.createTransaction({
@@ -65,7 +66,8 @@ router.get('/transactions/:id', async (req, res) => {
   try {
     const transaction = await mockTransactionService.getTransactionById(req.params.id);
     if (!transaction) {
-      return res.status(404).json({ message: 'Transacción no encontrada' });
+      res.status(404).json({ message: 'Transacción no encontrada' });
+      return;
     }
     res.json(transaction);
   } catch (error: any) {
@@ -78,7 +80,8 @@ router.post('/budgets', async (req, res) => {
   try {
     const { name, amount, asset, asset_address, description } = req.body;
     if (!name || !amount || !asset) {
-      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+      res.status(400).json({ message: 'Faltan campos obligatorios' });
+      return;
     }
     const created_by = 'mock-user-id';
     const budget = await mockBudgetService.createBudget({
@@ -111,7 +114,8 @@ router.get('/budgets/:id', async (req, res) => {
   try {
     const budget = await mockBudgetService.getBudgetById(req.params.id);
     if (!budget) {
-      return res.status(404).json({ message: 'Presupuesto no encontrado' });
+      res.status(404).json({ message: 'Presupuesto no encontrado' });
+      return;
     }
     res.json(budget);
   } catch (error: any) {

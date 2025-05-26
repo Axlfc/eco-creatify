@@ -20,7 +20,8 @@ const router = express.Router();
 router.post('/', authenticateJWT, (req, res) => {
   const { proposalId, changes } = req.body;
   if (!proposalId || !changes) {
-    return res.status(400).json({ message: 'proposalId y changes requeridos' });
+    res.status(400).json({ message: 'proposalId y changes requeridos' });
+    return;
   }
   const editorId = (req as any).user?.sub || 'unknown';
   const entry: ProposalHistory = {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -25,7 +24,7 @@ interface MandatoryUsernameModalProps {
   attemptCount?: number;
 }
 
-export const MandatoryUsernameModal = ({ 
+export const MandatoryUsernameModal: React.FC<MandatoryUsernameModalProps> = ({
   open, 
   onUsernameSet, 
   onCloseAttempt,
@@ -180,7 +179,8 @@ export const MandatoryUsernameModal = ({
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!user?.id || !username.trim() || !isAvailable) {
       return;
     }
@@ -492,3 +492,5 @@ export const MandatoryUsernameModal = ({
     </>
   );
 };
+
+export default MandatoryUsernameModal;

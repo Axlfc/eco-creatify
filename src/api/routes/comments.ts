@@ -31,7 +31,8 @@ router.get('/proposal/:proposalId', authenticateJWT, (req, res) => {
 router.post('/', authenticateJWT, (req, res) => {
   const { proposalId, parentId = null, content } = req.body;
   if (!proposalId || !content) {
-    return res.status(400).json({ message: 'proposalId y content requeridos' });
+    res.status(400).json({ message: 'proposalId y content requeridos' });
+    return;
   }
   const authorId = (req as any).user?.sub || 'unknown';
   const now = new Date().toISOString();
@@ -55,8 +56,14 @@ router.put('/:id', authenticateJWT, (req, res) => {
   const { content } = req.body;
   const authorId = (req as any).user?.sub || 'unknown';
   const comment = comments.find(c => c.id === id);
-  if (!comment) return res.status(404).json({ message: 'Comentario no encontrado' });
-  if (comment.authorId !== authorId) return res.status(403).json({ message: 'Solo el autor puede editar' });
+  if (!comment) {
+    res.status(404).json({ message: 'Comentario no encontrado' });
+    return;
+  }
+  if (comment.authorId !== authorId) {
+    res.status(403).json({ message: 'Solo el autor puede editar' });
+    return;
+  }
   comment.content = content;
   comment.updatedAt = new Date().toISOString();
   res.json(comment);
@@ -67,8 +74,14 @@ router.delete('/:id', authenticateJWT, (req, res) => {
   const { id } = req.params;
   const authorId = (req as any).user?.sub || 'unknown';
   const idx = comments.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ message: 'Comentario no encontrado' });
-  if (comments[idx].authorId !== authorId) return res.status(403).json({ message: 'Solo el autor puede eliminar' });
+  if (idx === -1) {
+    res.status(404).json({ message: 'Comentario no encontrado' });
+    return;
+  }
+  if (comments[idx].authorId !== authorId) {
+    res.status(403).json({ message: 'Solo el autor puede eliminar' });
+    return;
+  }
   comments.splice(idx, 1);
   res.status(204).send();
 });
