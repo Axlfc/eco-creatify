@@ -1,3 +1,4 @@
+
 /**
  * LEGACY - Página de foro (rutas).
  *
@@ -34,7 +35,7 @@ import ConflictResolutionForm from "@/components/ConflictResolutionForm";
 import FactCheckInterface from "@/components/FactCheckInterface";
 import { ReportContentDialog } from "@/components/ReportContentDialog";
 import { ModeratorQueue } from "@/components/ModeratorQueue";
-import { CommunityGuidelines } from "@/components/CommunityGuidelines";
+import CommunityGuidelines from "@/components/CommunityGuidelines";
 import DeliberationRoomsList from "@/components/DeliberationRoomsList";
 import PastDecisionsList from "@/components/PastDecisionsList";
 import { 
