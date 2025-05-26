@@ -6,6 +6,7 @@ export interface NotificationContextType {
   addNotification: (notification: any) => void;
   markAsRead: (id: string) => void;
   clearAll: () => void;
+  notify: (notification: { type: string; message: string }) => void;
 }
 
 export const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -29,13 +30,24 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     setNotifications([]);
   };
 
+  const notify = (notification: { type: string; message: string }) => {
+    const newNotification = {
+      ...notification,
+      id: Math.random().toString(36).substring(2, 15),
+      read: false,
+      createdAt: new Date().toISOString()
+    };
+    addNotification(newNotification);
+  };
+
   return (
     <NotificationContext.Provider 
       value={{ 
         notifications, 
         addNotification, 
         markAsRead, 
-        clearAll 
+        clearAll,
+        notify
       }}
     >
       {children}

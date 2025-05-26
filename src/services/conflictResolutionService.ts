@@ -1,3 +1,4 @@
+
 import { ConflictResolution, ConflictResolutionCategory, ConflictResolutionPriority } from "@/types/conflictResolution";
 
 export interface ValidationResult {
@@ -16,6 +17,8 @@ export class ConflictResolutionService {
           status: 'open',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
         resolve(newConflictResolution);
       }, 500);
@@ -30,8 +33,8 @@ export class ConflictResolutionService {
           id: id,
           title: 'Mock Conflict Resolution',
           description: 'This is a mock conflict resolution for testing purposes.',
-          category: 'governance' as ConflictResolutionCategory,
-          priority: 'high' as ConflictResolutionPriority,
+          category: ConflictResolutionCategory.GOVERNANCE,
+          priority: ConflictResolutionPriority.HIGH,
           reporter_id: 'user123',
           status: 'open',
           affected_proposal_id: 'proposal456',
@@ -40,6 +43,20 @@ export class ConflictResolutionService {
           timeline: '1 week',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          partyA: 'Party A',
+          partyB: 'Party B',
+          userId: 'user123',
+          positionA: { content: 'Position A' },
+          positionB: { content: 'Position B' },
+          progress: {
+            current_stage: 'articulation' as any,
+            completed_stages: [],
+            stage_progress: {}
+          },
+          consensusReached: false,
+          isPublic: true
         };
         resolve(mockConflictResolution);
       }, 300);
@@ -54,8 +71,8 @@ export class ConflictResolutionService {
           id: id,
           title: 'Mock Conflict Resolution',
           description: 'This is a mock conflict resolution for testing purposes.',
-          category: 'governance' as ConflictResolutionCategory,
-          priority: 'high' as ConflictResolutionPriority,
+          category: ConflictResolutionCategory.GOVERNANCE,
+          priority: ConflictResolutionPriority.HIGH,
           reporter_id: 'user123',
           status: 'open',
           affected_proposal_id: 'proposal456',
@@ -64,6 +81,20 @@ export class ConflictResolutionService {
           timeline: '1 week',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          partyA: 'Party A',
+          partyB: 'Party B',
+          userId: 'user123',
+          positionA: { content: 'Position A' },
+          positionB: { content: 'Position B' },
+          progress: {
+            current_stage: 'articulation' as any,
+            completed_stages: [],
+            stage_progress: {}
+          },
+          consensusReached: false,
+          isPublic: true,
           ...updates,
         };
         resolve(mockConflictResolution);
@@ -116,8 +147,8 @@ export class ConflictResolutionService {
           id: id,
           title: 'Mock Conflict Resolution',
           description: 'This is a mock conflict resolution for testing purposes.',
-          category: 'governance' as ConflictResolutionCategory,
-          priority: 'high' as ConflictResolutionPriority,
+          category: ConflictResolutionCategory.GOVERNANCE,
+          priority: ConflictResolutionPriority.HIGH,
           reporter_id: 'user123',
           status: 'escalated',
           affected_proposal_id: 'proposal456',
@@ -126,6 +157,20 @@ export class ConflictResolutionService {
           timeline: '1 week',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          partyA: 'Party A',
+          partyB: 'Party B',
+          userId: 'user123',
+          positionA: { content: 'Position A' },
+          positionB: { content: 'Position B' },
+          progress: {
+            current_stage: 'articulation' as any,
+            completed_stages: [],
+            stage_progress: {}
+          },
+          consensusReached: false,
+          isPublic: true
         };
         resolve(mockConflictResolution);
       }, 600);

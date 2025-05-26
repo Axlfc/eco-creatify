@@ -29,6 +29,19 @@ export enum MediationStatus {
   REJECTED = "rejected"
 }
 
+export enum ConflictResolutionCategory {
+  GOVERNANCE = "governance",
+  TECHNICAL = "technical",
+  COMMUNITY = "community",
+  FINANCIAL = "financial"
+}
+
+export enum ConflictResolutionPriority {
+  HIGH = "high",
+  MEDIUM = "medium",
+  LOW = "low"
+}
+
 export interface ConflictPosition {
   content: string;
   createdBy?: string;
@@ -89,11 +102,21 @@ export interface ConflictResolution {
   id: string;
   title: string;
   description?: string;
+  category: ConflictResolutionCategory;
+  priority: ConflictResolutionPriority;
   partyA: string;
   partyB: string;
   createdAt: string;
   updatedAt: string;
   userId: string;
+  reporter_id: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'escalated' | 'closed';
+  affected_proposal_id?: string;
+  evidence?: string;
+  desired_outcome?: string;
+  timeline?: string;
+  created_at: string;
+  updated_at: string;
   positionA: ConflictPosition;
   positionB: ConflictPosition;
   progress: ConflictResolutionProgress;
