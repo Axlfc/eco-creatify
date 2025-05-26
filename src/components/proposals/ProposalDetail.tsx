@@ -1,3 +1,4 @@
+
 /**
  * ProposalDetail.tsx
  *
@@ -37,7 +38,6 @@ import { fetchProposalHistory, ProposalHistory } from '@/lib/api/proposals';
 // import { useProposals } from '../../hooks/useProposals';
 // import { useComments } from '../../hooks/useComments';
 // TODO: Importar tipo Proposal desde types/proposal cuando esté disponible
-import { useParams } from 'react-router-dom';
 // Mock temporal para propuesta
 const mockProposal = {
   id: "1",
