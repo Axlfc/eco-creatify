@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForumThreads, useModeration, useUserProfile, useUpdateReputation } from "@/hooks/useForumThreads";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const ForumThreadDetail: React.FC<{ thread: import("@/types/forum").ForumThread 
   const { data: tips = [] } = useTips(thread.id);
   const [reply, setReply] = useState("");
   const { toast } = useToast();
-  const { moderate } = useModeration();
+  const moderate = useModeration();
   const [lastModeration, setLastModeration] = useState<any>(null);
   const { data: userProfile } = useUserProfile(thread.author);
   const updateReputation = useUpdateReputation();
@@ -90,7 +91,7 @@ const ForumThreadDetail: React.FC<{ thread: import("@/types/forum").ForumThread 
             {comments.map(c => (
               <li key={c.id} className="flex justify-between items-center border-b pb-1">
                 <span>{c.content} <span className="text-xs text-muted-foreground">por {c.author}</span></span>
-                <Button size="xs" variant="outline" onClick={() => handleTip(c.author)}>Propina</Button>
+                <Button size="sm" variant="outline" onClick={() => handleTip(c.author)}>Propina</Button>
               </li>
             ))}
           </ul>

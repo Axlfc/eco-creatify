@@ -1,372 +1,862 @@
 import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  MessageSquare, 
-  Handshake, 
-  Lightbulb,
-  UsersRound,
-  Diff
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { createConflictResolution } from "@/services/conflictResolutionService";
-import { Stage } from "@/types/conflictResolution";
-import { supabase } from "@/integrations/supabase/client";
+import { 
+  Users, 
+  MessageCircle, 
+  Scale, 
+  ClipboardList, 
+  Lightbulb,
+  Handshake,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  User
+} from "lucide-react";
 
 interface ConflictResolutionFormProps {
   onCancel: () => void;
   onSubmit: () => void;
 }
 
-const ConflictResolutionForm = ({ onCancel, onSubmit }: ConflictResolutionFormProps) => {
-  const [title, setTitle] = useState("");
-  const [partyA, setPartyA] = useState("");
-  const [partyB, setPartyB] = useState("");
-  const [positionA, setPositionA] = useState("");
-  const [positionB, setPositionB] = useState("");
-  const [commonGround, setCommonGround] = useState("");
-  const [proposedSolution, setProposedSolution] = useState("");
-  const [step, setStep] = useState(1);
+interface ConflictResolutionData {
+  title: string;
+  description: string;
+  partyA: string;
+  partyB: string;
+  positionA: {
+    description: string;
+    keyPoints: string[];
+    evidence: string[];
+  };
+  positionB: {
+    description: string;
+    keyPoints: string[];
+    evidence: string[];
+  };
+  common_ground?: {
+    sharedValues: string[];
+    agreedFacts: string[];
+    mutualGoals: string[];
+  };
+  disagreementPoints?: {
+    coreIssues: string[];
+    differentPerspectives: string[];
+    conflictingEvidence: string[];
+  };
+  evidenceList?: {
+    sources: string[];
+    documentation: string[];
+    expertOpinions: string[];
+  };
+  proposedSolutions?: {
+    compromises: string[];
+    alternativeApproaches: string[];
+    implementationSteps: string[];
+  };
+  mediationRequest?: {
+    requested: boolean;
+    preferredMediators: string[];
+    mediationGoals: string[];
+  };
+  progress: {
+    currentStage: string;
+    completedSteps: string[];
+    nextActions: string[];
+    timeframe: string;
+  };
+}
+
+const ConflictResolutionForm: React.FC<ConflictResolutionFormProps> = ({ onCancel, onSubmit }) => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<ConflictResolutionData>({
+    title: "",
+    description: "",
+    partyA: "",
+    partyB: string;
+    positionA: {
+      description: string;
+      keyPoints: string[];
+      evidence: string[];
+    };
+    positionB: {
+      description: string;
+      keyPoints: string[];
+      evidence: string[];
+    };
+    common_ground?: {
+      sharedValues: string[];
+      agreedFacts: string[];
+      mutualGoals: string[];
+    };
+    disagreementPoints?: {
+      coreIssues: string[];
+      differentPerspectives: string[];
+      conflictingEvidence: string[];
+    };
+    evidenceList?: {
+      sources: string[];
+      documentation: string[];
+      expertOpinions: string[];
+    };
+    proposedSolutions?: {
+      compromises: string[];
+      alternativeApproaches: string[];
+      implementationSteps: string[];
+    };
+    mediationRequest?: {
+      requested: boolean;
+      preferredMediators: string[];
+      mediationGoals: string[];
+    };
+    progress: {
+      currentStage: string;
+      completedSteps: string[];
+      nextActions: string[];
+      timeframe: string;
+    };
+  }
+
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const MIN_LENGTH = 100;
-  
-  const validateCurrentStep = () => {
-    switch (step) {
-      case 1:
-        if (!title.trim()) {
-          toast({
-            title: "Missing information",
-            description: "Please provide a title for this conflict resolution",
-            variant: "destructive",
-          });
-          return false;
-        }
-        if (!partyA.trim() || !partyB.trim()) {
-          toast({
-            title: "Missing information",
-            description: "Please identify both parties involved in the conflict",
-            variant: "destructive",
-          });
-          return false;
-        }
-        return true;
-        
-      case 2:
-        if (positionA.length < MIN_LENGTH) {
-          toast({
-            title: "Insufficient detail",
-            description: `Position A needs at least ${MIN_LENGTH} characters to ensure adequate explanation`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        if (positionB.length < MIN_LENGTH) {
-          toast({
-            title: "Insufficient detail",
-            description: `Position B needs at least ${MIN_LENGTH} characters to ensure adequate explanation`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        return true;
-        
-      case 3:
-        if (commonGround.length < MIN_LENGTH) {
-          toast({
-            title: "Insufficient detail",
-            description: `Common ground section needs at least ${MIN_LENGTH} characters to be meaningful`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        return true;
-        
-      case 4:
-        if (proposedSolution.length < MIN_LENGTH) {
-          toast({
-            title: "Insufficient detail",
-            description: `Proposed solution needs at least ${MIN_LENGTH} characters to be actionable`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        return true;
-        
-      default:
-        return true;
-    }
+  const createConflictResolution = useMutation({
+    mutationFn: async (data: ConflictResolutionData) => {
+      const { data: result, error } = await supabase
+        .from('conflict_resolutions')
+        .insert({
+          title: data.title,
+          description: data.description,
+          party_a: data.partyA,
+          party_b: data.partyB,
+          position_a: data.positionA,
+          position_b: data.positionB,
+          progress: data.progress,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conflict resolution template created",
+        description: "Your structured approach to conflict resolution has been saved.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['conflict-resolutions'] });
+      onSubmit();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating conflict resolution",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+      console.error("Error:", error);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createConflictResolution.mutate(formData);
   };
 
-  const nextStep = () => {
-    if (validateCurrentStep()) {
-      setStep(step + 1);
-    }
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const prevStep = () => {
-    setStep(Math.max(1, step - 1));
-  };
-
-  const handleSubmit = async () => {
-    if (!validateCurrentStep()) return;
+  const addArrayItem = (path: string, item: string) => {
+    if (!item.trim()) return;
     
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+    const pathParts = path.split('.');
+    setFormData(prev => {
+      const newData = { ...prev };
+      let current: any = newData;
       
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "You need to be logged in to submit a conflict resolution.",
-          variant: "destructive"
-        });
-        return;
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        current = current[pathParts[i]];
       }
       
-      // Create the conflict resolution in our database
-      await createConflictResolution({
-        title,
-        description: "Conflict resolution process",
-        partyA,
-        partyB,
-        positionA: {
-          content: positionA,
-          createdBy: user.id
-        },
-        positionB: {
-          content: positionB,
-          createdBy: user.id
-        },
-        progress: {
-          current_stage: Stage.Articulation,
-          completed_stages: [],
-          stage_progress: {}
-        },
-        commonGround: {
-          points: [commonGround],
-          agreedBy: [user.id],
-          createdAt: new Date().toISOString()
-        },
-        proposedSolutions: [{
-          description: proposedSolution,
-          addressesPoints: [],
-          proposedBy: user.id,
-          createdAt: new Date().toISOString()
-        }],
-        consensusReached: false,
-        isPublic: true,
-        userId: user.id
-      });
+      const finalKey = pathParts[pathParts.length - 1];
+      if (!current[finalKey]) current[finalKey] = [];
+      current[finalKey] = [...current[finalKey], item];
       
-      toast({
-        title: "Conflict resolution submitted",
-        description: "Your conflict resolution template has been submitted.",
-      });
-      
-      onSubmit();
-    } catch (error) {
-      console.error("Error submitting conflict resolution:", error);
-      toast({
-        title: "Submission failed",
-        description: "There was an error submitting your conflict resolution.",
-        variant: "destructive"
-      });
-    }
+      return newData;
+    });
   };
 
-  const renderStep = () => {
-    switch (step) {
+  const removeArrayItem = (path: string, index: number) => {
+    const pathParts = path.split('.');
+    setFormData(prev => {
+      const newData = { ...prev };
+      let current: any = newData;
+      
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        current = current[pathParts[i]];
+      }
+      
+      const finalKey = pathParts[pathParts.length - 1];
+      current[finalKey] = current[finalKey].filter((_: any, i: number) => i !== index);
+      
+      return newData;
+    });
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="conflict-title">Title of the Conflict</Label>
-              <Input
-                id="conflict-title"
-                placeholder="Summarize the conflict in a concise title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <Users className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Conflict Overview</h3>
+              <p className="text-gray-600">Define the basic information about the conflict situation</p>
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="party-a">Party A (Identifier/Position)</Label>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Conflict Title</Label>
                 <Input
-                  id="party-a"
-                  placeholder="e.g., Environmental Advocates"
-                  value={partyA}
-                  onChange={(e) => setPartyA(e.target.value)}
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => updateFormData('title', e.target.value)}
+                  placeholder="Brief description of the conflict"
+                  required
                 />
               </div>
-              
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="party-b">Party B (Identifier/Position)</Label>
-                <Input
-                  id="party-b"
-                  placeholder="e.g., Economic Development Group"
-                  value={partyB}
-                  onChange={(e) => setPartyB(e.target.value)}
+
+              <div>
+                <Label htmlFor="description">Detailed Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => updateFormData('description', e.target.value)}
+                  placeholder="Provide context and background information about the conflict"
+                  rows={4}
+                  required
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="partyA">Party A</Label>
+                  <Input
+                    id="partyA"
+                    value={formData.partyA}
+                    onChange={(e) => updateFormData('partyA', e.target.value)}
+                    placeholder="Name or identifier for Party A"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="partyB">Party B</Label>
+                  <Input
+                    id="partyB"
+                    value={formData.partyB}
+                    onChange={(e) => updateFormData('partyB', e.target.value)}
+                    placeholder="Name or identifier for Party B"
+                    required
+                  />
+                </div>
               </div>
             </div>
           </div>
         );
-        
+
       case 2:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <UsersRound className="h-5 w-5 text-primary" />
-                <Label htmlFor="position-a">{`${partyA}'s Position (${positionA.length}/${MIN_LENGTH} characters)`}</Label>
-              </div>
-              <Textarea
-                id="position-a"
-                placeholder="Describe the first position in detail..."
-                value={positionA}
-                onChange={(e) => setPositionA(e.target.value)}
-                rows={5}
-                className={positionA.length > 0 && positionA.length < MIN_LENGTH ? "border-red-300" : ""}
-              />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <MessageCircle className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Positions of Each Party</h3>
+              <p className="text-gray-600">Describe the positions, key points, and evidence for each party involved</p>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <UsersRound className="h-5 w-5 text-primary" />
-                <Label htmlFor="position-b">{`${partyB}'s Position (${positionB.length}/${MIN_LENGTH} characters)`}</Label>
-              </div>
-              <Textarea
-                id="position-b"
-                placeholder="Describe the second position in detail..."
-                value={positionB}
-                onChange={(e) => setPositionB(e.target.value)}
-                rows={5}
-                className={positionB.length > 0 && positionB.length < MIN_LENGTH ? "border-red-300" : ""}
-              />
-            </div>
-            
-            <div className="rounded-md bg-secondary/50 p-3 text-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Diff className="h-4 w-4 text-primary" />
-                <span className="font-medium">Position Documentation Guidelines</span>
-              </div>
-              <ul className="space-y-1 list-disc pl-5">
-                <li>State each position accurately without bias</li>
-                <li>Use evidence and specific examples where possible</li>
-                <li>Acknowledge underlying concerns and values</li>
-                <li>Avoid judgmental language or assumptions</li>
-              </ul>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Position of Party A</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="positionADescription">Description</Label>
+                    <Textarea
+                      id="positionADescription"
+                      value={formData.positionA.description}
+                      onChange={(e) => updateFormData('positionA.description', e.target.value)}
+                      placeholder="Describe the position of Party A"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Key Points</Label>
+                    {formData.positionA.keyPoints.map((point, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{point}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('positionA.keyPoints', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a key point"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('positionA.keyPoints', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('positionA.keyPoints', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Evidence</Label>
+                    {formData.positionA.evidence.map((evidence, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{evidence}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('positionA.evidence', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add evidence"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('positionA.evidence', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('positionA.evidence', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Position of Party B</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="positionBDescription">Description</Label>
+                    <Textarea
+                      id="positionBDescription"
+                      value={formData.positionB.description}
+                      onChange={(e) => updateFormData('positionB.description', e.target.value)}
+                      placeholder="Describe the position of Party B"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Key Points</Label>
+                    {formData.positionB.keyPoints.map((point, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{point}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('positionB.keyPoints', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a key point"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('positionB.keyPoints', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('positionB.keyPoints', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Evidence</Label>
+                    {formData.positionB.evidence.map((evidence, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{evidence}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('positionB.evidence', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add evidence"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('positionB.evidence', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('positionB.evidence', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
-        
+
       case 3:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Handshake className="h-5 w-5 text-primary" />
-                <Label htmlFor="common-ground">{`Common Ground (${commonGround.length}/${MIN_LENGTH} characters)`}</Label>
-              </div>
-              <Textarea
-                id="common-ground"
-                placeholder="Identify shared values, interests, or areas of agreement between the parties..."
-                value={commonGround}
-                onChange={(e) => setCommonGround(e.target.value)}
-                rows={6}
-                className={commonGround.length > 0 && commonGround.length < MIN_LENGTH ? "border-red-300" : ""}
-              />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <Handshake className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Finding Common Ground</h3>
+              <p className="text-gray-600">Identify shared values, agreed facts, and mutual goals between the parties</p>
             </div>
-            
-            <div className="rounded-md bg-secondary/50 p-3 text-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Handshake className="h-4 w-4 text-primary" />
-                <span className="font-medium">Finding Common Ground Tips</span>
-              </div>
-              <ul className="space-y-1 list-disc pl-5">
-                <li>Look for shared fundamental values beneath different positions</li>
-                <li>Identify mutual needs that both parties recognize</li>
-                <li>Consider long-term aspirations that may be compatible</li>
-                <li>Acknowledge areas where compromise might be possible</li>
-              </ul>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Common Ground</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Shared Values</Label>
+                    {formData.common_ground?.sharedValues?.map((value, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{value}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('common_ground.sharedValues', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a shared value"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('common_ground.sharedValues', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('common_ground.sharedValues', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Agreed Facts</Label>
+                    {formData.common_ground?.agreedFacts?.map((fact, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{fact}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('common_ground.agreedFacts', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add an agreed fact"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('common_ground.agreedFacts', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('common_ground.agreedFacts', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Mutual Goals</Label>
+                    {formData.common_ground?.mutualGoals?.map((goal, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{goal}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('common_ground.mutualGoals', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a mutual goal"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('common_ground.mutualGoals', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('common_ground.mutualGoals', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
-        
+
       case 4:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-primary" />
-                <Label htmlFor="proposed-solution">{`Proposed Solution (${proposedSolution.length}/${MIN_LENGTH} characters)`}</Label>
-              </div>
-              <Textarea
-                id="proposed-solution"
-                placeholder="Propose a solution that addresses concerns from both perspectives..."
-                value={proposedSolution}
-                onChange={(e) => setProposedSolution(e.target.value)}
-                rows={8}
-                className={proposedSolution.length > 0 && proposedSolution.length < MIN_LENGTH ? "border-red-300" : ""}
-              />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <AlertTriangle className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Addressing Disagreements</h3>
+              <p className="text-gray-600">Identify core issues, different perspectives, and conflicting evidence</p>
             </div>
-            
-            <div className="rounded-md bg-secondary/50 p-3 text-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <span className="font-medium">Effective Solution Guidelines</span>
-              </div>
-              <ul className="space-y-1 list-disc pl-5">
-                <li>Address core concerns from both sides</li>
-                <li>Be specific, detailed and actionable</li>
-                <li>Consider potential objections and address them</li>
-                <li>Focus on collaborative implementation</li>
-              </ul>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Disagreement Points</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Core Issues</Label>
+                    {formData.disagreementPoints?.coreIssues?.map((issue, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{issue}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('disagreementPoints.coreIssues', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a core issue"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('disagreementPoints.coreIssues', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('disagreementPoints.coreIssues', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Different Perspectives</Label>
+                    {formData.disagreementPoints?.differentPerspectives?.map((perspective, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{perspective}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('disagreementPoints.differentPerspectives', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a different perspective"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('disagreementPoints.differentPerspectives', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('disagreementPoints.differentPerspectives', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Conflicting Evidence</Label>
+                    {formData.disagreementPoints?.conflictingEvidence?.map((evidence, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{evidence}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('disagreementPoints.conflictingEvidence', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add conflicting evidence"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('disagreementPoints.conflictingEvidence', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('disagreementPoints.conflictingEvidence', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
-        
+
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <Lightbulb className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Proposing Solutions</h3>
+              <p className="text-gray-600">Suggest compromises, alternative approaches, and implementation steps</p>
+            </div>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Proposed Solutions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Compromises</Label>
+                    {formData.proposedSolutions?.compromises?.map((compromise, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{compromise}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('proposedSolutions.compromises', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add a compromise"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('proposedSolutions.compromises', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('proposedSolutions.compromises', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Alternative Approaches</Label>
+                    {formData.proposedSolutions?.alternativeApproaches?.map((approach, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{approach}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('proposedSolutions.alternativeApproaches', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add an alternative approach"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('proposedSolutions.alternativeApproaches', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('proposedSolutions.alternativeApproaches', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Implementation Steps</Label>
+                    {formData.proposedSolutions?.implementationSteps?.map((step, index) => (
+                      <div key={index} className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{step}</Badge>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeArrayItem('proposedSolutions.implementationSteps', index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add an implementation step"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addArrayItem('proposedSolutions.implementationSteps', (e.target as HTMLInputElement).value);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={(e) => {
+                        const input = e.target?.previousElementSibling as HTMLInputElement;
+                        if (input) {
+                          addArrayItem('proposedSolutions.implementationSteps', input.value);
+                          input.value = '';
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
+          <Scale className="h-5 w-5" />
           Conflict Resolution Template
-          <div className="ml-auto text-sm font-normal text-muted-foreground">
-            Step {step} of 4
-          </div>
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {renderStep()}
-        
-        <div className="flex justify-between pt-2">
-          <Button
-            variant="ghost"
-            onClick={step === 1 ? onCancel : prevStep}
-            type="button"
-          >
-            {step === 1 ? "Cancel" : "Back"}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={step === 4 ? handleSubmit : nextStep}
-            type="button"
-          >
-            {step === 4 ? "Submit" : "Continue"}
-          </Button>
+        <div className="flex items-center gap-2 mt-4">
+          {[1, 2, 3, 4, 5].map((step) => (
+            <div
+              key={step}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                step <= currentStep
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {step}
+            </div>
+          ))}
         </div>
+      </CardHeader>
+
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          {renderStepContent()}
+
+          <div className="flex justify-between mt-8">
+            <div className="flex gap-2">
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                >
+                  Previous
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              
+              {currentStep < 5 ? (
+                <Button
+                  type="button"
+                  onClick={() => setCurrentStep(currentStep + 1)}
+                  disabled={
+                    (currentStep === 1 && (!formData.title || !formData.description || !formData.partyA || !formData.partyB))
+                  }
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={createConflictResolution.isLoading}
+                >
+                  {createConflictResolution.isLoading ? 'Creating...' : 'Create Conflict Resolution'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

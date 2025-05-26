@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,48 +17,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-
-
-// Fetch proposals desde Supabase con paginación y filtros
-// Se puede ampliar para ordenación, scroll infinito, etc.
-const fetchProposals = async ({
-  page,
-  limit,
-  search,
-  category,
-  phase,
-}: {
-  page: number;
-  limit: number;
-  search?: string;
-  category?: string;
-  phase?: string;
-}) => {
-  let query = supabase
-    .from('proposals')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
-
-  // Filtros
-  if (search && search.trim()) {
-    query = query.ilike('title', `%${search}%`);
-  }
-  if (category && category !== 'All Categories') {
-    query = query.eq('category', category);
-  }
-  if (phase && phase !== 'all') {
-    query = query.eq('phase', phase);
-  }
-
-  // Paginación
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-  query = query.range(from, to);
-
-  const { data, error, count } = await query;
-  if (error) throw error;
-  return { data: data || [], count: count || 0 };
-};
+import { fetchMockProposals } from "@/lib/mockProposals";
 
 const categories = [
   "All Categories",
@@ -75,7 +33,6 @@ const categories = [
 ];
 
 const ProposalsList: React.FC = () => {
-
   // Estados de paginación y filtros
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPhase, setCurrentPhase] = useState<string>("all");
@@ -94,14 +51,14 @@ const ProposalsList: React.FC = () => {
     refetch,
   } = useQuery({
     queryKey: ["proposals", { page, limit, searchQuery, categoryFilter, currentPhase }],
-    queryFn: () => fetchProposals({
+    queryFn: () => fetchMockProposals({
       page,
       limit,
       search: searchQuery,
       category: categoryFilter,
       phase: currentPhase,
     }),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   const proposals = data?.data || [];
