@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, MessageSquare, ThumbsUp, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { TranslatableText } from "@/components/TranslatableText";
+import ReadingProgress from "./deliberation/ReadingProgress";
+import PerspectiveViewer from "./deliberation/PerspectiveViewer";
+import CommentForm from "./deliberation/CommentForm";
 
 interface Perspective {
   id: string;
@@ -137,100 +135,29 @@ const DeliberationRoom: React.FC<DeliberationRoomProps> = ({
       </CardHeader>
       
       <CardContent>
-        <div className="mb-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span>Reading progress</span>
-            <span className="text-muted-foreground">
-              {readPerspectives.size} of {perspectives.length} perspectives read
-            </span>
-          </div>
-          <Progress value={readingProgress} className="h-2" color={readingProgress === 100 ? "bg-green-500" : undefined} />
-        </div>
+        <ReadingProgress
+          readPerspectives={readPerspectives}
+          totalPerspectives={perspectives.length}
+          readingProgress={readingProgress}
+        />
 
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-3 mb-4">
-            {perspectives.map((perspective) => (
-              <TabsTrigger key={perspective.id} value={perspective.id} className="relative">
-                <span>
-                  <TranslatableText 
-                    text={perspective.viewpoint} 
-                    sourceLanguage={perspective.language || "en"}
-                  />
-                </span>
-                {readPerspectives.has(perspective.id) && (
-                  <BookOpen className="h-3 w-3 absolute top-1 right-1 text-green-500" />
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {perspectives.map((perspective) => (
-            <TabsContent key={perspective.id} value={perspective.id}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    <TranslatableText 
-                      text={perspective.title} 
-                      sourceLanguage={perspective.language || "en"}
-                    />
-                  </CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    By {perspective.author}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose max-w-none">
-                    <TranslatableText 
-                      text={perspective.content}
-                      sourceLanguage={perspective.language || "en"}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+        <PerspectiveViewer
+          perspectives={perspectives}
+          activeTab={activeTab}
+          readPerspectives={readPerspectives}
+          onTabChange={handleTabChange}
+        />
       </CardContent>
 
       <CardFooter className="flex flex-col space-y-4">
-        <div className="w-full">
-          <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium">Share your perspective</span>
-            {readingProgress < 100 && (
-              <span className="text-xs text-amber-500 flex items-center">
-                <BookOpen className="h-3 w-3 mr-1" />
-                Please read all perspectives first
-              </span>
-            )}
-          </div>
-          <Textarea
-            placeholder={
-              readingProgress < 100
-                ? "Read all perspectives before commenting..."
-                : "After considering all perspectives, I think..."
-            }
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="mb-2"
-            disabled={readingProgress < 100 || !isAuthenticated}
-            readOnlyMessage={
-              !isAuthenticated
-                ? "Please sign in to participate"
-                : readingProgress < 100
-                ? "Please read all perspectives first"
-                : undefined
-            }
-            rows={4}
-          />
-          <Button 
-            className="w-full mt-2"
-            onClick={handleCommentSubmit}
-            disabled={readingProgress < 100 || !comment.trim() || isSubmitting || !isAuthenticated}
-          >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Submit Considered Response
-          </Button>
-        </div>
+        <CommentForm
+          comment={comment}
+          setComment={setComment}
+          readingProgress={readingProgress}
+          isAuthenticated={isAuthenticated}
+          isSubmitting={isSubmitting}
+          onSubmit={handleCommentSubmit}
+        />
       </CardFooter>
     </Card>
   );
